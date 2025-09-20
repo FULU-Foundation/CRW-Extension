@@ -3,13 +3,13 @@
 Thanks for taking the time to contribute, we really appreciate it!  
 
 All types of contributions are encouraged and valued. Please read the relevant section below before making your contribution.
-
+<!--
 ## Code of Conduct
 
 This project and everyone participating in it is governed by the  
 [CRW Extension Code of Conduct](https://github.com/FULU-Foundation/CRW-Extension/blob/dev/CODE_OF_CONDUCT.md). 
 By participating, you are expected to uphold this code.
-
+-->
 ## I Have a Question
 
 If you want to ask a question, please first:  
