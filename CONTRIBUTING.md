@@ -19,7 +19,7 @@ If you want to ask a question, please first:
 
 If you still need clarification:  
 - Open a new [issue](https://github.com/FULU-Foundation/CRW-Extension/issues/new).  
-- Provide as much context as you can, including your environment (OS, browser, project setup).  
+- Provide as much context as you can, including your environment (OS, browser, project setup, etc).  
 
 We will review the issue as soon as possible.
 
