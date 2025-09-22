@@ -104,7 +104,7 @@ When opening an enhancement issue, please:
 
 ## Join the Project Team
 
-You can join the volunteer core extension project team by joining our [Discord](https://discord.gg/3tVabpZNYd).  
+You can join the volunteer extension project team by joining our [Discord](https://discord.gg/3tVabpZNYd).  
 Hop into the **#extension-dev** channel and request the *extension dev* tag.  
 
 This is also the best place to discuss ideas, get feedback, and collaborate directly with other contributors.
