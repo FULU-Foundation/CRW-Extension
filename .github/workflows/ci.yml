@@ -18,7 +18,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install --include=optional
+        run: npm ci
 
       - name: Patch native binary for Linux
         run: npm install -D @rollup/rollup-linux-x64-gnu
