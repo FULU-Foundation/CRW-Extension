@@ -1,5 +1,3 @@
 dist
 node_modules
-.githubnode_modules/
-dist/
 *.log
