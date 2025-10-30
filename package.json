@@ -6,8 +6,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
     "build": "vite build",
+    "build:watch": "vite build --watch",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\""
   },
   "dependencies": {
