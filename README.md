@@ -23,7 +23,7 @@ You can also check the [project board](https://github.com/FULU-Foundation/CRW-Ex
 git clone https://github.com/FULU-Foundation/CRW-Extension.git
 cd CRW-Extension
 npm install
-npm run build
+npm run build:watch
 ```
 
 The compiled extension will be output in the `dist` folder.
