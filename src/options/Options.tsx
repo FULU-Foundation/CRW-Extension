@@ -1,12 +1,10 @@
+import { setCount } from "@/background";
 import React from "react";
 import browser from "webextension-polyfill";
 
 export default function Options() {
   const previewBadge = async () => {
-    try {
-      await browser.action.setBadgeBackgroundColor({ color: "#1DFDC0" });
-      await browser.action.setBadgeText({ text: "1" });
-    } catch {}
+    setCount(3)
   };
 
   return (
