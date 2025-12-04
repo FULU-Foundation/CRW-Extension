@@ -14,6 +14,11 @@
       "128": "icon128.png"
     }
   },
+  "background": {
+    "service_worker": "background.js",
+    "scripts": ["background.js"],
+    "type": "module"
+  },
   "options_page": "options.html",
   "icons": {
     "16": "icon16.png",
