@@ -1,23 +1,33 @@
-import React, { useEffect, useState } from "react";
 import browser from "webextension-polyfill";
+import { CargoEntry } from "@/shared/types";
+import React, { useEffect, useState } from "react";
+import * as Constants from "@/shared/constants";
 
 export default function Popup() {
   const [domain, setDomain] = useState<string>("unknown");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [articles, setArticles] = useState<CargoEntry[]>([]);
 
   useEffect(() => {
     (async () => {
-      try {
-        const [tab] = await browser.tabs.query({
-          active: true,
-          currentWindow: true,
-        });
-        if (tab?.url) {
-          const u = new URL(tab.url);
-          setDomain(u.hostname);
-        }
-      } catch {}
+      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      const tabId = tab.id;
+      if (!tabId) return;
+
+      if (tab?.url) {
+        const u = new URL(tab.url);
+        setDomain(u.hostname);
+      }
+
+      const storageKey = Constants.STORAGE.MATCHES(tabId);
+      const stored = await browser.storage.local.get(storageKey);
+      const results = stored[storageKey] as CargoEntry[] || [];
+
+      setArticles(results);
+      setLoading(false);
     })();
   }, []);
+
 
   const openOptions = () => browser.runtime.openOptionsPage();
   const openWiki = () =>
@@ -42,58 +52,55 @@ export default function Popup() {
         <div className="flex items-center justify-between px-2 py-1.5">
           <span className="text-white">Articles Found:</span>
           <span className="rounded bg-gray-700 px-2 py-1 text-xs font-semibold text-gray-300">
-            0
+            {loading ? "…" : articles.length}
           </span>
         </div>
 
         <div className="bg-[#0B0E14]">
-          <div className="flex items-center justify-between px-3 py-2">
-            <div className="flex-1 pr-2">
-              <div className="text-sm font-semibold text-[#1DFDC0]">
-                Placeholder Article 1
-              </div>
-              <div className="text-xs text-gray-300">
-                Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean
-                commodo ligula eget dolor. Aenean massa. Cum sociis natoque
-                penatibus et magnis dis parturient.
-              </div>
+          {/* Loading State */}
+          {loading && (
+            <div className="p-4 text-center text-gray-400 text-sm">
+              Searching for related articles…
             </div>
-            <button className="ml-2 rounded border border-[#1DFDC0] px-2 py-1 text-xs text-[#1DFDC0] hover:bg-[#1DFDC0] hover:text-[#0B0E14]">
-              View
-            </button>
-          </div>
+          )}
 
-          <div className="flex items-center justify-between px-3 py-2">
-            <div className="flex-1 pr-2">
-              <div className="text-sm font-semibold text-[#1DFDC0]">
-                Placeholder Article 2
-              </div>
-              <div className="text-xs text-gray-300">
-                Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean
-                commodo ligula eget dolor. Aenean massa. Cum sociis natoque
-                penatibus et magnis dis parturient.
-              </div>
+          {/* No Articles Found */}
+          {!loading && articles.length === 0 && (
+            <div className="p-4 text-center text-gray-400 text-sm">
+              No related articles found.
             </div>
-            <button className="ml-2 rounded border border-[#1DFDC0] px-2 py-1 text-xs text-[#1DFDC0] hover:bg-[#1DFDC0] hover:text-[#0B0E14]">
-              View
-            </button>
-          </div>
+          )}
 
-          <div className="flex items-center justify-between px-3 py-2">
-            <div className="flex-1 pr-2">
-              <div className="text-sm font-semibold text-[#1DFDC0]">
-                Placeholder Article 3
+
+          {/* Render Articles */}
+          {!loading &&
+            articles.map((data: CargoEntry, idx: number) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between px-3 py-2 border-t border-gray-800"
+              >
+                <div className="flex-1 pr-2">
+                  <div className="text-sm font-semibold text-[#1DFDC0]">
+                    {data?.PageName}
+                  </div>
+
+                  <div className="text-xs text-gray-300 line-clamp-3">
+                    {data?.Description || "No description available."}
+                  </div>
+                </div>
+
+                <button
+                  className="ml-2 rounded border border-[#1DFDC0] px-2 py-1 text-xs text-[#1DFDC0] hover:bg-[#1DFDC0] hover:text-[#0B0E14]"
+                  onClick={() =>
+                    browser.tabs.create({
+                      url: `https://consumerrights.wiki/page/${data?.PageName}`,
+                    })
+                  }
+                >
+                  View
+                </button>
               </div>
-              <div className="text-xs text-gray-300">
-                Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean
-                commodo ligula eget dolor. Aenean massa. Cum sociis natoque
-                penatibus et magnis dis parturient.
-              </div>
-            </div>
-            <button className="ml-2 rounded border border-[#1DFDC0] px-2 py-1 text-xs text-[#1DFDC0] hover:bg-[#1DFDC0] hover:text-[#0B0E14]">
-              View
-            </button>
-          </div>
+            ))}
         </div>
 
         <div className="flex flex-col">
