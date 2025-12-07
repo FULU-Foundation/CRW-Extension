@@ -6,11 +6,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build",
-    "build:watch": "vite build --watch",
+    "build": "npm run build:bg && npm run build:ui && npm run build:pb",
+    "build:pb": "vite build --config vite.config.ts",
+    "build:bg": "vite build --config vite.background.config.ts",
+    "build:ui": "vite build --config vite.content.config.ts",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\""
   },
   "dependencies": {
+    "fuse.js": "^7.1.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "webextension-polyfill": "^0.12.0"
@@ -28,7 +31,8 @@
     "rollup-plugin-visualizer": "^6.0.5",
     "tailwindcss": "^4.1.16",
     "typescript": "^5.9.3",
-    "vite": "^7.1.12"
+    "vite": "^7.1.12",
+    "vite-plugin-static-copy": "^3.1.4"
   },
   "prettier": {
     "plugins": [
