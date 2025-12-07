@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
 import { fileURLToPath } from "url";
+import { getOutDir } from "./viteEnv";
 
 export default defineConfig({
   resolve: {
@@ -12,7 +13,7 @@ export default defineConfig({
   },
 
   build: {
-    outDir: "dist",
+    outDir: getOutDir(),
     emptyOutDir: false,
     minify: false,
     sourcemap: true,

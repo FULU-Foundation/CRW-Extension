@@ -2,8 +2,10 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
-import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { getManifestSrc, getOutDir } from "./viteEnv";
+
+const browser = process.env.BROWSER === "firefox" ? "firefox" : "chrome";
 
 export default defineConfig({
   plugins: [
@@ -11,7 +13,7 @@ export default defineConfig({
     tailwindcss(),
     viteStaticCopy({
       targets: [
-        { src: "manifest.json", dest: "." }, 
+        { src: getManifestSrc(), dest: ".", rename: "manifest.json" },
         { src: "all_cargo_combined.json", dest: "./assets" }
       ]
     })
@@ -20,7 +22,7 @@ export default defineConfig({
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
 
   build: {
-    outDir: "dist",
+    outDir: getOutDir(),
     emptyOutDir: false,
     minify: false,
     sourcemap: true,

@@ -6,10 +6,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npm run build:bg && npm run build:ui && npm run build:pb",
-    "build:pb": "vite build --config vite.config.ts",
-    "build:bg": "vite build --config vite.background.config.ts",
-    "build:ui": "vite build --config vite.content.config.ts",
+    "build": "npm run build:chrome && npm run build:firefox",
+    "build:firefox": "cross-env BROWSER=firefox vite build --config vite.background.config.ts && cross-env BROWSER=firefox vite build --config vite.content.config.ts && cross-env BROWSER=firefox vite build --config vite.config.ts",
+    "build:chrome": "cross-env BROWSER=chrome vite build --config vite.background.config.ts && cross-env BROWSER=chrome vite build --config vite.content.config.ts && cross-env BROWSER=chrome vite build --config vite.config.ts",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\""
   },
   "dependencies": {
@@ -25,6 +24,7 @@
     "@types/react-dom": "^19.2.2",
     "@types/webextension-polyfill": "^0.12.4",
     "@vitejs/plugin-react": "^5.1.0",
+    "cross-env": "^10.1.0",
     "globals": "^16.4.0",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.7.1",
