@@ -1,20 +1,16 @@
 /**
  * Cargo data types
  */
-export type CargoEntryType =
-  | "Company"
-  | "Incident"
-  | "Product"
-  | "ProductLine";
+export type CargoEntryType = "Company" | "Incident" | "Product" | "ProductLine";
 
 export interface CargoEntry {
-    _type: CargoEntryType;
-    [key: string]: any;
+  _type: CargoEntryType;
+  [key: string]: any;
 }
 
 export interface LoadResult {
-    raw: any;
-    all: CargoEntry[];
+  raw: any;
+  all: CargoEntry[];
 }
 
 /**
@@ -22,10 +18,10 @@ export interface LoadResult {
  */
 
 export interface PageContext {
-    url: string;
-    hostname: string;
+  url: string;
+  hostname: string;
 
-    title?: string;
-    meta?: Record<string, string>;
-    textContent?: string;
+  title?: string;
+  meta?: Record<string, string>;
+  textContent?: string;
 }

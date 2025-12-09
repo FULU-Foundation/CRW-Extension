@@ -17,10 +17,12 @@ export async function load(): Promise<LoadResult> {
 
   await browser.storage.local.set({
     [Constants.STORAGE.RAW]: json,
-    [Constants.STORAGE.ALL]: typedData
+    [Constants.STORAGE.ALL]: typedData,
   });
 
-  console.log(`${Constants.LOG_PREFIX} Dataset loaded with ${typedData.length} entries`);
+  console.log(
+    `${Constants.LOG_PREFIX} Dataset loaded with ${typedData.length} entries`,
+  );
 
   return { raw: json, all: typedData };
 }
@@ -29,7 +31,7 @@ function validateDataset(json: any) {
   for (const key of Constants.DATASET_KEYS) {
     if (!Array.isArray(json[key])) {
       console.warn(
-        `${Constants.LOG_PREFIX} Missing or invalid dataset section: ${key}`
+        `${Constants.LOG_PREFIX} Missing or invalid dataset section: ${key}`,
       );
       json[key] = [];
     }
@@ -45,7 +47,7 @@ function flattenDataset(json: any): CargoEntry[] {
     for (const item of section) {
       flattened.push({
         ...item,
-        _type: key
+        _type: key,
       });
     }
   }

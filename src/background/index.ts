@@ -8,25 +8,32 @@ import { MessageType } from "@/messaging/type";
 import { CargoEntry, PageContext } from "@/shared/types";
 
 browser.runtime.onInstalled.addListener(async () => {
-  console.log(`${Constants.LOG_PREFIX} Extension installed/updated. Loading dataset...`);
+  console.log(
+    `${Constants.LOG_PREFIX} Extension installed/updated. Loading dataset...`,
+  );
 
   try {
     Dataset.load();
   } catch (error) {
-    console.log(`${Constants.LOG_PREFIX} Dataset load failed`, error)
+    console.log(`${Constants.LOG_PREFIX} Dataset load failed`, error);
   }
-})
+});
 
 browser.tabs.onActivated.addListener(async ({ tabId }) => {
-  console.log(`${Constants.LOG_PREFIX} Active tab has been changed. TabId:${tabId}`);
+  console.log(
+    `${Constants.LOG_PREFIX} Active tab has been changed. TabId:${tabId}`,
+  );
 
   const storageKey = Constants.STORAGE.MATCHES(tabId);
   const stored = await browser.storage.local.get(storageKey);
-  const results = stored[storageKey] as CargoEntry[] || [];
+  const results = (stored[storageKey] as CargoEntry[]) || [];
 
-  browser.action.setBadgeText({ tabId, text: String(results.length > 3 ? '3+' : results.length) });
-  browser.action.setBadgeBackgroundColor({ tabId, color: '#FF5722' });
-})
+  browser.action.setBadgeText({
+    tabId,
+    text: String(results.length > 3 ? "3+" : results.length),
+  });
+  browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
+});
 
 Messaging.createBackgroundMessageHandler({
   async onPageContextUpdated(payload, sender) {
@@ -36,15 +43,18 @@ Messaging.createBackgroundMessageHandler({
     const { url } = payload;
 
     const data = await browser.storage.local.get([Constants.STORAGE.ALL]);
-    const dataset = data[Constants.STORAGE.ALL] as any[] || [];
+    const dataset = (data[Constants.STORAGE.ALL] as any[]) || [];
 
     const matches = Matching.matchByUrl(dataset, url);
 
     await browser.storage.local.set({
-      [Constants.STORAGE.MATCHES(tabId)]: matches
+      [Constants.STORAGE.MATCHES(tabId)]: matches,
     });
 
-    browser.action.setBadgeText({ tabId, text: String(matches.length > 3 ? '3+' : matches.length) });
-    browser.action.setBadgeBackgroundColor({ tabId, color: '#FF5722' });
-  }
-})
+    browser.action.setBadgeText({
+      tabId,
+      text: String(matches.length > 3 ? "3+" : matches.length),
+    });
+    browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
+  },
+});

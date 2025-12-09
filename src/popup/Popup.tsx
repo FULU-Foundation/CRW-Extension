@@ -10,7 +10,10 @@ export default function Popup() {
 
   useEffect(() => {
     (async () => {
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      const [tab] = await browser.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
       const tabId = tab.id;
       if (!tabId) return;
 
@@ -21,13 +24,12 @@ export default function Popup() {
 
       const storageKey = Constants.STORAGE.MATCHES(tabId);
       const stored = await browser.storage.local.get(storageKey);
-      const results = stored[storageKey] as CargoEntry[] || [];
+      const results = (stored[storageKey] as CargoEntry[]) || [];
 
       setArticles(results);
       setLoading(false);
     })();
   }, []);
-
 
   const openOptions = () => browser.runtime.openOptionsPage();
   const openWiki = () =>
@@ -59,32 +61,31 @@ export default function Popup() {
         <div className="bg-[#0B0E14]">
           {/* Loading State */}
           {loading && (
-            <div className="p-4 text-center text-gray-400 text-sm">
+            <div className="p-4 text-center text-sm text-gray-400">
               Searching for related articles…
             </div>
           )}
 
           {/* No Articles Found */}
           {!loading && articles.length === 0 && (
-            <div className="p-4 text-center text-gray-400 text-sm">
+            <div className="p-4 text-center text-sm text-gray-400">
               No related articles found.
             </div>
           )}
-
 
           {/* Render Articles */}
           {!loading &&
             articles.map((data: CargoEntry, idx: number) => (
               <div
                 key={idx}
-                className="flex items-center justify-between px-3 py-2 border-t border-gray-800"
+                className="flex items-center justify-between border-t border-gray-800 px-3 py-2"
               >
                 <div className="flex-1 pr-2">
                   <div className="text-sm font-semibold text-[#1DFDC0]">
                     {data?.PageName}
                   </div>
 
-                  <div className="text-xs text-gray-300 line-clamp-3">
+                  <div className="line-clamp-3 text-xs text-gray-300">
                     {data?.Description || "No description available."}
                   </div>
                 </div>
@@ -93,7 +94,7 @@ export default function Popup() {
                   className="ml-2 rounded border border-[#1DFDC0] px-2 py-1 text-xs text-[#1DFDC0] hover:bg-[#1DFDC0] hover:text-[#0B0E14]"
                   onClick={() =>
                     browser.tabs.create({
-                      url: `https://consumerrights.wiki/page/${data?.PageName}`,
+                      url: `https://consumerrights.wiki/${data?.PageName}`,
                     })
                   }
                 >
