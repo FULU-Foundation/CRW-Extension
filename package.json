@@ -9,8 +9,7 @@
     "build": "npm-run-all --parallel build-chrome && npm run build-firefox",
     "build-firefox": "cross-env BROWSER=firefox vite build --config vite.background.config.ts && cross-env BROWSER=firefox vite build --config vite.content.config.ts && cross-env BROWSER=firefox vite build --config vite.config.ts",
     "build-chrome": "cross-env BROWSER=chrome vite build --config vite.background.config.ts && cross-env BROWSER=chrome vite build --config vite.content.config.ts && cross-env BROWSER=chrome vite build --config vite.config.ts",
-    "build:watch": "npm run build-bg:once && concurrently -k -n content,main \"npm run build-content:watch\" \"npm run build-main:watch\"",
-    "watch": "chokidar \"src/**/*\" -c \"npm run build\"",
+    "build:watch": "chokidar \"src/**/*\" -c \"npm run build\"",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\""
   },
   "dependencies": {
