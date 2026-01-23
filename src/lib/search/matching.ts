@@ -71,15 +71,15 @@ export function matchByUrl(entiries: CargoEntry[], url: string): CargoEntry[] {
 
   for (const item of dataset) {
     urlTokens
-      .filter(token => token.source == "domain")
-      .map(token => {
-        const website = item?.['Website'] ?? ''
-        const domain = getDomainRoot(website)
+      .filter((token) => token.source == "domain")
+      .map((token) => {
+        const website = item?.["Website"] ?? "";
+        const domain = getDomainRoot(website);
 
         if (domain === token.value) {
           results.push(item);
-        }        
-      })
+        }
+      });
   }
 
   return results.slice(0, 3);

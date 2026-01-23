@@ -1,4 +1,5 @@
-import { webext } from "@/shared/webext";
+import browser from "webextension-polyfill";
+
 import * as Constants from "@/shared/constants";
 import { PageContext } from "@/shared/types";
 import * as Messaging from "@/messaging";
@@ -15,7 +16,7 @@ const runContentScript = () => {
     hostname: location.hostname.toLocaleLowerCase(),
   };
 
-  webext.runtime.sendMessage(
+  browser.runtime.sendMessage(
     Messaging.createMessage(
       MessageType.PAGE_CONTEXT_UPDATE,
       "content",
