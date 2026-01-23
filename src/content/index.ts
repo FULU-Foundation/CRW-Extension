@@ -1,4 +1,4 @@
-import browser from 'webextension-polyfill';
+import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
 import { PageContext } from "@/shared/types";
