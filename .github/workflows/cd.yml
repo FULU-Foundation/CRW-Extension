@@ -1,0 +1,43 @@
+name: Build and release extension
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Zip Chrome
+        run: |
+          cd dist/chrome
+          zip -r ../../chrome-extension.zip .
+
+      - name: Zip Firefox
+        run: |
+          cd dist/firefox
+          zip -r ../../firefox-extension.zip .
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          files: |
+            chrome-extension.zip
+            firefox-extension.zip
