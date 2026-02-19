@@ -16,8 +16,8 @@
 pip install -r requirements-dev.txt
 ```
 
-4. Run the script `export.py`
+4. Run the script `main.py`
 
 ```shell
-dotenv run -- python export.py
+dotenv run -- python main.py
 ```
