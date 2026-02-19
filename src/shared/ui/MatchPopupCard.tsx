@@ -36,6 +36,43 @@ const getEntryKey = (entry: CargoEntry): string => {
   return `${entry._type}:${entry.PageID}`;
 };
 
+const getIncidentPrimaryStatus = (entry: CargoEntry): string => {
+  if (typeof entry.Status !== "string") return "";
+  const [primaryStatus] = entry.Status
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return primaryStatus || "";
+};
+
+const isActiveIncident = (entry: CargoEntry): boolean => {
+  return getIncidentPrimaryStatus(entry).toLowerCase() === "active";
+};
+
+const parseStartDateMs = (entry: CargoEntry): number => {
+  if (typeof entry.StartDate !== "string") return Number.NEGATIVE_INFINITY;
+  const value = Date.parse(entry.StartDate);
+  if (Number.isNaN(value)) return Number.NEGATIVE_INFINITY;
+  return value;
+};
+
+const sortIncidents = (entries: CargoEntry[]): CargoEntry[] => {
+  return entries
+    .map((entry, index) => ({ entry, index }))
+    .sort((left, right) => {
+      const leftActive = isActiveIncident(left.entry);
+      const rightActive = isActiveIncident(right.entry);
+      if (leftActive !== rightActive) return rightActive ? 1 : -1;
+
+      const leftStart = parseStartDateMs(left.entry);
+      const rightStart = parseStartDateMs(right.entry);
+      if (leftStart !== rightStart) return rightStart - leftStart;
+
+      return left.index - right.index;
+    })
+    .map((row) => row.entry);
+};
+
 const shouldShowExternalIcon = (entry: CargoEntry): boolean => {
   return (
     entry._type === "Company" ||
@@ -100,6 +137,7 @@ const EntryLink = (props: {
   linkStyle: React.CSSProperties;
   titleStyle: React.CSSProperties;
   iconSize?: number;
+  statusLozenge?: string;
 }) => {
   const {
     entry,
@@ -107,6 +145,7 @@ const EntryLink = (props: {
     linkStyle,
     titleStyle,
     iconSize = 12,
+    statusLozenge,
   } = props;
   return (
     <a
@@ -117,6 +156,24 @@ const EntryLink = (props: {
       {...linkHoverHandlers}
     >
       <span style={titleStyle}>{entry.PageName}</span>
+      {statusLozenge && (
+        <span
+          style={{
+            border: "1px solid rgba(255,255,255,0.45)",
+            borderRadius: "999px",
+            padding: "1px 6px",
+            fontSize: "10px",
+            lineHeight: 1.2,
+            fontWeight: 700,
+            color: POPUP_CSS.text,
+            background: "rgba(255,255,255,0.12)",
+            flexShrink: 0,
+            textTransform: "uppercase",
+          }}
+        >
+          {statusLozenge}
+        </span>
+      )}
       {shouldShowExternalIcon(entry) && (
         <img
           src={externalIconUrl}
@@ -158,8 +215,14 @@ const RelatedGroup = (props: {
   title: string;
   entries: CargoEntry[];
   externalIconUrl: string;
+  showIncidentStatus?: boolean;
 }) => {
-  const { title, entries, externalIconUrl } = props;
+  const {
+    title,
+    entries,
+    externalIconUrl,
+    showIncidentStatus = false,
+  } = props;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
       <div
@@ -192,6 +255,11 @@ const RelatedGroup = (props: {
             minWidth: 0,
           }}
           iconSize={11}
+          statusLozenge={
+            showIncidentStatus
+              ? getIncidentPrimaryStatus(item) || undefined
+              : undefined
+          }
         />
       ))}
     </div>
@@ -220,28 +288,28 @@ const TopMatchBlock = (props: {
         padding: "10px",
       }}
     >
-      <EntryLink
-        entry={entry}
-        externalIconUrl={externalIconUrl}
-        linkStyle={{
-          fontSize: "29px",
-          fontWeight: 700,
-          lineHeight: 1.2,
-          color: POPUP_CSS.text,
-          textDecoration: "none",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-        }}
-        titleStyle={{
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-          minWidth: 0,
-        }}
-        iconSize={16}
-      />
+        <EntryLink
+          entry={entry}
+          externalIconUrl={externalIconUrl}
+          linkStyle={{
+            fontSize: "29px",
+            fontWeight: 700,
+            lineHeight: 1.2,
+            color: POPUP_CSS.text,
+            textDecoration: "none",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+          titleStyle={{
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            minWidth: 0,
+          }}
+          iconSize={16}
+        />
 
       {entry._type === "Company" && entry.Industry && (
         <div style={{ fontSize: "13px", color: POPUP_CSS.muted }}>
@@ -326,7 +394,9 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
       (item) => getEntryKey(item) !== topMatchKey,
     );
     const groupedRelated = {
-      Incident: relatedItems.filter((item) => item._type === "Incident"),
+      Incident: sortIncidents(
+        relatedItems.filter((item) => item._type === "Incident"),
+      ),
       Product: relatedItems.filter((item) => item._type === "Product"),
       ProductLine: relatedItems.filter((item) => item._type === "ProductLine"),
     };
@@ -483,6 +553,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
               title="Related Incidents"
               entries={visibleIncidents}
               externalIconUrl={externalIconUrl}
+              showIncidentStatus
             />
             {derived.groupedRelated.Incident.length > 5 && (
               <button
@@ -511,7 +582,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
         <div
           style={{
             display: showRelatedPages ? "flex" : "none",
-            paddingTop: "8px",
+            padding: "8px 6px 0 6px",
             borderTop: `1px solid ${POPUP_CSS.divider}`,
             flexDirection: "column",
             gap: "10px",
