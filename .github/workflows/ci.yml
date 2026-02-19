@@ -10,18 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Patch native binary for Linux
-        run: npm install -D --no-save @rollup/rollup-linux-x64-gnu
 
       - name: Run Prettier check
         run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,html}"

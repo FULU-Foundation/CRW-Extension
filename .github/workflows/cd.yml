@@ -1,0 +1,71 @@
+name: Build and release extension
+
+on:
+  push:
+    branches:
+      - release
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify build outputs
+        run: |
+          test -d dist/chrome
+          test -d dist/firefox
+
+      - name: Zip Chrome
+        working-directory: dist/chrome
+        run: zip -r ../../chrome-extension.zip .
+
+      - name: Zip Firefox
+        working-directory: dist/firefox
+        run: zip -r ../../firefox-extension.zip .
+
+      - name: Validate release tag
+        id: tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          git fetch --tags
+
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists. Bump package.json version and push again."
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          files: |
+            chrome-extension.zip
+            firefox-extension.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Continue delivery to webstore(s) here
