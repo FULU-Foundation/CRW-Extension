@@ -1,0 +1,42 @@
+name: Daily CRW Cargo tables export
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Every day at 00:00 UTC
+  workflow_dispatch:     # allows manual trigger from GitHub UI
+
+jobs:
+  export_cargo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r scripts/export_cargo/requirements.txt 
+
+      - name: Run Python script
+        env:
+          WIKI_USERNAME: ${{ secrets.WIKI_USERNAME }}
+          WIKI_BOTNAME: ${{ secrets.WIKI_BOTNAME }}
+          WIKI_PASSWORD: ${{ secrets.WIKI_PASSWORD }}
+
+        run: python scripts/export_cargo/main.py
+
+      - name: Clone target repo
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git switch export_cargo 2>/dev/null || git switch -c export_cargo
+          if ! git diff --cached --quiet; then
+            git commit -am "Update Cargo export"
+            git push
+          else
+            echo "No changes to commit"
+          fi
