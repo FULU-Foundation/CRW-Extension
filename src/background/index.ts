@@ -19,11 +19,7 @@ const sendMatchUpdateToTab = async (
   try {
     await browser.tabs.sendMessage(
       tabId,
-      Messaging.createMessage(
-        type,
-        "backgroud",
-        matches,
-      ),
+      Messaging.createMessage(type, "backgroud", matches),
     );
   } catch {
     if (attempt >= 2) return;
@@ -91,7 +87,11 @@ browser.action.onClicked.addListener(async (tab) => {
   const stored = await browser.storage.local.get(storageKey);
   const matches = (stored[storageKey] as CargoEntry[]) || [];
 
-  void sendMatchUpdateToTab(tabId, matches, MessageType.FORCE_SHOW_INLINE_POPUP);
+  void sendMatchUpdateToTab(
+    tabId,
+    matches,
+    MessageType.FORCE_SHOW_INLINE_POPUP,
+  );
 });
 
 Messaging.createBackgroundMessageHandler({

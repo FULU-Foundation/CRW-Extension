@@ -10,7 +10,8 @@ const isDomainOrSubdomain = (hostname: string, domain: string): boolean => {
   return host === target || host.endsWith(`.${target}`);
 };
 
-export const ECOMMERCE_DOMAIN_FAMILY_MAP = matchingConfig.ecommerceDomainFamilyMap;
+export const ECOMMERCE_DOMAIN_FAMILY_MAP =
+  matchingConfig.ecommerceDomainFamilyMap;
 export const ECOMMERCE_DOMAINS = Object.keys(
   matchingConfig.ecommerceDomainFamilyMap,
 );

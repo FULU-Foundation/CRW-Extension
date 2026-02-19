@@ -25,7 +25,7 @@
       "Industry": "Retail",
       "ParentCompany": "Seven-Eleven Japan",
       "Type": "Public subsidiary",
-      "Website": "https://www.7-eleven.com/"
+      "Website": "https://7-eleven.com/"
     },
     {
       "PageName": "Acer",
@@ -1151,6 +1151,174 @@
       "Description": "BMW is charging for activation of hardware features built into their vehicles.",
       "StartDate__precision": null,
       "EndDate__precision": null
+    },
+    {
+      "PageName": "7-Eleven Test Incident 01",
+      "PageID": "971201",
+      "Company": "7-Eleven",
+      "StartDate": "2025-02-01",
+      "EndDate": null,
+      "Status": "Active",
+      "ProductLine": "Fresh donuts",
+      "Product": "Fresh donuts",
+      "Type": "Testing",
+      "Description": "Synthetic incident 1 for validating CRW extension incident rendering and relation expansion for 7-eleven.com.",
+      "StartDate__precision": "2",
+      "EndDate__precision": null
+    },
+    {
+      "PageName": "7-Eleven Test Incident 02",
+      "PageID": "971202",
+      "Company": "7-Eleven",
+      "StartDate": "2025-03-01",
+      "EndDate": null,
+      "Status": "Active",
+      "ProductLine": "Fusion Energy",
+      "Product": "Fusion Energy energy drink",
+      "Type": "Testing",
+      "Description": "Synthetic incident 2 for validating CRW extension incident rendering and relation expansion for 7-eleven.com.",
+      "StartDate__precision": "2",
+      "EndDate__precision": null
+    },
+    {
+      "PageName": "7-Eleven Test Incident 03",
+      "PageID": "971203",
+      "Company": "7-Eleven",
+      "StartDate": "2025-04-01",
+      "EndDate": null,
+      "Status": "Active",
+      "ProductLine": "7-Eleven Test Product Line 03",
+      "Product": "7-Eleven Test Product 03",
+      "Type": "Testing",
+      "Description": "Synthetic incident 3 for validating CRW extension incident rendering and relation expansion for 7-eleven.com.",
+      "StartDate__precision": "2",
+      "EndDate__precision": null
+    },
+    {
+      "PageName": "7-Eleven Test Incident 04",
+      "PageID": "971204",
+      "Company": "7-Eleven",
+      "StartDate": "2025-05-01",
+      "EndDate": null,
+      "Status": "Active",
+      "ProductLine": "7-Eleven Test Product Line 04",
+      "Product": "7-Eleven Test Product 04",
+      "Type": "Testing",
+      "Description": "Synthetic incident 4 for validating CRW extension incident rendering and relation expansion for 7-eleven.com.",
+      "StartDate__precision": "2",
+      "EndDate__precision": null
+    },
+    {
+      "PageName": "7-Eleven Test Incident 05",
+      "PageID": "971205",
+      "Company": "7-Eleven",
+      "StartDate": "2025-06-01",
+      "EndDate": null,
+      "Status": "Active",
+      "ProductLine": "7-Eleven Test Product Line 05",
+      "Product": "7-Eleven Test Product 05",
+      "Type": "Testing",
+      "Description": "Synthetic incident 5 for validating CRW extension incident rendering and relation expansion for 7-eleven.com.",
+      "StartDate__precision": "2",
+      "EndDate__precision": null
+    },
+    {
+      "PageName": "7-Eleven Test Incident 06",
+      "PageID": "971206",
+      "Company": "7-Eleven",
+      "StartDate": "2025-07-01",
+      "EndDate": null,
+      "Status": "Active",
+      "ProductLine": "7-Eleven Test Product Line 06",
+      "Product": "7-Eleven Test Product 06",
+      "Type": "Testing",
+      "Description": "Synthetic incident 6 for validating CRW extension incident rendering and relation expansion for 7-eleven.com.",
+      "StartDate__precision": "2",
+      "EndDate__precision": null
+    },
+    {
+      "PageName": "7-Eleven Test Incident 07",
+      "PageID": "971207",
+      "Company": "7-Eleven",
+      "StartDate": "2025-08-01",
+      "EndDate": null,
+      "Status": "Active",
+      "ProductLine": "7-Eleven Test Product Line 07",
+      "Product": "7-Eleven Test Product 07",
+      "Type": "Testing",
+      "Description": "Synthetic incident 7 for validating CRW extension incident rendering and relation expansion for 7-eleven.com.",
+      "StartDate__precision": "2",
+      "EndDate__precision": null
+    },
+    {
+      "PageName": "7-Eleven Test Incident 08",
+      "PageID": "971208",
+      "Company": "7-Eleven",
+      "StartDate": "2025-09-01",
+      "EndDate": null,
+      "Status": "Active",
+      "ProductLine": "7-Eleven Test Product Line 08",
+      "Product": "7-Eleven Test Product 08",
+      "Type": "Testing",
+      "Description": "Synthetic incident 8 for validating CRW extension incident rendering and relation expansion for 7-eleven.com.",
+      "StartDate__precision": "2",
+      "EndDate__precision": null
+    },
+    {
+      "PageName": "7-Eleven Test Incident 09",
+      "PageID": "971209",
+      "Company": "7-Eleven",
+      "StartDate": "2025-10-01",
+      "EndDate": null,
+      "Status": "Active",
+      "ProductLine": "7-Eleven Test Product Line 09",
+      "Product": "7-Eleven Test Product 09",
+      "Type": "Testing",
+      "Description": "Synthetic incident 9 for validating CRW extension incident rendering and relation expansion for 7-eleven.com.",
+      "StartDate__precision": "2",
+      "EndDate__precision": null
+    },
+    {
+      "PageName": "7-Eleven Test Incident 10",
+      "PageID": "971210",
+      "Company": "7-Eleven",
+      "StartDate": "2025-11-01",
+      "EndDate": null,
+      "Status": "Active",
+      "ProductLine": "7-Eleven Test Product Line 10",
+      "Product": "7-Eleven Test Product 10",
+      "Type": "Testing",
+      "Description": "Synthetic incident 10 for validating CRW extension incident rendering and relation expansion for 7-eleven.com.",
+      "StartDate__precision": "2",
+      "EndDate__precision": null
+    },
+    {
+      "PageName": "7-Eleven Test Incident 11",
+      "PageID": "971211",
+      "Company": "7-Eleven",
+      "StartDate": "2025-12-01",
+      "EndDate": null,
+      "Status": "Active",
+      "ProductLine": "7-Eleven Test Product Line 11",
+      "Product": "7-Eleven Test Product 11",
+      "Type": "Testing",
+      "Description": "Synthetic incident 11 for validating CRW extension incident rendering and relation expansion for 7-eleven.com.",
+      "StartDate__precision": "2",
+      "EndDate__precision": null
+    },
+    {
+      "PageName": "7-Eleven Test Incident 12",
+      "PageID": "971212",
+      "Company": "7-Eleven",
+      "StartDate": "2025-01-01",
+      "EndDate": null,
+      "Status": "Active",
+      "ProductLine": "7-Eleven Test Product Line 12",
+      "Product": "7-Eleven Test Product 12",
+      "Type": "Testing",
+      "Description": "Synthetic incident 12 for validating CRW extension incident rendering and relation expansion for 7-eleven.com.",
+      "StartDate__precision": "2",
+      "EndDate__precision": null
     }
   ],
   "Product": [
@@ -1603,6 +1771,150 @@
       "Description": null,
       "ProductLine": "2011",
       "Website": "https://icloud.com"
+    },
+    {
+      "PageName": "Fresh donuts",
+      "PageID": "971101",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product for testing 7-eleven.com matching.",
+      "ProductLine": "Fresh donuts",
+      "Website": "https://7-eleven.com/test/products/fresh-donuts"
+    },
+    {
+      "PageName": "Fusion Energy energy drink",
+      "PageID": "971102",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product for testing 7-eleven.com matching.",
+      "ProductLine": "Fusion Energy",
+      "Website": "https://7-eleven.com/test/products/fusion-energy"
+    },
+    {
+      "PageName": "7-Eleven Test Product 03",
+      "PageID": "971103",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product 3 for validating CRW extension matching on 7-eleven.com.",
+      "ProductLine": "7-Eleven Test Product Line 03",
+      "Website": "https://7-eleven.com/test/products/03"
+    },
+    {
+      "PageName": "7-Eleven Test Product 04",
+      "PageID": "971104",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product 4 for validating CRW extension matching on 7-eleven.com.",
+      "ProductLine": "7-Eleven Test Product Line 04",
+      "Website": "https://7-eleven.com/test/products/04"
+    },
+    {
+      "PageName": "7-Eleven Test Product 05",
+      "PageID": "971105",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product 5 for validating CRW extension matching on 7-eleven.com.",
+      "ProductLine": "7-Eleven Test Product Line 05",
+      "Website": "https://7-eleven.com/test/products/05"
+    },
+    {
+      "PageName": "7-Eleven Test Product 06",
+      "PageID": "971106",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product 6 for validating CRW extension matching on 7-eleven.com.",
+      "ProductLine": "7-Eleven Test Product Line 06",
+      "Website": "https://7-eleven.com/test/products/06"
+    },
+    {
+      "PageName": "7-Eleven Test Product 07",
+      "PageID": "971107",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product 7 for validating CRW extension matching on 7-eleven.com.",
+      "ProductLine": "7-Eleven Test Product Line 07",
+      "Website": "https://7-eleven.com/test/products/07"
+    },
+    {
+      "PageName": "7-Eleven Test Product 08",
+      "PageID": "971108",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product 8 for validating CRW extension matching on 7-eleven.com.",
+      "ProductLine": "7-Eleven Test Product Line 08",
+      "Website": "https://7-eleven.com/test/products/08"
+    },
+    {
+      "PageName": "7-Eleven Test Product 09",
+      "PageID": "971109",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product 9 for validating CRW extension matching on 7-eleven.com.",
+      "ProductLine": "7-Eleven Test Product Line 09",
+      "Website": "https://7-eleven.com/test/products/09"
+    },
+    {
+      "PageName": "7-Eleven Test Product 10",
+      "PageID": "971110",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product 10 for validating CRW extension matching on 7-eleven.com.",
+      "ProductLine": "7-Eleven Test Product Line 10",
+      "Website": "https://7-eleven.com/test/products/10"
+    },
+    {
+      "PageName": "7-Eleven Test Product 11",
+      "PageID": "971111",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product 11 for validating CRW extension matching on 7-eleven.com.",
+      "ProductLine": "7-Eleven Test Product Line 11",
+      "Website": "https://7-eleven.com/test/products/11"
+    },
+    {
+      "PageName": "7-Eleven Test Product 12",
+      "PageID": "971112",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product 12 for validating CRW extension matching on 7-eleven.com.",
+      "ProductLine": "7-Eleven Test Product Line 12",
+      "Website": "https://7-eleven.com/test/products/12"
+    },
+    {
+      "PageName": "7-Eleven Test Product 13",
+      "PageID": "971113",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product 13 for validating CRW extension matching on 7-eleven.com.",
+      "ProductLine": "7-Eleven Test Product Line 13",
+      "Website": "https://7-eleven.com/test/products/13"
+    },
+    {
+      "PageName": "7-Eleven Test Product 14",
+      "PageID": "971114",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product 14 for validating CRW extension matching on 7-eleven.com.",
+      "ProductLine": "7-Eleven Test Product Line 14",
+      "Website": "https://7-eleven.com/test/products/14"
+    },
+    {
+      "PageName": "7-Eleven Test Product 15",
+      "PageID": "971115",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product 15 for validating CRW extension matching on 7-eleven.com.",
+      "ProductLine": "7-Eleven Test Product Line 15",
+      "Website": "https://7-eleven.com/test/products/15"
+    },
+    {
+      "PageName": "Wallet",
+      "PageID": "971116",
+      "Category": "Retail Product, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product 16 for validating CRW extension matching on 7-eleven.com.",
+      "ProductLine": "Wallet",
+      "Website": "https://7-eleven.com/test/products/wallet"
     }
   ],
   "ProductLine": [
@@ -1627,7 +1939,7 @@
       "PageID": "4599",
       "Category": "Wireless earbuds",
       "Company": "Apple",
-      "Description": null,
+      "Description": "Has a description",
       "Website": "https://apple.com/airpods"
     },
     {
@@ -2005,6 +2317,150 @@
       "Company": "Subaru",
       "Description": null,
       "Website": "https://subaru.com/"
+    },
+    {
+      "PageName": "Fresh donuts",
+      "PageID": "97101",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line for testing 7-eleven.com matching.",
+      "Website": "https://www.7-eleven.com/products/bakery/fresh-donuts"
+    },
+    {
+      "PageName": "Fusion Energy",
+      "PageID": "97102",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line for testing 7-eleven.com matching.",
+      "Website": "https://www.7-eleven.com/lp/energy-drinks"
+    },
+    {
+      "PageName": "7-Eleven Test Product Line 03",
+      "PageID": "97103",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 3 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://7-eleven.com/test/product-lines/03"
+    },
+    {
+      "PageName": "7-Eleven Test Product Line 04",
+      "PageID": "97104",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 4 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://7-eleven.com/test/product-lines/04"
+    },
+    {
+      "PageName": "7-Eleven Test Product Line 05",
+      "PageID": "97105",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 5 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://7-eleven.com/test/product-lines/05"
+    },
+    {
+      "PageName": "7-Eleven Test Product Line 06",
+      "PageID": "97106",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 6 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://7-eleven.com/test/product-lines/06"
+    },
+    {
+      "PageName": "7-Eleven Test Product Line 07",
+      "PageID": "97107",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 7 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://7-eleven.com/test/product-lines/07"
+    },
+    {
+      "PageName": "7-Eleven Test Product Line 08",
+      "PageID": "97108",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 8 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://7-eleven.com/test/product-lines/08"
+    },
+    {
+      "PageName": "7-Eleven Test Product Line 09",
+      "PageID": "97109",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 9 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://7-eleven.com/test/product-lines/09"
+    },
+    {
+      "PageName": "7-Eleven Test Product Line 10",
+      "PageID": "97110",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 10 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://7-eleven.com/test/product-lines/10"
+    },
+    {
+      "PageName": "7-Eleven Test Product Line 11",
+      "PageID": "97111",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 11 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://7-eleven.com/test/product-lines/11"
+    },
+    {
+      "PageName": "7-Eleven Test Product Line 12",
+      "PageID": "97112",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 12 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://7-eleven.com/test/product-lines/12"
+    },
+    {
+      "PageName": "7-Eleven Test Product Line 13",
+      "PageID": "97113",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 13 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://7-eleven.com/test/product-lines/13"
+    },
+    {
+      "PageName": "7-Eleven Test Product Line 14",
+      "PageID": "97114",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 14 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://7-eleven.com/test/product-lines/14"
+    },
+    {
+      "PageName": "7-Eleven Test Product Line 15",
+      "PageID": "97115",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 15 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://7-eleven.com/test/product-lines/15"
+    },
+    {
+      "PageName": "Wallet",
+      "PageID": "97116",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 16 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://www.7-eleven.com/7rewards/7-eleven-wallet"
+    },
+    {
+      "PageName": "7-Eleven Test Product Line 17",
+      "PageID": "97117",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 17 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://7-eleven.com/test/product-lines/17"
+    },
+    {
+      "PageName": "7-Eleven Test Product Line 18",
+      "PageID": "97118",
+      "Category": "Retail Services, Testing",
+      "Company": "7-Eleven",
+      "Description": "Synthetic product line 18 for validating CRW extension matching on 7-eleven.com.",
+      "Website": "https://7-eleven.com/test/product-lines/18"
     }
   ]
 }

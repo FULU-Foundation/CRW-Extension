@@ -98,9 +98,7 @@ export const matchingConfig: MatchingConfig = {
   ...DEFAULT_MATCHING_CONFIG,
 };
 
-export const setMatchingConfig = (
-  overrides: Partial<MatchingConfig>,
-): void => {
+export const setMatchingConfig = (overrides: Partial<MatchingConfig>): void => {
   Object.assign(matchingConfig, overrides);
 };
 
