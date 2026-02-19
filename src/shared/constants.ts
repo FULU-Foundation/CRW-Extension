@@ -11,8 +11,6 @@ export const DATASET_KEYS: CargoEntryType[] = [
 ];
 
 export const STORAGE = {
-  RAW: "crw_raw",
-  ALL: "crw_all",
   MATCHES: (tabId: number) => {
     return `crw_matched_${tabId}`;
   },

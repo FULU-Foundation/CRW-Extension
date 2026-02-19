@@ -1,8 +1,9 @@
 import browser from "webextension-polyfill";
 import { CargoEntry, LoadResult } from "@/shared/types";
 import * as Constants from "@/shared/constants";
+import { decodeEntityStrings } from "@/shared/html";
 
-export async function load(): Promise<LoadResult> {
+export const load = async (): Promise<LoadResult> => {
   console.log(`${Constants.LOG_PREFIX} Loading dataset...`);
 
   const url = browser.runtime.getURL(Constants.DATA_FILE_PATH);
@@ -15,19 +16,14 @@ export async function load(): Promise<LoadResult> {
 
   const typedData = flattenDataset(json);
 
-  await browser.storage.local.set({
-    [Constants.STORAGE.RAW]: json,
-    [Constants.STORAGE.ALL]: typedData,
-  });
-
   console.log(
     `${Constants.LOG_PREFIX} Dataset loaded with ${typedData.length} entries`,
   );
 
   return { raw: json, all: typedData };
-}
+};
 
-function validateDataset(json: any) {
+const validateDataset = (json: any) => {
   for (const key of Constants.DATASET_KEYS) {
     if (!Array.isArray(json[key])) {
       console.warn(
@@ -36,21 +32,22 @@ function validateDataset(json: any) {
       json[key] = [];
     }
   }
-}
+};
 
-function flattenDataset(json: any): CargoEntry[] {
+const flattenDataset = (json: any): CargoEntry[] => {
   const flattened: CargoEntry[] = [];
 
   for (const key of Constants.DATASET_KEYS) {
     const section = json[key] || [];
 
     for (const item of section) {
+      const decodedItem = decodeEntityStrings(item) as Record<string, unknown>;
       flattened.push({
-        ...item,
+        ...decodedItem,
         _type: key,
-      });
+      } as CargoEntry);
     }
   }
 
   return flattened;
-}
+};

@@ -6,16 +6,40 @@ import * as Dataset from "@/lib/dataset";
 import * as Messaging from "@/messaging";
 import { CargoEntry } from "@/shared/types";
 
+let datasetCache: CargoEntry[] = [];
+let datasetLoadPromise: Promise<CargoEntry[]> | null = null;
+
+const loadDatasetCache = async (): Promise<CargoEntry[]> => {
+  if (datasetCache.length > 0) return datasetCache;
+  if (datasetLoadPromise) return datasetLoadPromise;
+
+  datasetLoadPromise = (async () => {
+    const loaded = await Dataset.load();
+    datasetCache = loaded.all;
+    return datasetCache;
+  })();
+
+  try {
+    return await datasetLoadPromise;
+  } catch (error) {
+    console.log(`${Constants.LOG_PREFIX} Dataset load failed`, error);
+    datasetCache = [];
+    return datasetCache;
+  } finally {
+    datasetLoadPromise = null;
+  }
+};
+
 browser.runtime.onInstalled.addListener(async () => {
   console.log(
     `${Constants.LOG_PREFIX} Extension installed/updated. Loading dataset...`,
   );
 
-  try {
-    Dataset.load();
-  } catch (error) {
-    console.log(`${Constants.LOG_PREFIX} Dataset load failed`, error);
-  }
+  await loadDatasetCache();
+});
+
+browser.runtime.onStartup.addListener(async () => {
+  await loadDatasetCache();
 });
 
 browser.tabs.onActivated.addListener(async ({ tabId }) => {
@@ -40,9 +64,7 @@ Messaging.createBackgroundMessageHandler({
     if (!tabId) return;
 
     const { url } = payload;
-
-    const data = await browser.storage.local.get([Constants.STORAGE.ALL]);
-    const dataset = (data[Constants.STORAGE.ALL] as any[]) || [];
+    const dataset = await loadDatasetCache();
 
     const matches = Matching.matchByUrl(dataset, url);
 
@@ -57,3 +79,5 @@ Messaging.createBackgroundMessageHandler({
     browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
   },
 });
+
+void loadDatasetCache();
