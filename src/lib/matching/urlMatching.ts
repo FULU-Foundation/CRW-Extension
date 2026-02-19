@@ -1,5 +1,6 @@
 import type { CargoEntry } from "@/shared/types";
 import type { UrlEntryMatch, UrlMatchDetail, UrlMatchType } from "./types";
+import { getEcommerceFamily } from "./ecommerce.ts";
 
 const MATCH_PRIORITY: Record<UrlMatchType, number> = {
   exact: 3,
@@ -79,6 +80,18 @@ export const classifyUrlMatch = (
     };
   }
 
+  const visitedFamily = getEcommerceFamily(visitedHost);
+  const candidateFamily = getEcommerceFamily(candidateHost);
+  if (visitedFamily && candidateFamily && visitedFamily === candidateFamily) {
+    return {
+      matchType: "subdomain",
+      matchedPath: null,
+      visitedHost,
+      candidateHost,
+      ecommerceFamilyAlias: true,
+    };
+  }
+
   return null;
 };
 
@@ -100,6 +113,9 @@ const sortMatches = (left: UrlEntryMatch, right: UrlEntryMatch): number => {
 const getMatchReasons = (detail: UrlMatchDetail): string[] => {
   if (detail.matchType === "exact") return ["host_equal", "path_equal"];
   if (detail.matchType === "partial") return ["host_equal", "path_prefix"];
+  if (detail.ecommerceFamilyAlias) {
+    return ["ecommerce_family_alias", "subdomain_match"];
+  }
   return ["root_domain_equal", "subdomain_match"];
 };
 

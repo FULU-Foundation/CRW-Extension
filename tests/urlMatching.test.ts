@@ -117,3 +117,34 @@ test("returns empty array for invalid visited URL", () => {
   const results = matchEntriesByUrl([], "not a valid URL", 10);
   assert.deepEqual(results, []);
 });
+
+test("classifies ecommerce international domains as alias matches", () => {
+  const visited = safeParseUrl("https://www.amazon.com.au/s?k=airpods");
+  const candidate = safeParseUrl("https://amazon.com/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "subdomain");
+});
+
+test("matches amazon.com cargo entries while browsing amazon.com.au", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      PageID: "company-amazon",
+      PageName: "Amazon",
+      Website: "https://amazon.com/",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://www.amazon.com.au/Apple-MXP63ZA-A-AirPods-4/dp/B0DGJ2X3QV",
+    10,
+  );
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].entry.PageID, "company-amazon");
+  assert.equal(results[0].matchType, "subdomain");
+});
