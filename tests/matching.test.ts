@@ -1,9 +1,16 @@
-import test from "node:test";
+import test, { afterEach } from "node:test";
 import assert from "node:assert/strict";
 
 import { matchByPageContext, matchByUrl } from "../src/lib/matching/matching.ts";
+import {
+  resetMatchingConfig,
+} from "../src/lib/matching/matchingConfig.ts";
 import { entry, relationFixture } from "./helpers.ts";
 import type { CargoEntry } from "../src/shared/types.ts";
+
+afterEach(() => {
+  resetMatchingConfig();
+});
 
 test("matchByUrl returns related expanded entries from URL seed matches", () => {
   const dataset = relationFixture();
@@ -78,4 +85,81 @@ test("matchByPageContext falls back to ecommerce URL alias matches when meta/tit
   const ids = results.map((item) => item.PageID);
   assert.ok(ids.includes("company-amazon"));
   assert.equal(ids.includes("company-apple"), false);
+});
+
+test("matchByPageContext does not run meta-only matches without URL/domain seed", () => {
+  const dataset = ecommerceFixture();
+  const results = matchByPageContext(dataset, {
+    url: "https://example.org/products/airpods",
+    hostname: "example.org",
+    title: "Apple AirPods 4 review",
+    meta: {
+      description: "Apple AirPods 4 review",
+      "og:title": "Apple AirPods 4 review",
+      "og:description": "Apple AirPods 4 review",
+    },
+  });
+
+  assert.equal(results.length, 0);
+});
+
+test("matchByPageContext prioritizes exact non-company URL match before company meta hits", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-7eleven",
+      PageName: "7-Eleven",
+      Website: "https://7-eleven.com/",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-wallet",
+      PageName: "Wallet",
+      Company: "7-Eleven",
+      Website: "https://www.7-eleven.com/7rewards/7-eleven-wallet",
+    }),
+  ];
+
+  const results = matchByPageContext(dataset, {
+    url: "https://www.7-eleven.com/7rewards/7-eleven-wallet",
+    hostname: "www.7-eleven.com",
+    title: "7-Eleven Wallet",
+    meta: {
+      description: "Pay with 7-Eleven Wallet",
+      "og:title": "7-Eleven Wallet",
+      "og:description": "7-Eleven Wallet",
+    },
+  });
+
+  assert.equal(results[0]?.PageID, "pl-wallet");
+});
+
+test("matchByPageContext promotes wallet meta match when URL seed is company", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-7eleven",
+      PageName: "7-Eleven",
+      Website: "https://7-eleven.com/",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-wallet",
+      PageName: "Wallet",
+      Company: "7-Eleven",
+    }),
+  ];
+
+  const results = matchByPageContext(dataset, {
+    url: "https://www.7-eleven.com/7rewards",
+    hostname: "www.7-eleven.com",
+    title: "7-Eleven Wallet",
+    meta: {
+      description: "Use your 7-Eleven Wallet in 7REWARDS",
+      "og:title": "7-Eleven Wallet",
+      "og:description": "Use your 7-Eleven Wallet",
+    },
+  });
+
+  assert.equal(results[0]?.PageID, "pl-wallet");
 });

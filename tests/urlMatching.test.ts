@@ -1,4 +1,4 @@
-import test from "node:test";
+import test, { afterEach } from "node:test";
 import assert from "node:assert/strict";
 
 import type { CargoEntry } from "../src/shared/types.ts";
@@ -8,7 +8,15 @@ import {
   safeParseUrl,
   scoreUrlMatch,
 } from "../src/lib/matching/urlMatching.ts";
+import {
+  resetMatchingConfig,
+  setMatchingConfig,
+} from "../src/lib/matching/matchingConfig.ts";
 import { entry } from "./helpers.ts";
+
+afterEach(() => {
+  resetMatchingConfig();
+});
 
 test("classifies exact match when host and normalized path are equal", () => {
   const visited = safeParseUrl("https://www.ally.com/invest/");
@@ -19,6 +27,17 @@ test("classifies exact match when host and normalized path are equal", () => {
   const result = classifyUrlMatch(visited, candidate);
   assert.ok(result);
   assert.equal(result.matchType, "exact");
+});
+
+test("treats www and bare domains as equal hosts", () => {
+  const visited = safeParseUrl("https://www.7-eleven.com/7rewards/7-eleven-wallet");
+  const candidate = safeParseUrl("https://7-eleven.com/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "partial");
 });
 
 test("classifies partial when visited path is a deeper prefix on same host", () => {
@@ -46,6 +65,7 @@ test("does not partial-match when candidate is deeper than visited path", () => 
 });
 
 test("classifies subdomain match without requiring path compatibility", () => {
+  setMatchingConfig({ enableSubdomainMatching: true });
   const visited = safeParseUrl("https://invest.ally.com/ola/");
   const candidate = safeParseUrl("https://www.ally.com/invest/");
   assert.ok(visited);
@@ -54,6 +74,17 @@ test("classifies subdomain match without requiring path compatibility", () => {
   const result = classifyUrlMatch(visited, candidate);
   assert.ok(result);
   assert.equal(result.matchType, "subdomain");
+});
+
+test("does not classify subdomain match when subdomain matching is disabled", () => {
+  setMatchingConfig({ enableSubdomainMatching: false });
+  const visited = safeParseUrl("https://invest.ally.com/ola/");
+  const candidate = safeParseUrl("https://www.ally.com/invest/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
 });
 
 test("returns null when domains are unrelated", () => {
@@ -84,11 +115,12 @@ test("scores partial matches by prefix length", () => {
 });
 
 test("ranks exact above partial above subdomain", () => {
+  setMatchingConfig({ enableSubdomainMatching: true });
   const dataset: CargoEntry[] = [
     entry({
       PageID: "ally-subdomain",
       PageName: "Ally Root",
-      Website: "https://ally.com/",
+      Website: "https://support.ally.com/",
     }),
     entry({
       PageID: "ally-partial",

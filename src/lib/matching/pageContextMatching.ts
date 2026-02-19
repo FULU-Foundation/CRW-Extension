@@ -1,5 +1,4 @@
 import type { CargoEntry, PageContext } from "@/shared/types";
-import { isKnownEcommerceHost } from "./ecommerce.ts";
 
 type TextMatch = {
   entry: CargoEntry;
@@ -78,12 +77,12 @@ export const matchEntriesByPageContext = (
   context: PageContext,
   limit = 5,
 ): CargoEntry[] => {
-  const hostname = context.hostname || "";
-  if (!isKnownEcommerceHost(hostname)) return [];
-
   const title = normalizeText(context.title || "");
+  const metaTitle = normalizeText(context.meta?.title || "");
   const description = normalizeText(context.meta?.description || "");
-  const canonicalText = `${title} ${description}`.trim();
+  const ogTitle = normalizeText(context.meta?.["og:title"] || "");
+  const ogDescription = normalizeText(context.meta?.["og:description"] || "");
+  const canonicalText = `${title} ${metaTitle} ${description} ${ogTitle} ${ogDescription}`.trim();
   if (!canonicalText) return [];
 
   const matches: TextMatch[] = [];
@@ -96,11 +95,28 @@ export const matchEntriesByPageContext = (
     if (MARKETPLACE_BRANDS.has(pageName)) continue;
 
     const titleHit = phraseScore(title, pageName);
+    const metaTitleHit = phraseScore(metaTitle, pageName);
     const descriptionHit = phraseScore(description, pageName);
-    if (titleHit === 0 && descriptionHit === 0) continue;
+    const ogTitleHit = phraseScore(ogTitle, pageName);
+    const ogDescriptionHit = phraseScore(ogDescription, pageName);
+    if (
+      titleHit === 0 &&
+      metaTitleHit === 0 &&
+      descriptionHit === 0 &&
+      ogTitleHit === 0 &&
+      ogDescriptionHit === 0
+    ) {
+      continue;
+    }
 
     const score =
-      titleHit * 10 + descriptionHit * 6 + typeBoost(entry) + pageName.length;
+      titleHit * 10 +
+      metaTitleHit * 9 +
+      descriptionHit * 6 +
+      ogTitleHit * 9 +
+      ogDescriptionHit * 6 +
+      typeBoost(entry) +
+      pageName.length;
 
     matches.push({
       entry,
