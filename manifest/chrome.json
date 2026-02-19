@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Consumer Rights Wiki Extension",
+  "name": "Consumer Rights Wiki",
   "version": "0.0.1",
   "author": "jake@fulu.org",
   "description": "Shows a popup and notifications when the current site may have an article on the Consumer Rights Wiki.",
