@@ -36,6 +36,30 @@ const getEntryKey = (entry: CargoEntry): string => {
   return `${entry._type}:${entry.PageID}`;
 };
 
+const normalizeEntityToken = (value: string): string => {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+};
+
+const toNormalizedReferenceSet = (value: unknown): Set<string> => {
+  if (typeof value !== "string") return new Set<string>();
+  const normalized = value
+    .split(/[,;|]/)
+    .map((piece) => normalizeEntityToken(piece))
+    .filter(Boolean);
+  return new Set(normalized);
+};
+
+const addIfPresent = (target: Set<string>, value: unknown) => {
+  if (typeof value !== "string") return;
+  const normalized = normalizeEntityToken(value);
+  if (!normalized) return;
+  target.add(normalized);
+};
+
 const getIncidentPrimaryStatus = (entry: CargoEntry): string => {
   if (typeof entry.Status !== "string") return "";
   const [primaryStatus] = entry.Status
@@ -56,10 +80,73 @@ const parseStartDateMs = (entry: CargoEntry): number => {
   return value;
 };
 
-const sortIncidents = (entries: CargoEntry[]): CargoEntry[] => {
+type IncidentFocus = {
+  companyNames: Set<string>;
+  productNames: Set<string>;
+  productLineNames: Set<string>;
+};
+
+const getIncidentFocus = (
+  topMatch: CargoEntry | undefined,
+  companyMatch: CargoEntry | undefined,
+): IncidentFocus => {
+  const companyNames = new Set<string>();
+  const productNames = new Set<string>();
+  const productLineNames = new Set<string>();
+
+  if (topMatch) {
+    if (topMatch._type === "Company") addIfPresent(companyNames, topMatch.PageName);
+    if (topMatch._type === "Product") addIfPresent(productNames, topMatch.PageName);
+    if (topMatch._type === "ProductLine") addIfPresent(productLineNames, topMatch.PageName);
+    addIfPresent(companyNames, topMatch.Company);
+    addIfPresent(productLineNames, topMatch.ProductLine);
+    addIfPresent(productNames, topMatch.Product);
+  }
+
+  if (companyMatch) addIfPresent(companyNames, companyMatch.PageName);
+
+  return { companyNames, productNames, productLineNames };
+};
+
+const hasIntersection = (left: Set<string>, right: Set<string>): boolean => {
+  for (const value of left) {
+    if (right.has(value)) return true;
+  }
+  return false;
+};
+
+const getIncidentRelevanceTier = (
+  incident: CargoEntry,
+  focus: IncidentFocus,
+): number => {
+  const incidentCompanyRefs = toNormalizedReferenceSet(incident.Company);
+  const incidentProductRefs = toNormalizedReferenceSet(incident.Product);
+  const incidentProductLineRefs = toNormalizedReferenceSet(incident.ProductLine);
+
+  const productHit = hasIntersection(incidentProductRefs, focus.productNames);
+  const productLineHit = hasIntersection(
+    incidentProductLineRefs,
+    focus.productLineNames,
+  );
+  if (productHit || productLineHit) return 0;
+
+  const companyHit = hasIntersection(incidentCompanyRefs, focus.companyNames);
+  if (companyHit) return 1;
+
+  return 2;
+};
+
+const sortIncidents = (
+  entries: CargoEntry[],
+  focus: IncidentFocus,
+): CargoEntry[] => {
   return entries
     .map((entry, index) => ({ entry, index }))
     .sort((left, right) => {
+      const leftTier = getIncidentRelevanceTier(left.entry, focus);
+      const rightTier = getIncidentRelevanceTier(right.entry, focus);
+      if (leftTier !== rightTier) return leftTier - rightTier;
+
       const leftActive = isActiveIncident(left.entry);
       const rightActive = isActiveIncident(right.entry);
       if (leftActive !== rightActive) return rightActive ? 1 : -1;
@@ -394,15 +481,18 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
       (item) => getEntryKey(item) !== topMatchKey,
     );
     const groupedRelated = {
-      Incident: sortIncidents(
-        relatedItems.filter((item) => item._type === "Incident"),
-      ),
+      Incident: [] as CargoEntry[],
       Product: relatedItems.filter((item) => item._type === "Product"),
       ProductLine: relatedItems.filter((item) => item._type === "ProductLine"),
     };
+    const companyMatch = matches.find((item) => item._type === "Company");
+    const incidentFocus = getIncidentFocus(topMatch, companyMatch);
+    groupedRelated.Incident = sortIncidents(
+      relatedItems.filter((item) => item._type === "Incident"),
+      incidentFocus,
+    );
     const relatedOtherCount =
       groupedRelated.Product.length + groupedRelated.ProductLine.length;
-    const companyMatch = matches.find((item) => item._type === "Company");
     return { topMatch, groupedRelated, relatedOtherCount, companyMatch };
   }, [matches]);
 
