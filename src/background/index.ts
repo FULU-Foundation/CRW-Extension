@@ -4,8 +4,7 @@ import * as Constants from "@/shared/constants";
 import * as Matching from "@/lib/matching/matching";
 import * as Dataset from "@/lib/dataset";
 import * as Messaging from "@/messaging";
-import { MessageType } from "@/messaging/type";
-import { CargoEntry, PageContext } from "@/shared/types";
+import { CargoEntry } from "@/shared/types";
 
 browser.runtime.onInstalled.addListener(async () => {
   console.log(

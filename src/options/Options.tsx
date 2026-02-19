@@ -6,7 +6,9 @@ export default function Options() {
     try {
       await browser.action.setBadgeBackgroundColor({ color: "#1DFDC0" });
       await browser.action.setBadgeText({ text: "1" });
-    } catch {}
+    } catch {
+      // Ignore unsupported browser.action calls in non-extension contexts.
+    }
   };
 
   return (
