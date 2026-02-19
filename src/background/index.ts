@@ -63,10 +63,9 @@ Messaging.createBackgroundMessageHandler({
     const tabId = sender.tab?.id;
     if (!tabId) return;
 
-    const { url } = payload;
     const dataset = await loadDatasetCache();
 
-    const matches = Matching.matchByUrl(dataset, url);
+    const matches = Matching.matchByPageContext(dataset, payload);
 
     await browser.storage.local.set({
       [Constants.STORAGE.MATCHES(tabId)]: matches,
