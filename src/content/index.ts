@@ -11,9 +11,19 @@ console.log(
 );
 
 const runContentScript = () => {
+  const description = (
+    document
+      .querySelector('meta[name="description"]')
+      ?.getAttribute("content") || ""
+  ).trim();
+
   const context: PageContext = {
     url: location.href.toLocaleLowerCase(),
     hostname: location.hostname.toLocaleLowerCase(),
+    title: (document.title || "").trim(),
+    meta: {
+      description,
+    },
   };
 
   browser.runtime.sendMessage(
