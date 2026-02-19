@@ -38,6 +38,13 @@ const isCurrentSiteSuppressed = async (): Promise<boolean> => {
   return current.length > 0 && domains.includes(current);
 };
 
+const isWarningsEnabled = async (): Promise<boolean> => {
+  const stored = await browser.storage.local.get(Constants.STORAGE.WARNINGS_ENABLED);
+  const value = stored[Constants.STORAGE.WARNINGS_ENABLED];
+  if (typeof value === "boolean") return value;
+  return true;
+};
+
 const suppressCurrentSite = async (): Promise<void> => {
   const current = normalizeHostname(location.hostname || "");
   if (!current) return;
@@ -45,6 +52,16 @@ const suppressCurrentSite = async (): Promise<void> => {
   if (domains.includes(current)) return;
   await browser.storage.local.set({
     [Constants.STORAGE.SUPPRESSED_DOMAINS]: [...domains, current],
+  });
+};
+
+const unsuppressCurrentSite = async (): Promise<void> => {
+  const current = normalizeHostname(location.hostname || "");
+  if (!current) return;
+  const domains = await getSuppressedDomains();
+  const next = domains.filter((domain) => domain !== current);
+  await browser.storage.local.set({
+    [Constants.STORAGE.SUPPRESSED_DOMAINS]: next,
   });
 };
 
@@ -72,17 +89,23 @@ const removeInlinePopup = () => {
   popupHost = null;
 };
 
-const renderInlinePopup = async (matches: CargoEntry[]) => {
+const renderInlinePopup = async (matches: CargoEntry[], ignorePreferences = false) => {
   if (matches.length === 0) {
     removeInlinePopup();
     return;
   }
 
-  if (await isCurrentSiteSuppressed()) {
+  if (!ignorePreferences && !(await isWarningsEnabled())) {
     removeInlinePopup();
     return;
   }
 
+  if (!ignorePreferences && (await isCurrentSiteSuppressed())) {
+    removeInlinePopup();
+    return;
+  }
+
+  const currentlySuppressed = await isCurrentSiteSuppressed();
   const root = ensurePopupRoot();
   root.render(
     <InlinePopup
@@ -90,10 +113,20 @@ const renderInlinePopup = async (matches: CargoEntry[]) => {
       logoUrl={browser.runtime.getURL("crw_logo.png")}
       externalIconUrl={browser.runtime.getURL("open-in-new.svg")}
       onClose={removeInlinePopup}
+      suppressButtonLabel={
+        ignorePreferences && currentlySuppressed
+          ? "Always show for this site"
+          : "Don't show for this site"
+      }
       onSuppressSite={() => {
         void (async () => {
-          await suppressCurrentSite();
-          removeInlinePopup();
+          if (ignorePreferences && currentlySuppressed) {
+            await unsuppressCurrentSite();
+            void renderInlinePopup(matches, true);
+          } else {
+            await suppressCurrentSite();
+            removeInlinePopup();
+          }
         })();
       }}
     />,
@@ -101,6 +134,11 @@ const renderInlinePopup = async (matches: CargoEntry[]) => {
 };
 
 const runContentScript = async () => {
+  if (!(await isWarningsEnabled())) {
+    removeInlinePopup();
+    return;
+  }
+
   if (await isCurrentSiteSuppressed()) {
     removeInlinePopup();
     return;
@@ -144,10 +182,44 @@ const isMatchUpdateMessage = (
   return typed.type === MessageType.MATCH_RESULTS_UPDATED;
 };
 
+const isForceShowMessage = (
+  message: unknown,
+): message is { type: MessageType; payload?: unknown } => {
+  if (!message || typeof message !== "object") return false;
+  const typed = message as { type?: MessageType };
+  return typed.type === MessageType.FORCE_SHOW_INLINE_POPUP;
+};
+
 browser.runtime.onMessage.addListener((msg: unknown) => {
-  if (!isMatchUpdateMessage(msg)) return;
-  const matches = (msg.payload as CargoEntry[]) || [];
-  void renderInlinePopup(matches);
+  if (isMatchUpdateMessage(msg)) {
+    const matches = (msg.payload as CargoEntry[]) || [];
+    void renderInlinePopup(matches);
+    return;
+  }
+  if (isForceShowMessage(msg)) {
+    const matches = (msg.payload as CargoEntry[]) || [];
+    void renderInlinePopup(matches, true);
+  }
+});
+
+browser.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local") return;
+
+  void (async () => {
+    if (
+      changes[Constants.STORAGE.WARNINGS_ENABLED] &&
+      !(await isWarningsEnabled())
+    ) {
+      removeInlinePopup();
+      return;
+    }
+    if (
+      changes[Constants.STORAGE.SUPPRESSED_DOMAINS] &&
+      (await isCurrentSiteSuppressed())
+    ) {
+      removeInlinePopup();
+    }
+  })();
 });
 
 void runContentScript();

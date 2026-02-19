@@ -103,6 +103,24 @@ test("matchByPageContext does not run meta-only matches without URL/domain seed"
   assert.equal(results.length, 0);
 });
 
+test("matchByPageContext allows meta-only matching on ecommerce hosts without URL seed", () => {
+  const dataset = ecommerceFixture();
+  const results = matchByPageContext(dataset, {
+    url: "https://www.ebay.com/itm/1566543210",
+    hostname: "www.ebay.com",
+    title: "Apple AirPods 4 Wireless Earbuds - White | eBay",
+    meta: {
+      description: "Shop Apple AirPods 4 at eBay",
+      "og:title": "Apple AirPods 4 Wireless Earbuds",
+      "og:description": "Buy Apple AirPods on eBay",
+    },
+  });
+
+  const ids = results.map((item) => item.PageID);
+  assert.ok(ids.includes("pl-airpods"));
+  assert.ok(ids.includes("company-apple"));
+});
+
 test("matchByPageContext prioritizes exact non-company URL match before company meta hits", () => {
   const dataset: CargoEntry[] = [
     entry({

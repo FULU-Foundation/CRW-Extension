@@ -13,13 +13,14 @@ let datasetLoadPromise: Promise<CargoEntry[]> | null = null;
 const sendMatchUpdateToTab = async (
   tabId: number,
   matches: CargoEntry[],
+  type: MessageType = MessageType.MATCH_RESULTS_UPDATED,
   attempt = 0,
 ): Promise<void> => {
   try {
     await browser.tabs.sendMessage(
       tabId,
       Messaging.createMessage(
-        MessageType.MATCH_RESULTS_UPDATED,
+        type,
         "backgroud",
         matches,
       ),
@@ -28,7 +29,7 @@ const sendMatchUpdateToTab = async (
     if (attempt >= 2) return;
     const delayMs = 250 * (attempt + 1);
     setTimeout(() => {
-      void sendMatchUpdateToTab(tabId, matches, attempt + 1);
+      void sendMatchUpdateToTab(tabId, matches, type, attempt + 1);
     }, delayMs);
   }
 };
@@ -80,6 +81,17 @@ browser.tabs.onActivated.addListener(async ({ tabId }) => {
     text: String(results.length > 3 ? "3+" : results.length),
   });
   browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
+});
+
+browser.action.onClicked.addListener(async (tab) => {
+  const tabId = tab.id;
+  if (!tabId) return;
+
+  const storageKey = Constants.STORAGE.MATCHES(tabId);
+  const stored = await browser.storage.local.get(storageKey);
+  const matches = (stored[storageKey] as CargoEntry[]) || [];
+
+  void sendMatchUpdateToTab(tabId, matches, MessageType.FORCE_SHOW_INLINE_POPUP);
 });
 
 Messaging.createBackgroundMessageHandler({

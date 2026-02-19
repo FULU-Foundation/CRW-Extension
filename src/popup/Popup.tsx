@@ -1,137 +1,190 @@
-import browser from "webextension-polyfill";
-import { CargoEntry } from "@/shared/types";
 import React, { useEffect, useState } from "react";
-import * as Constants from "@/shared/constants";
+import browser from "webextension-polyfill";
 
-export default function Popup() {
-  const [domain, setDomain] = useState<string>("unknown");
-  const [loading, setLoading] = useState<boolean>(true);
+import * as Constants from "@/shared/constants";
+import { CargoEntry } from "@/shared/types";
+import { MatchPopupCard } from "@/shared/ui/MatchPopupCard";
+
+const POPUP_BG = "#004080";
+const POPUP_TEXT = "#FFFFFF";
+
+const normalizeHostname = (hostname: string): string => {
+  return hostname.trim().toLowerCase().replace(/^www\./, "");
+};
+
+const Popup = () => {
+  const [loading, setLoading] = useState(true);
+  const [domain, setDomain] = useState("unknown");
   const [articles, setArticles] = useState<CargoEntry[]>([]);
+  const [suppressed, setSuppressed] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const [tab] = await browser.tabs.query({
-        active: true,
-        currentWindow: true,
-      });
-      const tabId = tab.id;
-      if (!tabId) return;
+    void (async () => {
+      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      const tabId = tab?.id;
+      const url = tab?.url;
 
-      if (tab?.url) {
-        const u = new URL(tab.url);
-        setDomain(u.hostname);
+      if (url) {
+        const normalizedDomain = normalizeHostname(new URL(url).hostname);
+        setDomain(normalizedDomain);
+        const suppressedStored = await browser.storage.local.get(
+          Constants.STORAGE.SUPPRESSED_DOMAINS,
+        );
+        const suppressedRaw = suppressedStored[Constants.STORAGE.SUPPRESSED_DOMAINS];
+        const suppressedDomains = Array.isArray(suppressedRaw)
+          ? suppressedRaw.filter((entry): entry is string => typeof entry === "string")
+          : [];
+        setSuppressed(suppressedDomains.map(normalizeHostname).includes(normalizedDomain));
+      }
+
+      if (!tabId) {
+        setLoading(false);
+        return;
       }
 
       const storageKey = Constants.STORAGE.MATCHES(tabId);
       const stored = await browser.storage.local.get(storageKey);
       const results = (stored[storageKey] as CargoEntry[]) || [];
-
       setArticles(results);
       setLoading(false);
     })();
   }, []);
 
-  const openOptions = () => browser.runtime.openOptionsPage();
-  const openWiki = () =>
-    browser.tabs.create({ url: "https://consumerrights.wiki" });
+  const suppressDomain = async () => {
+    if (!domain || domain === "unknown") return;
+    const key = Constants.STORAGE.SUPPRESSED_DOMAINS;
+    const stored = await browser.storage.local.get(key);
+    const existingRaw = stored[key];
+    const existing = Array.isArray(existingRaw)
+      ? existingRaw.filter((entry): entry is string => typeof entry === "string")
+      : [];
+    const normalized = normalizeHostname(domain);
+    if (!normalized || existing.map(normalizeHostname).includes(normalized)) {
+      window.close();
+      return;
+    }
 
-  return (
-    <div className="w-[640px] space-y-4 border-4 border-[#1DFDC0] bg-[#0B0E14] p-4 font-sans text-white">
-      <div className="pb-2 text-center">
-        <div className="flex items-center justify-center space-x-2">
-          <img src="/crw_logo.png" alt="CRW Logo" className="h-6 w-6 rounded" />
-          <h1 className="text-base font-semibold text-[#1DFDC0]">
-            CRW Extension
-          </h1>
-        </div>
+    await browser.storage.local.set({
+      [key]: [...existing, normalized],
+    });
+    setSuppressed(true);
+    window.close();
+  };
+
+  const unsuppressDomain = async () => {
+    if (!domain || domain === "unknown") return;
+    const key = Constants.STORAGE.SUPPRESSED_DOMAINS;
+    const stored = await browser.storage.local.get(key);
+    const existingRaw = stored[key];
+    const existing = Array.isArray(existingRaw)
+      ? existingRaw.filter((entry): entry is string => typeof entry === "string")
+      : [];
+    const normalized = normalizeHostname(domain);
+    const next = existing.filter((entry) => normalizeHostname(entry) !== normalized);
+    await browser.storage.local.set({
+      [key]: next,
+    });
+    setSuppressed(false);
+    window.close();
+  };
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          width: "500px",
+          minHeight: "240px",
+          background: POPUP_BG,
+          color: POPUP_TEXT,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "ui-sans-serif,system-ui,sans-serif",
+        }}
+      >
+        Checking Consumer Rights Wiki matches...
       </div>
+    );
+  }
 
-      <div className="flex h-10 items-center justify-center">
-        <p className="text-base leading-none font-medium">{domain}</p>
+  if (articles.length === 0) {
+    return (
+      <div
+        style={{
+          width: "500px",
+          minHeight: "240px",
+          background: POPUP_BG,
+          color: POPUP_TEXT,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "10px",
+          fontFamily: "ui-sans-serif,system-ui,sans-serif",
+        }}
+      >
+        <div>No matches for this page.</div>
       </div>
+    );
+  }
 
-      <div className="flex flex-col">
-        <div className="flex items-center justify-between px-2 py-1.5">
-          <span className="text-white">Articles Found:</span>
-          <span className="rounded bg-gray-700 px-2 py-1 text-xs font-semibold text-gray-300">
-            {loading ? "…" : articles.length}
-          </span>
-        </div>
-
-        <div className="bg-[#0B0E14]">
-          {/* Loading State */}
-          {loading && (
-            <div className="p-4 text-center text-sm text-gray-400">
-              Searching for related articles…
-            </div>
-          )}
-
-          {/* No Articles Found */}
-          {!loading && articles.length === 0 && (
-            <div className="p-4 text-center text-sm text-gray-400">
-              No related articles found.
-            </div>
-          )}
-
-          {/* Render Articles */}
-          {!loading &&
-            articles.map((data: CargoEntry, idx: number) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between border-t border-gray-800 px-3 py-2"
-              >
-                <div className="flex-1 pr-2">
-                  <div className="text-sm font-semibold text-[#1DFDC0]">
-                    {data?.PageName}
-                  </div>
-
-                  <div className="line-clamp-3 text-xs text-gray-300">
-                    {data?.Description || "No description available."}
-                  </div>
-                </div>
-
-                <button
-                  className="ml-2 rounded border border-[#1DFDC0] px-2 py-1 text-xs text-[#1DFDC0] hover:bg-[#1DFDC0] hover:text-[#0B0E14]"
-                  onClick={() =>
-                    browser.tabs.create({
-                      url: `https://consumerrights.wiki/${data?.PageName}`,
-                    })
-                  }
-                >
-                  View
-                </button>
-              </div>
-            ))}
-        </div>
-
-        <div className="flex flex-col">
-          <button
-            onClick={openWiki}
-            className="flex items-center justify-between px-2 py-4 text-left hover:bg-gray-700"
-          >
-            <span className="text-white">Open the Wiki</span>
-            <span className="rounded bg-gray-700 px-2 py-0.5 text-xs text-white">
-              Visit
-            </span>
-          </button>
-
-          <button
-            onClick={openOptions}
-            className="flex items-center justify-between px-2 py-4 text-left hover:bg-gray-700"
-          >
-            <span className="text-white">Extension Options</span>
-            <span className="rounded bg-gray-700 px-2 py-0.5 text-xs text-white">
-              Open
-            </span>
-          </button>
-        </div>
-      </div>
-
-      <div className="pt-3 text-center">
-        <button className="w-full rounded bg-gray-700 px-2 py-3 text-sm font-medium text-[#1DFDC0] hover:bg-gray-700">
-          Exclude this domain from alerts
+  if (suppressed) {
+    return (
+      <div
+        style={{
+          width: "500px",
+          minHeight: "240px",
+          background: POPUP_BG,
+          color: POPUP_TEXT,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "10px",
+          fontFamily: "ui-sans-serif,system-ui,sans-serif",
+          padding: "16px",
+          textAlign: "center",
+        }}
+      >
+        <div>Alerts are disabled for {domain}.</div>
+        <button
+          type="button"
+          onClick={() => {
+            void unsuppressDomain();
+          }}
+          style={{
+            border: "1px solid #FFFFFF",
+            background: "#FFFFFF",
+            color: "#004080",
+            borderRadius: "10px",
+            padding: "8px 14px",
+            fontSize: "13px",
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          Enable alerts for this site
         </button>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <MatchPopupCard
+      matches={articles}
+      logoUrl={browser.runtime.getURL("crw_logo.png")}
+      externalIconUrl={browser.runtime.getURL("open-in-new.svg")}
+      onSuppressSite={() => {
+        void suppressDomain();
+      }}
+      domainLabel={domain}
+      containerStyle={{
+        width: "500px",
+        height: "560px",
+        maxHeight: "85vh",
+      }}
+    />
   );
-}
+};
+
+export default Popup;
