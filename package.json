@@ -10,10 +10,11 @@
     "build-firefox": "cross-env BROWSER=firefox vite build --config vite.background.config.ts && cross-env BROWSER=firefox vite build --config vite.content.config.ts && cross-env BROWSER=firefox vite build --config vite.config.ts",
     "build-chrome": "cross-env BROWSER=chrome vite build --config vite.background.config.ts && cross-env BROWSER=chrome vite build --config vite.content.config.ts && cross-env BROWSER=chrome vite build --config vite.config.ts",
     "build:watch": "chokidar \"src/**/*\" -c \"npm run build\"",
-    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\"",
+    "match:preview": "node --experimental-strip-types scripts/url-match-preview.ts",
+    "test": "node --test --experimental-strip-types tests/*.test.ts"
   },
   "dependencies": {
-    "fuse.js": "^7.1.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "webextension-polyfill": "^0.12.0"

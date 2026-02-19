@@ -1,7 +1,7 @@
 // /src/background/index.ts
 import browser from "webextension-polyfill";
 import * as Constants from "@/shared/constants";
-import * as Matching from "@/lib/search/matching";
+import * as Matching from "@/lib/matching/matching";
 import * as Dataset from "@/lib/dataset";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";

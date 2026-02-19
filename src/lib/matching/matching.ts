@@ -1,0 +1,160 @@
+import type { CargoEntry } from "@/shared/types";
+
+export type UrlMatchType = "exact" | "partial" | "subdomain";
+
+export type UrlMatchDetail = {
+  matchType: UrlMatchType;
+  matchedPath: string | null;
+  visitedHost: string;
+  candidateHost: string;
+};
+
+export type UrlEntryMatch = {
+  entry: CargoEntry;
+  matchType: UrlMatchType;
+  matchedPath: string | null;
+  score: number;
+  reasons: string[];
+};
+
+const MATCH_PRIORITY: Record<UrlMatchType, number> = {
+  exact: 3,
+  partial: 2,
+  subdomain: 1,
+};
+
+export const safeParseUrl = (
+  rawUrl: string | null | undefined,
+): URL | null => {
+  if (!rawUrl || typeof rawUrl !== "string") return null;
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return null;
+
+  try {
+    return new URL(trimmed);
+  } catch {
+    try {
+      return new URL(`https://${trimmed}`);
+    } catch {
+      return null;
+    }
+  }
+};
+
+export const normalizePath = (pathname: string): string => {
+  const clean = pathname.replace(/\/{2,}/g, "/");
+  if (clean === "/") return "/";
+  return clean.replace(/\/+$/, "");
+};
+
+export const getDomainRoot = (hostname: string): string => {
+  const parts = hostname.toLowerCase().split(".").filter(Boolean);
+  if (parts.length <= 2) return parts.join(".");
+  return parts.slice(-2).join(".");
+};
+
+export const classifyUrlMatch = (
+  visitedUrl: URL,
+  candidateUrl: URL,
+): UrlMatchDetail | null => {
+  const visitedHost = visitedUrl.hostname.toLowerCase();
+  const candidateHost = candidateUrl.hostname.toLowerCase();
+  const visitedPath = normalizePath(visitedUrl.pathname);
+  const candidatePath = normalizePath(candidateUrl.pathname);
+
+  if (visitedHost === candidateHost) {
+    if (visitedPath === candidatePath) {
+      return {
+        matchType: "exact",
+        matchedPath: candidatePath,
+        visitedHost,
+        candidateHost,
+      };
+    }
+
+    const prefix = candidatePath === "/" ? "/" : `${candidatePath}/`;
+    if (visitedPath.startsWith(prefix)) {
+      return {
+        matchType: "partial",
+        matchedPath: candidatePath,
+        visitedHost,
+        candidateHost,
+      };
+    }
+  }
+
+  if (
+    getDomainRoot(visitedHost) === getDomainRoot(candidateHost) &&
+    visitedHost !== candidateHost
+  ) {
+    return {
+      matchType: "subdomain",
+      matchedPath: null,
+      visitedHost,
+      candidateHost,
+    };
+  }
+
+  return null;
+};
+
+export const scoreUrlMatch = (detail: UrlMatchDetail): number => {
+  const base = MATCH_PRIORITY[detail.matchType] * 1000;
+  if (detail.matchType === "partial") {
+    return base + (detail.matchedPath?.length ?? 0);
+  }
+  return base;
+};
+
+const sortMatches = (left: UrlEntryMatch, right: UrlEntryMatch): number => {
+  if (right.score !== left.score) return right.score - left.score;
+  const byName = left.entry.PageName.localeCompare(right.entry.PageName);
+  if (byName !== 0) return byName;
+  return left.entry.PageID.localeCompare(right.entry.PageID);
+};
+
+const getMatchReasons = (detail: UrlMatchDetail): string[] => {
+  if (detail.matchType === "exact") {
+    return ["host_equal", "path_equal"];
+  }
+  if (detail.matchType === "partial") {
+    return ["host_equal", "path_prefix"];
+  }
+  return ["root_domain_equal", "subdomain_match"];
+};
+
+export const matchEntriesByUrl = (
+  entries: CargoEntry[],
+  visitedUrlRaw: string,
+  limit = 3,
+): UrlEntryMatch[] => {
+  const visitedUrl = safeParseUrl(visitedUrlRaw);
+  if (!visitedUrl) return [];
+
+  const matches: UrlEntryMatch[] = [];
+  for (const entry of entries) {
+    const candidateUrl = safeParseUrl(entry?.Website);
+    if (!candidateUrl) continue;
+
+    const detail = classifyUrlMatch(visitedUrl, candidateUrl);
+    if (!detail) continue;
+
+    matches.push({
+      entry,
+      matchType: detail.matchType,
+      matchedPath: detail.matchedPath,
+      score: scoreUrlMatch(detail),
+      reasons: getMatchReasons(detail),
+    });
+  }
+
+  matches.sort(sortMatches);
+  return matches.slice(0, limit);
+};
+
+export const matchByUrl = (
+  entiries: CargoEntry[],
+  url: string,
+): CargoEntry[] => {
+  return matchEntriesByUrl(entiries, url, 3).map((match) => match.entry);
+};
