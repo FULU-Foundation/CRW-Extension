@@ -5,6 +5,9 @@ export type CargoEntryType = "Company" | "Incident" | "Product" | "ProductLine";
 
 export interface CargoEntry {
   _type: CargoEntryType;
+  PageID: string;
+  PageName: string;
+  Description: string | null;
   [key: string]: any;
 }
 
