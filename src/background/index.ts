@@ -4,10 +4,34 @@ import * as Constants from "@/shared/constants";
 import * as Matching from "@/lib/matching/matching";
 import * as Dataset from "@/lib/dataset";
 import * as Messaging from "@/messaging";
+import { MessageType } from "@/messaging/type";
 import { CargoEntry } from "@/shared/types";
 
 let datasetCache: CargoEntry[] = [];
 let datasetLoadPromise: Promise<CargoEntry[]> | null = null;
+
+const sendMatchUpdateToTab = async (
+  tabId: number,
+  matches: CargoEntry[],
+  attempt = 0,
+): Promise<void> => {
+  try {
+    await browser.tabs.sendMessage(
+      tabId,
+      Messaging.createMessage(
+        MessageType.MATCH_RESULTS_UPDATED,
+        "backgroud",
+        matches,
+      ),
+    );
+  } catch {
+    if (attempt >= 2) return;
+    const delayMs = 250 * (attempt + 1);
+    setTimeout(() => {
+      void sendMatchUpdateToTab(tabId, matches, attempt + 1);
+    }, delayMs);
+  }
+};
 
 const loadDatasetCache = async (): Promise<CargoEntry[]> => {
   if (datasetCache.length > 0) return datasetCache;
@@ -62,13 +86,13 @@ Messaging.createBackgroundMessageHandler({
   async onPageContextUpdated(payload, sender) {
     const tabId = sender.tab?.id;
     if (!tabId) return;
-
     const dataset = await loadDatasetCache();
+    const storageKey = Constants.STORAGE.MATCHES(tabId);
 
     const matches = Matching.matchByPageContext(dataset, payload);
 
     await browser.storage.local.set({
-      [Constants.STORAGE.MATCHES(tabId)]: matches,
+      [storageKey]: matches,
     });
 
     browser.action.setBadgeText({
@@ -76,6 +100,8 @@ Messaging.createBackgroundMessageHandler({
       text: String(matches.length > 3 ? "3+" : matches.length),
     });
     browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
+
+    void sendMatchUpdateToTab(tabId, matches);
   },
 });
 

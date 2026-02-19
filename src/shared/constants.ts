@@ -14,4 +14,5 @@ export const STORAGE = {
   MATCHES: (tabId: number) => {
     return `crw_matched_${tabId}`;
   },
+  SUPPRESSED_DOMAINS: "crw_suppressed_domains",
 };

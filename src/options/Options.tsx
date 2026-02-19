@@ -16,7 +16,7 @@ export default function Options() {
       <div className="mx-auto max-w-3xl p-6">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/fulu.png" alt="CRW Logo" className="h-8 w-8" />
+            <img src="/crw_logo.png" alt="CRW Logo" className="h-8 w-8" />
             <h1 className="text-xl font-semibold text-[#1DFDC0]">
               CRW Extension Options
             </h1>
