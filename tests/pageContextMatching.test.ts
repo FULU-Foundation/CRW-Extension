@@ -54,3 +54,20 @@ test("does not match by partial substring (Electron vs Electronics)", () => {
   const ids = results.map((entryItem) => entryItem.PageID);
   assert.equal(ids.includes("product-electron"), false);
 });
+
+test("matches entities from og:title and og:description", () => {
+  const results = matchEntriesByPageContext(fixture(), {
+    url: "https://www.amazon.com.au/Apple-MXP63ZA-A-AirPods-4/dp/B0DGJ2X3QV",
+    hostname: "www.amazon.com.au",
+    title: "",
+    meta: {
+      description: "",
+      "og:title": "Apple AirPods 4",
+      "og:description": "Apple AirPods 4 wireless earbuds",
+    },
+  });
+
+  const ids = results.map((entryItem) => entryItem.PageID);
+  assert.ok(ids.includes("company-apple"));
+  assert.ok(ids.includes("pl-airpods"));
+});

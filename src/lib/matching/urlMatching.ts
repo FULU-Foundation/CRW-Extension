@@ -1,6 +1,7 @@
 import type { CargoEntry } from "@/shared/types";
 import type { UrlEntryMatch, UrlMatchDetail, UrlMatchType } from "./types";
 import { getEcommerceFamily } from "./ecommerce.ts";
+import { matchingConfig } from "./matchingConfig.ts";
 
 const MATCH_PRIORITY: Record<UrlMatchType, number> = {
   exact: 3,
@@ -38,12 +39,16 @@ export const getDomainRoot = (hostname: string): string => {
   return parts.slice(-2).join(".");
 };
 
+const normalizeMatchHostname = (hostname: string): string => {
+  return hostname.toLowerCase().replace(/^www\./, "");
+};
+
 export const classifyUrlMatch = (
   visitedUrl: URL,
   candidateUrl: URL,
 ): UrlMatchDetail | null => {
-  const visitedHost = visitedUrl.hostname.toLowerCase();
-  const candidateHost = candidateUrl.hostname.toLowerCase();
+  const visitedHost = normalizeMatchHostname(visitedUrl.hostname);
+  const candidateHost = normalizeMatchHostname(candidateUrl.hostname);
   const visitedPath = normalizePath(visitedUrl.pathname);
   const candidatePath = normalizePath(candidateUrl.pathname);
 
@@ -68,28 +73,32 @@ export const classifyUrlMatch = (
     }
   }
 
-  if (
-    getDomainRoot(visitedHost) === getDomainRoot(candidateHost) &&
-    visitedHost !== candidateHost
-  ) {
-    return {
-      matchType: "subdomain",
-      matchedPath: null,
-      visitedHost,
-      candidateHost,
-    };
+  if (matchingConfig.enableSubdomainMatching) {
+    if (
+      getDomainRoot(visitedHost) === getDomainRoot(candidateHost) &&
+      visitedHost !== candidateHost
+    ) {
+      return {
+        matchType: "subdomain",
+        matchedPath: null,
+        visitedHost,
+        candidateHost,
+      };
+    }
   }
 
-  const visitedFamily = getEcommerceFamily(visitedHost);
-  const candidateFamily = getEcommerceFamily(candidateHost);
-  if (visitedFamily && candidateFamily && visitedFamily === candidateFamily) {
-    return {
-      matchType: "subdomain",
-      matchedPath: null,
-      visitedHost,
-      candidateHost,
-      ecommerceFamilyAlias: true,
-    };
+  if (matchingConfig.enableEcommerceFamilyAliasMatching) {
+    const visitedFamily = getEcommerceFamily(visitedHost);
+    const candidateFamily = getEcommerceFamily(candidateHost);
+    if (visitedFamily && candidateFamily && visitedFamily === candidateFamily) {
+      return {
+        matchType: "subdomain",
+        matchedPath: null,
+        visitedHost,
+        candidateHost,
+        ecommerceFamilyAlias: true,
+      };
+    }
   }
 
   return null;
