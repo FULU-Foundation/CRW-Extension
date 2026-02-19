@@ -1,14 +1,32 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import browser from "webextension-polyfill";
 
+import * as Constants from "@/shared/constants";
+
+const readWarningsEnabled = async (): Promise<boolean> => {
+  const stored = await browser.storage.local.get(Constants.STORAGE.WARNINGS_ENABLED);
+  const value = stored[Constants.STORAGE.WARNINGS_ENABLED];
+  if (typeof value === "boolean") return value;
+  return true;
+};
+
 export default function Options() {
-  const previewBadge = async () => {
-    try {
-      await browser.action.setBadgeBackgroundColor({ color: "#1DFDC0" });
-      await browser.action.setBadgeText({ text: "1" });
-    } catch {
-      // Ignore unsupported browser.action calls in non-extension contexts.
-    }
+  const [warningsEnabled, setWarningsEnabled] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    void (async () => {
+      const enabled = await readWarningsEnabled();
+      setWarningsEnabled(enabled);
+      setLoading(false);
+    })();
+  }, []);
+
+  const onToggleWarnings = async (enabled: boolean) => {
+    setWarningsEnabled(enabled);
+    await browser.storage.local.set({
+      [Constants.STORAGE.WARNINGS_ENABLED]: enabled,
+    });
   };
 
   return (
@@ -21,70 +39,34 @@ export default function Options() {
               CRW Extension Options
             </h1>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={previewBadge}
-              className="border border-white px-3 py-1.5 text-sm hover:bg-white hover:text-[#0B0E14]"
-            >
-              Preview badge
-            </button>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                browser.runtime.reload();
-              }}
-              className="border border-white px-3 py-1.5 text-sm hover:bg-white hover:text-[#0B0E14]"
-            >
-              Reload Extension
-            </button>
-          </div>
         </div>
 
         <section className="border border-gray-800 p-5">
           <h2 className="mb-1 text-lg font-semibold text-[#1DFDC0]">
-            Excluded Domains
+            Warnings
           </h2>
           <p className="mb-4 text-sm text-gray-300">
-            Add domains where alerts should be disabled.
+            Control whether warnings are automatically shown on matching sites.
           </p>
 
-          <div className="mb-4 flex gap-2">
+          <label className="flex items-center justify-between border border-gray-800 px-3 py-3 text-sm">
+            <span className="text-gray-200">Show warnings automatically</span>
             <input
-              type="text"
-              placeholder="example.com"
-              className="flex-1 border border-gray-700 bg-[#0B0E14] px-3 py-2 text-sm placeholder-gray-400 focus:border-[#1DFDC0] focus:outline-none"
-              disabled
+              type="checkbox"
+              checked={warningsEnabled}
+              disabled={loading}
+              onChange={(event) => {
+                void onToggleWarnings(event.target.checked);
+              }}
+              className="h-4 w-4 accent-[#1DFDC0]"
             />
-            <button
-              className="border border-white px-4 py-2 text-sm opacity-60"
-              disabled
-            >
-              Add
-            </button>
-          </div>
+          </label>
 
-          <ul className="space-y-2">
-            <li className="flex items-center justify-between border border-gray-800 px-3 py-2 text-sm">
-              <span className="truncate text-gray-300">example.com</span>
-              <button
-                className="border border-white px-2 py-1 text-xs opacity-60"
-                disabled
-              >
-                Remove
-              </button>
-            </li>
-            <li className="flex items-center justify-between border border-gray-800 px-3 py-2 text-sm">
-              <span className="truncate text-gray-300">news.example.org</span>
-              <button
-                className="border border-white px-2 py-1 text-xs opacity-60"
-                disabled
-              >
-                Remove
-              </button>
-            </li>
-          </ul>
-
-          <p className="mt-3 text-xs text-gray-500">UI only</p>
+          <p className="mt-3 text-xs text-gray-500">
+            {warningsEnabled
+              ? "Warnings are enabled."
+              : "Warnings are disabled. You can still force-show via extension icon click."}
+          </p>
         </section>
       </div>
     </div>

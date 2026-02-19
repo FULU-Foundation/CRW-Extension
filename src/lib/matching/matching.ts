@@ -2,6 +2,7 @@ import type { CargoEntry, PageContext } from "@/shared/types";
 import { expandRelatedEntries } from "./relations.ts";
 import { matchEntriesByUrl } from "./urlMatching.ts";
 import { matchEntriesByPageContext } from "./pageContextMatching.ts";
+import { isKnownEcommerceHost } from "./ecommerce.ts";
 import type { UrlEntryMatch } from "./types.ts";
 
 export type { UrlEntryMatch, UrlMatchDetail, UrlMatchType } from "./types.ts";
@@ -81,9 +82,14 @@ export const matchByPageContext = (
   context: PageContext,
 ): CargoEntry[] => {
   const urlMatches = matchEntriesByUrl(entries, context.url, 3);
-  if (urlMatches.length === 0) return [];
-
   const metaSeeds = matchEntriesByPageContext(entries, context, 5);
+  const isEcommerceHost = isKnownEcommerceHost(context.hostname || "");
+
+  if (urlMatches.length === 0) {
+    if (!isEcommerceHost || metaSeeds.length === 0) return [];
+    return expandRelatedEntries(entries, dedupeSeeds(metaSeeds));
+  }
+
   const prioritizedSeeds = prioritizePageContextSeeds(urlMatches, metaSeeds);
   return expandRelatedEntries(entries, prioritizedSeeds);
 };
