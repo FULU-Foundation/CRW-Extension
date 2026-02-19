@@ -8,18 +8,18 @@
     "default_popup": "popup.html",
     "default_title": "CRW Extension",
     "default_icon": {
-      "16": "icon16.png",
-      "32": "icon32.png",
-      "48": "icon48.png",
-      "128": "icon128.png"
+      "16": "crw_logo.png",
+      "32": "crw_logo.png",
+      "48": "crw_logo.png",
+      "128": "crw_logo.png"
     }
   },
   "options_page": "options.html",
   "icons": {
-    "16": "icon16.png",
-    "32": "icon32.png",
-    "48": "icon48.png",
-    "128": "icon128.png"
+    "16": "crw_logo.png",
+    "32": "crw_logo.png",
+    "48": "crw_logo.png",
+    "128": "crw_logo.png"
   },
   "permissions": [
     "tabs",
@@ -29,7 +29,9 @@
     "<all_urls>"
   ],
   "background": {
-    "scripts": ["background.js"],
+    "scripts": [
+      "background.js"
+    ],
     "type": "module"
   },
   "content_scripts": [
@@ -46,7 +48,9 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "assets/data.json"
+        "assets/data.json",
+        "crw_logo.png",
+        "open-in-new.svg"
       ],
       "matches": [
         "<all_urls>"

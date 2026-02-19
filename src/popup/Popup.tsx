@@ -39,7 +39,7 @@ export default function Popup() {
     <div className="w-[640px] space-y-4 border-4 border-[#1DFDC0] bg-[#0B0E14] p-4 font-sans text-white">
       <div className="pb-2 text-center">
         <div className="flex items-center justify-center space-x-2">
-          <img src="/fulu.png" alt="CRW Logo" className="h-6 w-6 rounded" />
+          <img src="/crw_logo.png" alt="CRW Logo" className="h-6 w-6 rounded" />
           <h1 className="text-base font-semibold text-[#1DFDC0]">
             CRW Extension
           </h1>
