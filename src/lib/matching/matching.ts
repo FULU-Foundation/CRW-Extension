@@ -45,11 +45,15 @@ export const matchByPageContext = (
 
   if (isEcommerce) {
     const metaSeeds = matchEntriesByPageContext(entries, context, 5);
-    if (metaSeeds.length === 0) return [];
-
     const urlSeeds = matchEntriesByUrl(entries, context.url, 3).map(
       (match) => match.entry,
     );
+
+    if (metaSeeds.length === 0) {
+      if (urlSeeds.length === 0) return [];
+      return expandRelatedEntries(entries, dedupeSeeds(urlSeeds));
+    }
+
     return expandRelatedEntries(entries, dedupeSeeds([...metaSeeds, ...urlSeeds]));
   }
 

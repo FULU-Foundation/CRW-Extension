@@ -64,7 +64,7 @@ test("matchByPageContext matches ecommerce page when meta/title contain entity",
   assert.ok(ids.includes("incident-apple-repair"));
 });
 
-test("matchByPageContext returns no ecommerce matches when meta/title have no entity signal", () => {
+test("matchByPageContext falls back to ecommerce URL alias matches when meta/title have no entity signal", () => {
   const dataset = ecommerceFixture();
   const results = matchByPageContext(dataset, {
     url: "https://www.amazon.com.au/random-listing/dp/B000000000",
@@ -75,5 +75,7 @@ test("matchByPageContext returns no ecommerce matches when meta/title have no en
     },
   });
 
-  assert.deepEqual(results, []);
+  const ids = results.map((item) => item.PageID);
+  assert.ok(ids.includes("company-amazon"));
+  assert.equal(ids.includes("company-apple"), false);
 });
