@@ -42,7 +42,7 @@ export const InlinePopup = (props: InlinePopupProps) => {
         position: "fixed",
         right: "16px",
         bottom: "16px",
-        width: "494px",
+        width: "460px",
         maxWidth: "calc(100vw - 32px)",
         zIndex: 2147483647,
         maxHeight: "60vh",

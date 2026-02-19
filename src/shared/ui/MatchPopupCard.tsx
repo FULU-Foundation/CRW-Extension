@@ -364,7 +364,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
           alignItems: "center",
           justifyContent: showCloseButton ? "space-between" : "flex-start",
           gap: "8px",
-          marginBottom: "14px",
+          marginBottom: "7px",
         }}
       >
         <div
@@ -380,8 +380,8 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
               src={logoUrl}
               alt="CRW"
               style={{
-                width: "44px",
-                height: "44px",
+                width: "22px",
+                height: "22px",
                 borderRadius: "6px",
                 flexShrink: 0,
                 objectFit: "cover",
@@ -392,8 +392,8 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
           {logoError && (
             <span
               style={{
-                width: "44px",
-                height: "44px",
+                width: "22px",
+                height: "22px",
                 borderRadius: "6px",
                 flexShrink: 0,
                 display: "inline-flex",
@@ -401,7 +401,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
                 justifyContent: "center",
                 background: POPUP_CSS.panel,
                 color: POPUP_CSS.link,
-                fontSize: "9px",
+                fontSize: "6px",
                 fontWeight: 700,
                 letterSpacing: "0.4px",
               }}
@@ -415,7 +415,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
               style={{
                 fontWeight: 700,
                 color: POPUP_CSS.text,
-                fontSize: "24px",
+                fontSize: "12px",
                 lineHeight: 1.1,
                 whiteSpace: "nowrap",
                 overflow: "hidden",
@@ -425,7 +425,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
               Consumer Rights Wiki
             </div>
             {domainLabel && (
-              <div style={{ fontSize: "12px", color: POPUP_CSS.muted }}>
+              <div style={{ fontSize: "10px", color: POPUP_CSS.muted }}>
                 {domainLabel}
               </div>
             )}
@@ -446,7 +446,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              alignSelf: "flex-start",
+              alignSelf: "center",
               fontSize: "24px",
               lineHeight: "24px",
               cursor: "pointer",

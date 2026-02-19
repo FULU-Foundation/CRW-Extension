@@ -171,7 +171,7 @@ const Popup = () => {
             fontWeight: 700,
           }}
         >
-          There are no matches on the Consumer Rights Wiki.
+          No mentions found on the Consumer Rights Wiki.
         </h2>
       </div>
     );
@@ -229,7 +229,7 @@ const Popup = () => {
       domainLabel={domain}
       hideRelatedButtonWhenEmpty
       containerStyle={{
-        width: "500px",
+        width: "460px",
         height: "560px",
         maxHeight: "85vh",
       }}
