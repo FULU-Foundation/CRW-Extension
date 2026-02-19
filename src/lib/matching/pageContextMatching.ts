@@ -22,7 +22,11 @@ const containsWholePhrase = (haystack: string, needle: string): boolean => {
   if (haystackTokens.length === 0 || needleTokens.length === 0) return false;
   if (needleTokens.length > haystackTokens.length) return false;
 
-  for (let index = 0; index <= haystackTokens.length - needleTokens.length; index += 1) {
+  for (
+    let index = 0;
+    index <= haystackTokens.length - needleTokens.length;
+    index += 1
+  ) {
     let isMatch = true;
     for (let offset = 0; offset < needleTokens.length; offset += 1) {
       if (haystackTokens[index + offset] !== needleTokens[offset]) {
@@ -82,7 +86,8 @@ export const matchEntriesByPageContext = (
   const description = normalizeText(context.meta?.description || "");
   const ogTitle = normalizeText(context.meta?.["og:title"] || "");
   const ogDescription = normalizeText(context.meta?.["og:description"] || "");
-  const canonicalText = `${title} ${metaTitle} ${description} ${ogTitle} ${ogDescription}`.trim();
+  const canonicalText =
+    `${title} ${metaTitle} ${description} ${ogTitle} ${ogDescription}`.trim();
   if (!canonicalText) return [];
 
   const matches: TextMatch[] = [];

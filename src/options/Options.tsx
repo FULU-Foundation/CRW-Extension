@@ -4,7 +4,9 @@ import browser from "webextension-polyfill";
 import * as Constants from "@/shared/constants";
 
 const readWarningsEnabled = async (): Promise<boolean> => {
-  const stored = await browser.storage.local.get(Constants.STORAGE.WARNINGS_ENABLED);
+  const stored = await browser.storage.local.get(
+    Constants.STORAGE.WARNINGS_ENABLED,
+  );
   const value = stored[Constants.STORAGE.WARNINGS_ENABLED];
   if (typeof value === "boolean") return value;
   return true;

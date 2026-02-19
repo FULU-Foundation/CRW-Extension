@@ -9,9 +9,7 @@ const MATCH_PRIORITY: Record<UrlMatchType, number> = {
   subdomain: 1,
 };
 
-export const safeParseUrl = (
-  rawUrl: string | null | undefined,
-): URL | null => {
+export const safeParseUrl = (rawUrl: string | null | undefined): URL | null => {
   if (!rawUrl || typeof rawUrl !== "string") return null;
   const trimmed = rawUrl.trim();
   if (!trimmed) return null;

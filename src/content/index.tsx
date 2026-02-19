@@ -17,13 +17,19 @@ const POPUP_ID = "crw-inline-alert";
 
 let popupHost: HTMLDivElement | null = null;
 let popupRoot: Root | null = null;
+let forcePopupVisible = false;
 
 const normalizeHostname = (hostname: string): string => {
-  return hostname.trim().toLowerCase().replace(/^www\./, "");
+  return hostname
+    .trim()
+    .toLowerCase()
+    .replace(/^www\./, "");
 };
 
 const getSuppressedDomains = async (): Promise<string[]> => {
-  const stored = await browser.storage.local.get(Constants.STORAGE.SUPPRESSED_DOMAINS);
+  const stored = await browser.storage.local.get(
+    Constants.STORAGE.SUPPRESSED_DOMAINS,
+  );
   const value = stored[Constants.STORAGE.SUPPRESSED_DOMAINS];
   if (!Array.isArray(value)) return [];
   return value
@@ -39,10 +45,18 @@ const isCurrentSiteSuppressed = async (): Promise<boolean> => {
 };
 
 const isWarningsEnabled = async (): Promise<boolean> => {
-  const stored = await browser.storage.local.get(Constants.STORAGE.WARNINGS_ENABLED);
+  const stored = await browser.storage.local.get(
+    Constants.STORAGE.WARNINGS_ENABLED,
+  );
   const value = stored[Constants.STORAGE.WARNINGS_ENABLED];
   if (typeof value === "boolean") return value;
   return true;
+};
+
+const setWarningsEnabled = async (enabled: boolean): Promise<void> => {
+  await browser.storage.local.set({
+    [Constants.STORAGE.WARNINGS_ENABLED]: enabled,
+  });
 };
 
 const suppressCurrentSite = async (): Promise<void> => {
@@ -79,6 +93,7 @@ const ensurePopupRoot = (): Root => {
 };
 
 const removeInlinePopup = () => {
+  forcePopupVisible = false;
   if (popupRoot) {
     popupRoot.unmount();
   }
@@ -89,13 +104,18 @@ const removeInlinePopup = () => {
   popupHost = null;
 };
 
-const renderInlinePopup = async (matches: CargoEntry[], ignorePreferences = false) => {
+const renderInlinePopup = async (
+  matches: CargoEntry[],
+  ignorePreferences = false,
+) => {
   if (matches.length === 0) {
     removeInlinePopup();
     return;
   }
 
-  if (!ignorePreferences && !(await isWarningsEnabled())) {
+  const currentlyWarningsEnabled = await isWarningsEnabled();
+
+  if (!ignorePreferences && !currentlyWarningsEnabled) {
     removeInlinePopup();
     return;
   }
@@ -106,6 +126,7 @@ const renderInlinePopup = async (matches: CargoEntry[], ignorePreferences = fals
   }
 
   const currentlySuppressed = await isCurrentSiteSuppressed();
+  forcePopupVisible = ignorePreferences;
   const root = ensurePopupRoot();
   root.render(
     <InlinePopup
@@ -113,6 +134,22 @@ const renderInlinePopup = async (matches: CargoEntry[], ignorePreferences = fals
       logoUrl={browser.runtime.getURL("crw_logo.png")}
       externalIconUrl={browser.runtime.getURL("open-in-new.svg")}
       onClose={removeInlinePopup}
+      onDisableWarnings={() => {
+        void (async () => {
+          if (ignorePreferences && !currentlyWarningsEnabled) {
+            await setWarningsEnabled(true);
+            void renderInlinePopup(matches, true);
+          } else {
+            await setWarningsEnabled(false);
+            removeInlinePopup();
+          }
+        })();
+      }}
+      disableWarningsLabel={
+        ignorePreferences && !currentlyWarningsEnabled
+          ? "Show this for all sites"
+          : "Don't show me this again"
+      }
       suppressButtonLabel={
         ignorePreferences && currentlySuppressed
           ? "Always show for this site"
@@ -145,7 +182,9 @@ const runContentScript = async () => {
   }
 
   const getMetaContent = (selector: string): string => {
-    return (document.querySelector(selector)?.getAttribute("content") || "").trim();
+    return (
+      document.querySelector(selector)?.getAttribute("content") || ""
+    ).trim();
   };
 
   const description = getMetaContent('meta[name="description"]');
@@ -193,7 +232,10 @@ const isForceShowMessage = (
 browser.runtime.onMessage.addListener((msg: unknown) => {
   if (isMatchUpdateMessage(msg)) {
     const matches = (msg.payload as CargoEntry[]) || [];
-    void renderInlinePopup(matches);
+    void (async () => {
+      if (forcePopupVisible && !(await isWarningsEnabled())) return;
+      void renderInlinePopup(matches);
+    })();
     return;
   }
   if (isForceShowMessage(msg)) {

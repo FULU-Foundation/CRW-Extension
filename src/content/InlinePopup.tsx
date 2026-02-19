@@ -9,7 +9,9 @@ type InlinePopupProps = {
   externalIconUrl: string;
   onClose: () => void;
   onSuppressSite: () => void;
+  onDisableWarnings?: () => void;
   suppressButtonLabel?: string;
+  disableWarningsLabel?: string;
 };
 
 export const InlinePopup = (props: InlinePopupProps) => {
@@ -19,7 +21,9 @@ export const InlinePopup = (props: InlinePopupProps) => {
     externalIconUrl,
     onClose,
     onSuppressSite,
+    onDisableWarnings,
     suppressButtonLabel,
+    disableWarningsLabel,
   } = props;
 
   return (
@@ -29,8 +33,11 @@ export const InlinePopup = (props: InlinePopupProps) => {
       externalIconUrl={externalIconUrl}
       onClose={onClose}
       onSuppressSite={onSuppressSite}
+      onDisableWarnings={onDisableWarnings}
       suppressButtonLabel={suppressButtonLabel}
+      disableWarningsLabel={disableWarningsLabel}
       showCloseButton
+      hideRelatedButtonWhenEmpty
       containerStyle={{
         position: "fixed",
         right: "16px",

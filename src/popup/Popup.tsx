@@ -9,7 +9,18 @@ const POPUP_BG = "#004080";
 const POPUP_TEXT = "#FFFFFF";
 
 const normalizeHostname = (hostname: string): string => {
-  return hostname.trim().toLowerCase().replace(/^www\./, "");
+  return hostname
+    .trim()
+    .toLowerCase()
+    .replace(/^www\./, "");
+};
+
+const safeRuntimeUrl = (assetPath: string): string => {
+  try {
+    return browser.runtime.getURL(assetPath);
+  } catch {
+    return `/${assetPath}`;
+  }
 };
 
 const Popup = () => {
@@ -20,33 +31,45 @@ const Popup = () => {
 
   useEffect(() => {
     void (async () => {
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-      const tabId = tab?.id;
-      const url = tab?.url;
+      try {
+        const [tab] = await browser.tabs.query({
+          active: true,
+          currentWindow: true,
+        });
+        const tabId = tab?.id;
+        const url = tab?.url;
 
-      if (url) {
-        const normalizedDomain = normalizeHostname(new URL(url).hostname);
-        setDomain(normalizedDomain);
-        const suppressedStored = await browser.storage.local.get(
-          Constants.STORAGE.SUPPRESSED_DOMAINS,
-        );
-        const suppressedRaw = suppressedStored[Constants.STORAGE.SUPPRESSED_DOMAINS];
-        const suppressedDomains = Array.isArray(suppressedRaw)
-          ? suppressedRaw.filter((entry): entry is string => typeof entry === "string")
-          : [];
-        setSuppressed(suppressedDomains.map(normalizeHostname).includes(normalizedDomain));
-      }
+        if (url) {
+          const normalizedDomain = normalizeHostname(new URL(url).hostname);
+          setDomain(normalizedDomain);
+          const suppressedStored = await browser.storage.local.get(
+            Constants.STORAGE.SUPPRESSED_DOMAINS,
+          );
+          const suppressedRaw =
+            suppressedStored[Constants.STORAGE.SUPPRESSED_DOMAINS];
+          const suppressedDomains = Array.isArray(suppressedRaw)
+            ? suppressedRaw.filter(
+                (entry): entry is string => typeof entry === "string",
+              )
+            : [];
+          setSuppressed(
+            suppressedDomains.map(normalizeHostname).includes(normalizedDomain),
+          );
+        }
 
-      if (!tabId) {
+        if (!tabId) return;
+
+        const storageKey = Constants.STORAGE.MATCHES(tabId);
+        const stored = await browser.storage.local.get(storageKey);
+        const results = (stored[storageKey] as CargoEntry[]) || [];
+        setArticles(results);
+      } catch {
+        setDomain("unknown");
+        setSuppressed(false);
+        setArticles([]);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const storageKey = Constants.STORAGE.MATCHES(tabId);
-      const stored = await browser.storage.local.get(storageKey);
-      const results = (stored[storageKey] as CargoEntry[]) || [];
-      setArticles(results);
-      setLoading(false);
     })();
   }, []);
 
@@ -56,7 +79,9 @@ const Popup = () => {
     const stored = await browser.storage.local.get(key);
     const existingRaw = stored[key];
     const existing = Array.isArray(existingRaw)
-      ? existingRaw.filter((entry): entry is string => typeof entry === "string")
+      ? existingRaw.filter(
+          (entry): entry is string => typeof entry === "string",
+        )
       : [];
     const normalized = normalizeHostname(domain);
     if (!normalized || existing.map(normalizeHostname).includes(normalized)) {
@@ -77,10 +102,14 @@ const Popup = () => {
     const stored = await browser.storage.local.get(key);
     const existingRaw = stored[key];
     const existing = Array.isArray(existingRaw)
-      ? existingRaw.filter((entry): entry is string => typeof entry === "string")
+      ? existingRaw.filter(
+          (entry): entry is string => typeof entry === "string",
+        )
       : [];
     const normalized = normalizeHostname(domain);
-    const next = existing.filter((entry) => normalizeHostname(entry) !== normalized);
+    const next = existing.filter(
+      (entry) => normalizeHostname(entry) !== normalized,
+    );
     await browser.storage.local.set({
       [key]: next,
     });
@@ -121,9 +150,29 @@ const Popup = () => {
           justifyContent: "center",
           gap: "10px",
           fontFamily: "ui-sans-serif,system-ui,sans-serif",
+          textAlign: "center",
+          padding: "20px",
         }}
       >
-        <div>No matches for this page.</div>
+        <img
+          src={safeRuntimeUrl("crw_logo.png")}
+          alt="Consumer Rights Wiki"
+          style={{
+            width: "60px",
+            height: "60px",
+            borderRadius: "8px",
+          }}
+        />
+        <h2
+          style={{
+            margin: 0,
+            fontSize: "24px",
+            lineHeight: 1.2,
+            fontWeight: 700,
+          }}
+        >
+          There are no matches on the Consumer Rights Wiki.
+        </h2>
       </div>
     );
   }
@@ -172,12 +221,13 @@ const Popup = () => {
   return (
     <MatchPopupCard
       matches={articles}
-      logoUrl={browser.runtime.getURL("crw_logo.png")}
-      externalIconUrl={browser.runtime.getURL("open-in-new.svg")}
+      logoUrl={safeRuntimeUrl("crw_logo.png")}
+      externalIconUrl={safeRuntimeUrl("open-in-new.svg")}
       onSuppressSite={() => {
         void suppressDomain();
       }}
       domainLabel={domain}
+      hideRelatedButtonWhenEmpty
       containerStyle={{
         width: "500px",
         height: "560px",
