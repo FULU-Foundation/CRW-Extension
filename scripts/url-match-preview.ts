@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { CargoEntry, CargoEntryType } from "../src/shared/types.ts";
 import {
+  expandRelatedEntries,
   matchEntriesByUrl,
   safeParseUrl,
 } from "../src/lib/matching/matching.ts";
@@ -64,6 +65,19 @@ const toTableRows = (matches: UrlEntryMatch[]) => {
   }));
 };
 
+const toRelationRows = (expanded: CargoEntry[], seedIds: Set<string>) => {
+  return expanded.map((entry) => ({
+    source: seedIds.has(entry.PageID) ? "seed" : "related",
+    type: entry._type,
+    pageId: entry.PageID,
+    pageName: entry.PageName,
+    company: entry.Company ?? "-",
+    product: entry.Product ?? "-",
+    productLine: entry.ProductLine ?? "-",
+    website: entry.Website ?? "-",
+  }));
+};
+
 const run = () => {
   const [, , urlArg, ...rest] = process.argv;
   const runExamples = !urlArg || urlArg === "--examples";
@@ -72,6 +86,10 @@ const run = () => {
   const limit = Number(limitArg?.split("=")[1] || 20);
   const maxExamplesArg = rest.find((arg) => arg.startsWith("--max-examples="));
   const maxExamples = Number(maxExamplesArg?.split("=")[1] || 25);
+  const relationLimitArg = rest.find((arg) =>
+    arg.startsWith("--relations-limit="),
+  );
+  const relationLimit = Number(relationLimitArg?.split("=")[1] || 50);
 
   const raw = JSON.parse(fs.readFileSync(DATASET_PATH, "utf8"));
   const dataset = flattenDataset(raw);
@@ -93,10 +111,18 @@ const run = () => {
     }
 
     const matches = matchEntriesByUrl(dataset, parsed.toString(), limit);
+    const seedEntries = matches.map((match) => match.entry);
+    const expanded = expandRelatedEntries(dataset, seedEntries);
+    const seedIds = new Set(seedEntries.map((entry) => entry.PageID));
+
     console.log(`Visited URL: ${parsed.toString()}`);
-    console.log(`Total matches: ${matches.length}`);
+    console.log(`Seed matches: ${matches.length}`);
+    console.log(`Expanded related entries: ${expanded.length}`);
     console.log("");
+    console.log("Seed Matches");
     console.table(toTableRows(matches));
+    console.log("Related Expansion");
+    console.table(toRelationRows(expanded.slice(0, relationLimit), seedIds));
     console.log("");
   }
 };
