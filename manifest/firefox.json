@@ -5,7 +5,6 @@
   "author": "jake@fulu.org",
   "description": "Shows a popup and notifications when the current site may have an article on the Consumer Rights Wiki.",
   "action": {
-    "default_popup": "popup.html",
     "default_title": "CRW Extension",
     "default_icon": {
       "16": "crw_logo.png",
