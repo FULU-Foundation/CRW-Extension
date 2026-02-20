@@ -114,7 +114,7 @@ test("scores partial matches by prefix length", () => {
   assert.ok(longScore > shortScore);
 });
 
-test("ranks exact above partial above subdomain", () => {
+test("ranks exact above partial above subdomain for non-github hosts", () => {
   setMatchingConfig({ enableSubdomainMatching: true });
   const dataset: CargoEntry[] = [
     entry({
@@ -179,4 +179,31 @@ test("matches amazon.com cargo entries while browsing amazon.com.au", () => {
   assert.equal(results.length, 1);
   assert.equal(results[0].entry.PageID, "company-amazon");
   assert.equal(results[0].matchType, "subdomain");
+});
+
+test("prefers repo-specific github entry over github root company entry", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-github",
+      PageName: "GitHub",
+      Website: "github.com",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-crw-extension",
+      PageName: "Consumer Rights Wiki Extension",
+      Website: "https://github.com/FULU-Foundation/CRW-Extension/",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://github.com/FULU-Foundation/CRW-Extension/",
+    10,
+  );
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].entry.PageID, "pl-crw-extension");
+  assert.equal(results[0].matchType, "exact");
 });
