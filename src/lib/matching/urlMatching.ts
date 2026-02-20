@@ -126,6 +126,48 @@ const getMatchReasons = (detail: UrlMatchDetail): string[] => {
   return ["root_domain_equal", "subdomain_match"];
 };
 
+type DetailedUrlEntryMatch = {
+  entry: CargoEntry;
+  detail: UrlMatchDetail;
+  score: number;
+  reasons: string[];
+};
+
+const GITHUB_HOST = "github.com";
+
+const filterToMostSpecificPathMatches = (
+  matches: DetailedUrlEntryMatch[],
+): DetailedUrlEntryMatch[] => {
+  const deepestPathLengthByHost = new Map<string, number>();
+
+  for (const match of matches) {
+    if (match.detail.candidateHost !== GITHUB_HOST) continue;
+    if (
+      (match.detail.matchType !== "exact" && match.detail.matchType !== "partial") ||
+      !match.detail.matchedPath
+    ) {
+      continue;
+    }
+
+    const current = deepestPathLengthByHost.get(match.detail.candidateHost) ?? 0;
+    const next = match.detail.matchedPath.length;
+    if (next > current) deepestPathLengthByHost.set(match.detail.candidateHost, next);
+  }
+
+  return matches.filter((match) => {
+    if (match.detail.candidateHost !== GITHUB_HOST) return true;
+    if (
+      (match.detail.matchType !== "exact" && match.detail.matchType !== "partial") ||
+      !match.detail.matchedPath
+    ) {
+      return true;
+    }
+    const deepest = deepestPathLengthByHost.get(match.detail.candidateHost);
+    if (typeof deepest !== "number") return true;
+    return match.detail.matchedPath.length >= deepest;
+  });
+};
+
 export const matchEntriesByUrl = (
   entries: CargoEntry[],
   visitedUrlRaw: string,
@@ -134,7 +176,7 @@ export const matchEntriesByUrl = (
   const visitedUrl = safeParseUrl(visitedUrlRaw);
   if (!visitedUrl) return [];
 
-  const matches: UrlEntryMatch[] = [];
+  const matches: DetailedUrlEntryMatch[] = [];
   for (const entry of entries) {
     const candidateUrl = safeParseUrl(entry?.Website);
     if (!candidateUrl) continue;
@@ -144,13 +186,20 @@ export const matchEntriesByUrl = (
 
     matches.push({
       entry,
-      matchType: detail.matchType,
-      matchedPath: detail.matchedPath,
+      detail,
       score: scoreUrlMatch(detail),
       reasons: getMatchReasons(detail),
     });
   }
 
-  matches.sort(sortMatches);
-  return matches.slice(0, limit);
+  const pruned = filterToMostSpecificPathMatches(matches).map((match) => ({
+    entry: match.entry,
+    matchType: match.detail.matchType,
+    matchedPath: match.detail.matchedPath,
+    score: match.score,
+    reasons: match.reasons,
+  }));
+
+  pruned.sort(sortMatches);
+  return pruned.slice(0, limit);
 };
