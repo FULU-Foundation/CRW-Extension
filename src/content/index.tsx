@@ -7,6 +7,8 @@ import { CargoEntry, PageContext } from "@/shared/types";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
 import { InlinePopup } from "@/content/InlinePopup";
+import { InlineEmptyState } from "@/content/InlineEmptyState";
+import { getInlinePopupInstruction } from "@/content/messageRouting";
 
 console.log(
   `${Constants.LOG_PREFIX} Content script loaded on:`,
@@ -130,82 +132,10 @@ const renderInlinePopup = async (
   const root = ensurePopupRoot();
   if (matches.length === 0) {
     root.render(
-      <div
-        style={{
-          position: "fixed",
-          right: "16px",
-          bottom: "16px",
-          width: "460px",
-          maxWidth: "calc(100vw - 32px)",
-          zIndex: 2147483647,
-          background: "#004080",
-          color: "#FFFFFF",
-          border: "1px solid rgba(255,255,255,0.25)",
-          borderRadius: "14px",
-          boxShadow: "0 14px 36px rgba(0,0,0,0.35)",
-          fontFamily: "ui-sans-serif,system-ui,sans-serif",
-          padding: "14px",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "8px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <img
-              src={browser.runtime.getURL("crw_logo.png")}
-              alt="CRW"
-              style={{
-                width: "24px",
-                height: "24px",
-                borderRadius: "6px",
-                flexShrink: 0,
-              }}
-            />
-            <div style={{ fontSize: "14px", fontWeight: 700, lineHeight: 1.2 }}>
-              Consumer Rights Wiki
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={removeInlinePopup}
-            style={{
-              border: 0,
-              background: "transparent",
-              color: "rgba(255,255,255,0.82)",
-              width: "32px",
-              height: "32px",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "24px",
-              lineHeight: "24px",
-              cursor: "pointer",
-              padding: 0,
-            }}
-          >
-            ×
-          </button>
-        </div>
-        <div
-          style={{
-            marginTop: "12px",
-            border: "1px solid rgba(255,255,255,0.25)",
-            borderRadius: "10px",
-            background: "rgba(255,255,255,0.08)",
-            padding: "12px",
-            fontSize: "14px",
-            lineHeight: 1.35,
-            textAlign: "center",
-          }}
-        >
-          There are no matching arcitcles.
-        </div>
-      </div>,
+      <InlineEmptyState
+        logoUrl={browser.runtime.getURL("crw_logo.png")}
+        onClose={removeInlinePopup}
+      />,
     );
     return;
   }
@@ -295,35 +225,19 @@ const runContentScript = async () => {
   );
 };
 
-const isMatchUpdateMessage = (
-  message: unknown,
-): message is { type: MessageType; payload?: unknown } => {
-  if (!message || typeof message !== "object") return false;
-  const typed = message as { type?: MessageType };
-  return typed.type === MessageType.MATCH_RESULTS_UPDATED;
-};
-
-const isForceShowMessage = (
-  message: unknown,
-): message is { type: MessageType; payload?: unknown } => {
-  if (!message || typeof message !== "object") return false;
-  const typed = message as { type?: MessageType };
-  return typed.type === MessageType.FORCE_SHOW_INLINE_POPUP;
-};
-
 browser.runtime.onMessage.addListener((msg: unknown) => {
-  if (isMatchUpdateMessage(msg)) {
-    const matches = (msg.payload as CargoEntry[]) || [];
+  const instruction = getInlinePopupInstruction(msg);
+  if (!instruction) return;
+
+  if (!instruction.ignorePreferences) {
     void (async () => {
       if (forcePopupVisible && !(await isWarningsEnabled())) return;
-      void renderInlinePopup(matches);
+      void renderInlinePopup(instruction.matches, false);
     })();
     return;
   }
-  if (isForceShowMessage(msg)) {
-    const matches = (msg.payload as CargoEntry[]) || [];
-    void renderInlinePopup(matches, true);
-  }
+
+  void renderInlinePopup(instruction.matches, true);
 });
 
 browser.storage.onChanged.addListener((changes, areaName) => {

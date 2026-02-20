@@ -14,8 +14,8 @@
     "lint:fix": "eslint --fix \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/**/*.ts\"",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\"",
     "match:preview": "node --experimental-strip-types scripts/url-match-preview.ts",
-    "test": "node --test --experimental-strip-types tests/*.test.ts",
-    "test:coverage": "node --test --experimental-strip-types --experimental-test-coverage tests/*.test.ts"
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:coverage": "node --import tsx --test --experimental-test-coverage tests/*.test.ts"
   },
   "dependencies": {
     "react": "^19.2.0",
@@ -40,6 +40,7 @@
     "prettier-plugin-tailwindcss": "^0.7.1",
     "rollup-plugin-visualizer": "^6.0.5",
     "tailwindcss": "^4.1.16",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.0",
     "vite": "^7.1.12",
