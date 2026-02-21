@@ -143,21 +143,25 @@ const filterToMostSpecificPathMatches = (
   for (const match of matches) {
     if (match.detail.candidateHost !== GITHUB_HOST) continue;
     if (
-      (match.detail.matchType !== "exact" && match.detail.matchType !== "partial") ||
+      (match.detail.matchType !== "exact" &&
+        match.detail.matchType !== "partial") ||
       !match.detail.matchedPath
     ) {
       continue;
     }
 
-    const current = deepestPathLengthByHost.get(match.detail.candidateHost) ?? 0;
+    const current =
+      deepestPathLengthByHost.get(match.detail.candidateHost) ?? 0;
     const next = match.detail.matchedPath.length;
-    if (next > current) deepestPathLengthByHost.set(match.detail.candidateHost, next);
+    if (next > current)
+      deepestPathLengthByHost.set(match.detail.candidateHost, next);
   }
 
   return matches.filter((match) => {
     if (match.detail.candidateHost !== GITHUB_HOST) return true;
     if (
-      (match.detail.matchType !== "exact" && match.detail.matchType !== "partial") ||
+      (match.detail.matchType !== "exact" &&
+        match.detail.matchType !== "partial") ||
       !match.detail.matchedPath
     ) {
       return true;
