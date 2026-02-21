@@ -62,8 +62,7 @@ const addIfPresent = (target: Set<string>, value: unknown) => {
 
 const getIncidentPrimaryStatus = (entry: CargoEntry): string => {
   if (typeof entry.Status !== "string") return "";
-  const [primaryStatus] = entry.Status
-    .split(",")
+  const [primaryStatus] = entry.Status.split(",")
     .map((value) => value.trim())
     .filter(Boolean);
   return primaryStatus || "";
@@ -95,9 +94,12 @@ const getIncidentFocus = (
   const productLineNames = new Set<string>();
 
   if (topMatch) {
-    if (topMatch._type === "Company") addIfPresent(companyNames, topMatch.PageName);
-    if (topMatch._type === "Product") addIfPresent(productNames, topMatch.PageName);
-    if (topMatch._type === "ProductLine") addIfPresent(productLineNames, topMatch.PageName);
+    if (topMatch._type === "Company")
+      addIfPresent(companyNames, topMatch.PageName);
+    if (topMatch._type === "Product")
+      addIfPresent(productNames, topMatch.PageName);
+    if (topMatch._type === "ProductLine")
+      addIfPresent(productLineNames, topMatch.PageName);
     addIfPresent(companyNames, topMatch.Company);
     addIfPresent(productLineNames, topMatch.ProductLine);
     addIfPresent(productNames, topMatch.Product);
@@ -121,7 +123,9 @@ const getIncidentRelevanceTier = (
 ): number => {
   const incidentCompanyRefs = toNormalizedReferenceSet(incident.Company);
   const incidentProductRefs = toNormalizedReferenceSet(incident.Product);
-  const incidentProductLineRefs = toNormalizedReferenceSet(incident.ProductLine);
+  const incidentProductLineRefs = toNormalizedReferenceSet(
+    incident.ProductLine,
+  );
 
   const productHit = hasIntersection(incidentProductRefs, focus.productNames);
   const productLineHit = hasIntersection(
@@ -304,12 +308,7 @@ const RelatedGroup = (props: {
   externalIconUrl: string;
   showIncidentStatus?: boolean;
 }) => {
-  const {
-    title,
-    entries,
-    externalIconUrl,
-    showIncidentStatus = false,
-  } = props;
+  const { title, entries, externalIconUrl, showIncidentStatus = false } = props;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
       <div
@@ -375,28 +374,28 @@ const TopMatchBlock = (props: {
         padding: "10px",
       }}
     >
-        <EntryLink
-          entry={entry}
-          externalIconUrl={externalIconUrl}
-          linkStyle={{
-            fontSize: "29px",
-            fontWeight: 700,
-            lineHeight: 1.2,
-            color: POPUP_CSS.text,
-            textDecoration: "none",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-          titleStyle={{
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-            minWidth: 0,
-          }}
-          iconSize={16}
-        />
+      <EntryLink
+        entry={entry}
+        externalIconUrl={externalIconUrl}
+        linkStyle={{
+          fontSize: "29px",
+          fontWeight: 700,
+          lineHeight: 1.2,
+          color: POPUP_CSS.text,
+          textDecoration: "none",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+        }}
+        titleStyle={{
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+          minWidth: 0,
+        }}
+        iconSize={16}
+      />
 
       {entry._type === "Company" && entry.Industry && (
         <div style={{ fontSize: "13px", color: POPUP_CSS.muted }}>
