@@ -23,6 +23,7 @@ export type MatchingConfig = {
   pageContextMinEntityNameLength: number;
   marketplaceBrandDenylist: string[];
   ecommerceDomainFamilyMap: Record<string, string>;
+  specificPathDomainMatches: string[];
 };
 
 const DEFAULT_MATCHING_CONFIG: MatchingConfig = {
@@ -49,6 +50,7 @@ const DEFAULT_MATCHING_CONFIG: MatchingConfig = {
   },
   pageContextMinEntityNameLength: 3,
   marketplaceBrandDenylist: ["amazon", "ebay"],
+  specificPathDomainMatches: ["github.com"],
   ecommerceDomainFamilyMap: {
     "amazon.com": "amazon",
     "amazon.ca": "amazon",

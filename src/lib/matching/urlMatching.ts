@@ -133,7 +133,9 @@ type DetailedUrlEntryMatch = {
   reasons: string[];
 };
 
-const GITHUB_HOST = "github.com";
+const isSpecificPathDomainMatchEnabled = (candidateHost: string): boolean => {
+  return matchingConfig.specificPathDomainMatches.includes(candidateHost);
+};
 
 const filterToMostSpecificPathMatches = (
   matches: DetailedUrlEntryMatch[],
@@ -141,7 +143,7 @@ const filterToMostSpecificPathMatches = (
   const deepestPathLengthByHost = new Map<string, number>();
 
   for (const match of matches) {
-    if (match.detail.candidateHost !== GITHUB_HOST) continue;
+    if (!isSpecificPathDomainMatchEnabled(match.detail.candidateHost)) continue;
     if (
       (match.detail.matchType !== "exact" &&
         match.detail.matchType !== "partial") ||
@@ -158,7 +160,7 @@ const filterToMostSpecificPathMatches = (
   }
 
   return matches.filter((match) => {
-    if (match.detail.candidateHost !== GITHUB_HOST) return true;
+    if (!isSpecificPathDomainMatchEnabled(match.detail.candidateHost)) return true;
     if (
       (match.detail.matchType !== "exact" &&
         match.detail.matchType !== "partial") ||
