@@ -442,6 +442,24 @@
       "Website": "https://bytedance.com"
     },
     {
+      "PageName": "GitHub",
+      "PageID": "98021",
+      "Description": "GitHub is a code hosting and collaboration platform.",
+      "Industry": "Software",
+      "ParentCompany": "Microsoft",
+      "Type": "Subsidiary",
+      "Website": "github.com"
+    },
+    {
+      "PageName": "Consumer Rights Wiki Extension",
+      "PageID": "98022",
+      "Description": "Browser extension repository for the Consumer Rights Wiki project.",
+      "Industry": "Software",
+      "ParentCompany": null,
+      "Type": "Project",
+      "Website": "https://github.com/FULU-Foundation/CRW-Extension/"
+    },
+    {
       "PageName": "Cami Research",
       "PageID": "4568",
       "Description": null,
