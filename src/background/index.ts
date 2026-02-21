@@ -10,6 +10,12 @@ import { CargoEntry } from "@/shared/types";
 let datasetCache: CargoEntry[] = [];
 let datasetLoadPromise: Promise<CargoEntry[]> | null = null;
 
+const getBadgeText = (count: number): string => {
+  if (count <= 0) return "";
+  if (count > 3) return "3+";
+  return String(count);
+};
+
 const sendMatchUpdateToTab = async (
   tabId: number,
   matches: CargoEntry[],
@@ -74,7 +80,7 @@ browser.tabs.onActivated.addListener(async ({ tabId }) => {
 
   browser.action.setBadgeText({
     tabId,
-    text: String(results.length > 3 ? "3+" : results.length),
+    text: getBadgeText(results.length),
   });
   browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
 });
@@ -109,7 +115,7 @@ Messaging.createBackgroundMessageHandler({
 
     browser.action.setBadgeText({
       tabId,
-      text: String(matches.length > 3 ? "3+" : matches.length),
+      text: getBadgeText(matches.length),
     });
     browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
 
