@@ -26,15 +26,15 @@ jobs:
           WIKI_USERNAME: ${{ secrets.WIKI_USERNAME }}
           WIKI_BOTNAME: ${{ secrets.WIKI_BOTNAME }}
           WIKI_PASSWORD: ${{ secrets.WIKI_PASSWORD }}
-
         run: python scripts/export_cargo/main.py
 
-      - name: Clone target repo
+      - name: Update cargo export file
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global push.autoSetupRemote true
           git switch export_cargo 2>/dev/null || git switch -c export_cargo
-          if ! git diff --cached --quiet; then
+          if ! git diff --quiet; then
             git commit -am "Update Cargo export"
             git push
           else
