@@ -105,7 +105,13 @@ export const OptionsView = (props: OptionsViewProps) => {
           >
             Show On Page Load
           </h2>
-          <p style={{ margin: "6px 0 10px 0", fontSize: "13px", color: PAGE_CSS.muted }}>
+          <p
+            style={{
+              margin: "6px 0 10px 0",
+              fontSize: "13px",
+              color: PAGE_CSS.muted,
+            }}
+          >
             Controls the in-page popup. Turning this off is the same behavior as
             using "Don&apos;t show me this again".
           </p>
@@ -134,7 +140,13 @@ export const OptionsView = (props: OptionsViewProps) => {
             />
           </label>
 
-          <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: PAGE_CSS.muted }}>
+          <p
+            style={{
+              margin: "8px 0 0 0",
+              fontSize: "12px",
+              color: PAGE_CSS.muted,
+            }}
+          >
             {warningsEnabled
               ? "Enabled: matching popups can show automatically."
               : "Disabled: popups will not auto-show on page load."}
@@ -160,7 +172,13 @@ export const OptionsView = (props: OptionsViewProps) => {
           >
             Ignored Sites
           </h2>
-          <p style={{ margin: "6px 0 10px 0", fontSize: "13px", color: PAGE_CSS.muted }}>
+          <p
+            style={{
+              margin: "6px 0 10px 0",
+              fontSize: "13px",
+              color: PAGE_CSS.muted,
+            }}
+          >
             Remove a site from this list to start showing popups there again.
           </p>
 
@@ -179,7 +197,9 @@ export const OptionsView = (props: OptionsViewProps) => {
           )}
 
           {suppressedDomains.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            >
               {suppressedDomains.map((domain) => (
                 <div
                   key={domain}
