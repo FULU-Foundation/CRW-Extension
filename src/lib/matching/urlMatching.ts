@@ -160,7 +160,8 @@ const filterToMostSpecificPathMatches = (
   }
 
   return matches.filter((match) => {
-    if (!isSpecificPathDomainMatchEnabled(match.detail.candidateHost)) return true;
+    if (!isSpecificPathDomainMatchEnabled(match.detail.candidateHost))
+      return true;
     if (
       (match.detail.matchType !== "exact" &&
         match.detail.matchType !== "partial") ||
