@@ -19,5 +19,5 @@ test("InlineEmptyState renders CRW branding and empty-state message", () => {
 
   assert.ok(html.includes("Consumer Rights Wiki"));
   assert.ok(html.includes("Open extension settings"));
-  assert.ok(html.includes("There are no matching arcitcles."));
+  assert.ok(html.includes("There are no matching articles."));
 });
