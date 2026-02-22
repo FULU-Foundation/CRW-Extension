@@ -1,21 +1,14 @@
 import React, { useMemo, useState } from "react";
-import { CargoEntry } from "@/shared/types";
 
-const POPUP_CSS = {
-  bg: "#004080",
-  panel: "#004080",
-  border: "rgba(255,255,255,0.25)",
-  text: "#FFFFFF",
-  muted: "rgba(255,255,255,0.82)",
-  link: "#D8F1FF",
-  buttonText: "#004080",
-  buttonBg: "#FFFFFF",
-  buttonBgHover: "#3056A9",
-  divider: "rgba(255,255,255,0.25)",
-  subtleBg: "rgba(255,255,255,0.08)",
-  buttonSecondaryText: "#FFFFFF",
-  buttonSecondaryBorder: "rgba(255,255,255,0.38)",
-};
+import { CargoEntry } from "@/shared/types";
+import { MatchPopupBody } from "@/shared/ui/MatchPopupBody";
+import { MatchPopupFooterActions } from "@/shared/ui/MatchPopupFooterActions";
+import { MatchPopupHeader } from "@/shared/ui/MatchPopupHeader";
+import {
+  getEntryKey,
+  getIncidentPrimaryStatus,
+} from "@/shared/ui/MatchPopupPrimitives";
+import { POPUP_CSS, POPUP_LAYOUT } from "@/shared/ui/matchPopupStyles";
 
 type MatchPopupCardProps = {
   matches: CargoEntry[];
@@ -168,283 +161,9 @@ const sortIncidents = (
     .map((row) => row.entry);
 };
 
-const shouldShowExternalIcon = (entry: CargoEntry): boolean => {
-  return (
-    entry._type === "Company" ||
-    entry._type === "Incident" ||
-    entry._type === "Product" ||
-    entry._type === "ProductLine"
-  );
-};
-
-const entryHref = (entry: CargoEntry): string => {
-  return `https://consumerrights.wiki/${encodeURIComponent(entry.PageName)}`;
-};
-
 const getSuppressScopeLabel = (entry: CargoEntry): string => {
   if (entry._type === "ProductLine") return "product";
   return entry._type.toLowerCase();
-};
-
-const linkHoverHandlers = {
-  onMouseEnter: (event: React.MouseEvent<HTMLAnchorElement>) => {
-    event.currentTarget.style.color = POPUP_CSS.link;
-    event.currentTarget.style.textDecoration = "underline";
-  },
-  onMouseLeave: (event: React.MouseEvent<HTMLAnchorElement>) => {
-    event.currentTarget.style.color = POPUP_CSS.text;
-    event.currentTarget.style.textDecoration = "none";
-  },
-  onFocus: (event: React.FocusEvent<HTMLAnchorElement>) => {
-    event.currentTarget.style.color = POPUP_CSS.link;
-    event.currentTarget.style.textDecoration = "underline";
-  },
-  onBlur: (event: React.FocusEvent<HTMLAnchorElement>) => {
-    event.currentTarget.style.color = POPUP_CSS.text;
-    event.currentTarget.style.textDecoration = "none";
-  },
-};
-
-const ghostButtonHoverHandlers = {
-  onMouseEnter: (event: React.MouseEvent<HTMLButtonElement>) => {
-    if (event.currentTarget.disabled) return;
-    event.currentTarget.style.background = "rgba(255,255,255,0.24)";
-  },
-  onMouseLeave: (event: React.MouseEvent<HTMLButtonElement>) => {
-    if (event.currentTarget.disabled) return;
-    event.currentTarget.style.background = "transparent";
-  },
-};
-
-const EntryLink = (props: {
-  entry: CargoEntry;
-  externalIconUrl: string;
-  linkStyle: React.CSSProperties;
-  titleStyle: React.CSSProperties;
-  iconSize?: number;
-  statusLozenge?: string;
-}) => {
-  const {
-    entry,
-    externalIconUrl,
-    linkStyle,
-    titleStyle,
-    iconSize = 12,
-    statusLozenge,
-  } = props;
-  return (
-    <a
-      href={entryHref(entry)}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={linkStyle}
-      {...linkHoverHandlers}
-    >
-      <span style={titleStyle}>{entry.PageName}</span>
-      {statusLozenge && (
-        <span
-          style={{
-            border: "1px solid rgba(255,255,255,0.45)",
-            borderRadius: "999px",
-            padding: "1px 6px",
-            fontSize: "10px",
-            lineHeight: 1.2,
-            fontWeight: 700,
-            color: POPUP_CSS.text,
-            background: "rgba(255,255,255,0.12)",
-            flexShrink: 0,
-            textTransform: "uppercase",
-          }}
-        >
-          {statusLozenge}
-        </span>
-      )}
-      {shouldShowExternalIcon(entry) && (
-        <img
-          src={externalIconUrl}
-          alt=""
-          style={{
-            width: `${iconSize}px`,
-            height: `${iconSize}px`,
-            flexShrink: 0,
-            filter: "brightness(0) saturate(100%) invert(100%)",
-            opacity: 0.9,
-          }}
-        />
-      )}
-    </a>
-  );
-};
-
-const DescriptionBlock = ({ value }: { value: string }) => {
-  return (
-    <div
-      style={{
-        fontSize: "13px",
-        color: POPUP_CSS.text,
-        marginTop: "2px",
-        display: "-webkit-box",
-        WebkitLineClamp: 3,
-        WebkitBoxOrient: "vertical",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "normal",
-      }}
-    >
-      {value}
-    </div>
-  );
-};
-
-const RelatedGroup = (props: {
-  title: string;
-  entries: CargoEntry[];
-  externalIconUrl: string;
-  showIncidentStatus?: boolean;
-}) => {
-  const { title, entries, externalIconUrl, showIncidentStatus = false } = props;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      <div
-        style={{
-          fontSize: "11px",
-          textTransform: "uppercase",
-          letterSpacing: ".04em",
-          color: POPUP_CSS.muted,
-        }}
-      >
-        {title}
-      </div>
-      {entries.map((item) => (
-        <EntryLink
-          key={getEntryKey(item)}
-          entry={item}
-          externalIconUrl={externalIconUrl}
-          linkStyle={{
-            fontSize: "12px",
-            color: POPUP_CSS.text,
-            textDecoration: "none",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-          }}
-          titleStyle={{
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            minWidth: 0,
-          }}
-          iconSize={11}
-          statusLozenge={
-            showIncidentStatus
-              ? getIncidentPrimaryStatus(item) || undefined
-              : undefined
-          }
-        />
-      ))}
-    </div>
-  );
-};
-
-const TopMatchBlock = (props: {
-  entry: CargoEntry;
-  companyFallback?: CargoEntry;
-  externalIconUrl: string;
-}) => {
-  const { entry, companyFallback, externalIconUrl } = props;
-  const shouldShowCompanyFallback =
-    entry._type !== "Company" &&
-    companyFallback &&
-    companyFallback.PageID !== entry.PageID;
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "6px",
-        background: POPUP_CSS.subtleBg,
-        borderRadius: "10px",
-        padding: "10px",
-      }}
-    >
-      <EntryLink
-        entry={entry}
-        externalIconUrl={externalIconUrl}
-        linkStyle={{
-          fontSize: "29px",
-          fontWeight: 700,
-          lineHeight: 1.2,
-          color: POPUP_CSS.text,
-          textDecoration: "none",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-        }}
-        titleStyle={{
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-          minWidth: 0,
-        }}
-        iconSize={16}
-      />
-
-      {entry._type === "Company" && entry.Industry && (
-        <div style={{ fontSize: "13px", color: POPUP_CSS.muted }}>
-          {String(entry.Industry)}
-        </div>
-      )}
-
-      {entry.Description && (
-        <DescriptionBlock value={String(entry.Description)} />
-      )}
-
-      {shouldShowCompanyFallback && (
-        <>
-          <div
-            style={{
-              height: "1px",
-              background: POPUP_CSS.divider,
-              margin: "2px 0",
-            }}
-          />
-          <EntryLink
-            entry={companyFallback}
-            externalIconUrl={externalIconUrl}
-            linkStyle={{
-              fontSize: "16px",
-              fontWeight: 700,
-              lineHeight: 1.2,
-              color: POPUP_CSS.text,
-              textDecoration: "none",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-            }}
-            titleStyle={{
-              display: "-webkit-box",
-              WebkitLineClamp: 1,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-              minWidth: 0,
-            }}
-            iconSize={13}
-          />
-          {companyFallback.Description ? (
-            <DescriptionBlock value={String(companyFallback.Description)} />
-          ) : (
-            companyFallback.Industry && (
-              <div style={{ fontSize: "13px", color: POPUP_CSS.muted }}>
-                {String(companyFallback.Industry)}
-              </div>
-            )
-          )}
-        </>
-      )}
-    </div>
-  );
 };
 
 export const MatchPopupCard = (props: MatchPopupCardProps) => {
@@ -501,56 +220,10 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
 
   if (!derived.topMatch) return null;
 
-  const showHeaderActions = showCloseButton || !!onOpenSettings;
   const visibleIncidents = derived.groupedRelated.Incident.slice(0, 5);
   const expandedIncidents = derived.groupedRelated.Incident.slice(5);
-  const hasExpandableRelatedGroups =
-    expandedIncidents.length > 0 ||
-    derived.groupedRelated.Product.length > 0 ||
-    derived.groupedRelated.ProductLine.length > 0;
   const showsRelatedPagesToggle =
     !hideRelatedButtonWhenEmpty || derived.hiddenRelatedPagesCount > 0;
-  const hasBodyContentAfterTopMatch =
-    derived.groupedRelated.Incident.length > 0 || showsRelatedPagesToggle;
-  const secondaryActionButtonStyle: React.CSSProperties = {
-    appearance: "none",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    height: "32px",
-    margin: 0,
-    border: `1px solid ${POPUP_CSS.buttonSecondaryBorder}`,
-    background: "transparent",
-    color: POPUP_CSS.buttonSecondaryText,
-    borderRadius: "10px",
-    boxSizing: "border-box",
-    padding: "0 14px",
-    fontSize: "14px",
-    fontWeight: 600,
-    lineHeight: 1,
-    whiteSpace: "nowrap",
-    flexShrink: 0,
-    outline: "none",
-    cursor: "pointer",
-  };
-  const headerIconButtonStyle: React.CSSProperties = {
-    appearance: "none",
-    border: 0,
-    background: "transparent",
-    color: POPUP_CSS.muted,
-    margin: 0,
-    width: "22px",
-    height: "22px",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: "4px",
-    cursor: "pointer",
-    padding: 0,
-    outline: "none",
-    boxSizing: "border-box",
-    flexShrink: 0,
-  };
   const resolvedSuppressPageNameLabel =
     suppressPageNameLabel ||
     `Hide for this ${getSuppressScopeLabel(derived.topMatch)}`;
@@ -558,269 +231,41 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
   return (
     <div
       style={{
-        background: POPUP_CSS.bg,
-        color: POPUP_CSS.text,
-        border: `1px solid ${POPUP_CSS.border}`,
-        borderRadius: "14px",
-        boxShadow: "0 14px 36px rgba(0,0,0,0.35)",
-        fontFamily: "ui-sans-serif,system-ui,sans-serif",
-        padding: "14px",
-        lineHeight: 1.4,
-        display: "flex",
-        flexDirection: "column",
+        ...POPUP_LAYOUT.root,
         ...containerStyle,
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: showHeaderActions ? "space-between" : "flex-start",
-          gap: "8px",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            minWidth: 0,
-          }}
-        >
-          {!logoError && (
-            <img
-              src={logoUrl}
-              alt="CRW"
-              style={{
-                width: "22px",
-                height: "22px",
-                borderRadius: "6px",
-                flexShrink: 0,
-                objectFit: "cover",
-              }}
-              onError={() => setLogoError(true)}
-            />
-          )}
-          {logoError && (
-            <span
-              style={{
-                width: "22px",
-                height: "22px",
-                borderRadius: "6px",
-                flexShrink: 0,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: POPUP_CSS.panel,
-                color: POPUP_CSS.link,
-                fontSize: "6px",
-                fontWeight: 700,
-                letterSpacing: "0.4px",
-              }}
-            >
-              CRW
-            </span>
-          )}
+      <MatchPopupHeader
+        logoUrl={logoUrl}
+        logoError={logoError}
+        onLogoError={() => setLogoError(true)}
+        domainLabel={domainLabel}
+        onOpenSettings={onOpenSettings}
+        settingsIconUrl={settingsIconUrl}
+        showCloseButton={showCloseButton}
+        onClose={onClose}
+      />
 
-          <div style={{ minWidth: 0 }}>
-            <div
-              style={{
-                fontWeight: 700,
-                color: POPUP_CSS.text,
-                fontSize: "12px",
-                lineHeight: 1.2,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              Consumer Rights Wiki
-            </div>
-            {domainLabel && (
-              <div style={{ fontSize: "10px", color: POPUP_CSS.muted }}>
-                {domainLabel}
-              </div>
-            )}
-          </div>
-        </div>
+      <MatchPopupBody
+        topMatch={derived.topMatch}
+        companyMatch={derived.companyMatch}
+        externalIconUrl={externalIconUrl}
+        visibleIncidents={visibleIncidents}
+        expandedIncidents={expandedIncidents}
+        relatedProducts={derived.groupedRelated.Product}
+        relatedProductLines={derived.groupedRelated.ProductLine}
+        showsRelatedPagesToggle={showsRelatedPagesToggle}
+        hiddenRelatedPagesCount={derived.hiddenRelatedPagesCount}
+        showRelatedPages={showRelatedPages}
+        onToggleRelatedPages={() => setShowRelatedPages((value) => !value)}
+      />
 
-        {showHeaderActions && (
-          <div
-            style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
-          >
-            {onOpenSettings && settingsIconUrl && (
-              <button
-                type="button"
-                onClick={onOpenSettings}
-                {...ghostButtonHoverHandlers}
-                aria-label="Open extension settings"
-                title="Open settings"
-                style={headerIconButtonStyle}
-              >
-                <img
-                  src={settingsIconUrl}
-                  alt=""
-                  aria-hidden="true"
-                  style={{
-                    width: "18px",
-                    height: "18px",
-                    display: "block",
-                    filter: "brightness(0) saturate(100%) invert(100%)",
-                    opacity: 0.82,
-                  }}
-                />
-              </button>
-            )}
-            {showCloseButton && (
-              <button
-                type="button"
-                onClick={onClose}
-                {...ghostButtonHoverHandlers}
-                style={{
-                  ...headerIconButtonStyle,
-                  fontSize: "24px",
-                  lineHeight: 1,
-                }}
-              >
-                <span
-                  aria-hidden="true"
-                  style={{
-                    display: "block",
-                    lineHeight: 1,
-                  }}
-                >
-                  ×
-                </span>
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: hasBodyContentAfterTopMatch ? "10px" : "0",
-          background: POPUP_CSS.panel,
-          borderRadius: "10px",
-          padding: hasBodyContentAfterTopMatch ? "10px 0 6px 0" : "10px 0 0 0",
-          overflowY: hasBodyContentAfterTopMatch ? "auto" : "visible",
-          minHeight: 0,
-          flex: hasBodyContentAfterTopMatch ? 1 : "0 0 auto",
-        }}
-      >
-        <TopMatchBlock
-          entry={derived.topMatch}
-          companyFallback={derived.companyMatch}
-          externalIconUrl={externalIconUrl}
-        />
-
-        {derived.groupedRelated.Incident.length > 0 && (
-          <div style={{ padding: "0 6px" }}>
-            <RelatedGroup
-              title="Related Incidents"
-              entries={visibleIncidents}
-              externalIconUrl={externalIconUrl}
-              showIncidentStatus
-            />
-          </div>
-        )}
-
-        {showsRelatedPagesToggle && (
-          <div style={{ padding: "0 6px" }}>
-            <button
-              type="button"
-              disabled={derived.hiddenRelatedPagesCount === 0}
-              onClick={() => setShowRelatedPages((value) => !value)}
-              {...ghostButtonHoverHandlers}
-              style={{
-                marginTop: "0",
-                border: `1px solid ${POPUP_CSS.divider}`,
-                background: "transparent",
-                color: POPUP_CSS.text,
-                borderRadius: "8px",
-                padding: "5px 9px",
-                fontSize: "12px",
-                cursor:
-                  derived.hiddenRelatedPagesCount === 0
-                    ? "not-allowed"
-                    : "pointer",
-                opacity: derived.hiddenRelatedPagesCount === 0 ? 0.6 : 1,
-              }}
-            >
-              {showRelatedPages
-                ? "Show fewer related pages"
-                : `Show ${derived.hiddenRelatedPagesCount} related pages`}
-            </button>
-          </div>
-        )}
-
-        {showRelatedPages && hasExpandableRelatedGroups && (
-          <div
-            style={{
-              padding: "8px 6px 0 6px",
-              borderTop: `1px solid ${POPUP_CSS.divider}`,
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px",
-            }}
-          >
-            {expandedIncidents.length > 0 && (
-              <RelatedGroup
-                title="More Related Incidents"
-                entries={expandedIncidents}
-                externalIconUrl={externalIconUrl}
-                showIncidentStatus
-              />
-            )}
-            {derived.groupedRelated.Product.length > 0 && (
-              <RelatedGroup
-                title="Related Products"
-                entries={derived.groupedRelated.Product}
-                externalIconUrl={externalIconUrl}
-              />
-            )}
-            {derived.groupedRelated.ProductLine.length > 0 && (
-              <RelatedGroup
-                title="Related Product Lines"
-                entries={derived.groupedRelated.ProductLine}
-                externalIconUrl={externalIconUrl}
-              />
-            )}
-          </div>
-        )}
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "8px",
-          marginTop: hasBodyContentAfterTopMatch ? "12px" : "8px",
-        }}
-      >
-        {onSuppressPageName && (
-          <button
-            type="button"
-            onClick={onSuppressPageName}
-            {...ghostButtonHoverHandlers}
-            style={secondaryActionButtonStyle}
-          >
-            {resolvedSuppressPageNameLabel}
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={onSuppressSite}
-          {...ghostButtonHoverHandlers}
-          style={secondaryActionButtonStyle}
-        >
-          {suppressButtonLabel}
-        </button>
-      </div>
+      <MatchPopupFooterActions
+        onSuppressPageName={onSuppressPageName}
+        suppressPageNameLabel={resolvedSuppressPageNameLabel}
+        onSuppressSite={onSuppressSite}
+        suppressButtonLabel={suppressButtonLabel}
+      />
 
       {onDisableWarnings && (
         <div style={{ marginTop: "8px", textAlign: "center" }}>
