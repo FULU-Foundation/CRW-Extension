@@ -209,7 +209,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
       incidentFocus,
     );
     const hiddenRelatedPagesCount =
-      Math.max(groupedRelated.Incident.length - 5, 0) +
+      Math.max(groupedRelated.Incident.length - 4, 0) +
       groupedRelated.Product.length +
       groupedRelated.ProductLine.length;
     return {
@@ -222,8 +222,8 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
 
   if (!derived.topMatch) return null;
 
-  const visibleIncidents = derived.groupedRelated.Incident.slice(0, 5);
-  const expandedIncidents = derived.groupedRelated.Incident.slice(5);
+  const visibleIncidents = derived.groupedRelated.Incident.slice(0, 4);
+  const expandedIncidents = derived.groupedRelated.Incident.slice(4);
   const showsRelatedPagesToggle =
     !hideRelatedButtonWhenEmpty || derived.hiddenRelatedPagesCount > 0;
   const resolvedSuppressPageNameLabel =
