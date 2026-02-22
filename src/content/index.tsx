@@ -358,8 +358,8 @@ const runContentScript = async () => {
   const ogDescription = getMetaContent('meta[property="og:description"]');
 
   const context: PageContext = {
-    url: location.href.toLocaleLowerCase(),
-    hostname: location.hostname.toLocaleLowerCase(),
+    url: location.href,
+    hostname: location.hostname.toLowerCase(),
     title: (document.title || "").trim(),
     meta: {
       title: metaTitle,

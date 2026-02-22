@@ -29,6 +29,32 @@ test("classifies exact match when host and normalized path are equal", () => {
   assert.equal(result.matchType, "exact");
 });
 
+test("preserves path case", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Product",
+      PageID: "thunderbird",
+      PageName: "Thunderbird",
+      Website: "https://www.thunderbird.net/en-US/",
+    }),
+  ];
+
+  const exactResults = matchEntriesByUrl(
+    dataset,
+    "https://www.thunderbird.net/en-US/",
+    10,
+  );
+  const lowercasedResults = matchEntriesByUrl(
+    dataset,
+    "https://www.thunderbird.net/en-us/",
+    10,
+  );
+
+  assert.equal(exactResults.length, 1);
+  assert.equal(exactResults[0]?.matchType, "exact");
+  assert.equal(lowercasedResults.length, 0);
+});
+
 test("treats www and bare domains as equal hosts", () => {
   const visited = safeParseUrl("https://www.7-eleven.com/7rewards/7-eleven-wallet");
   const candidate = safeParseUrl("https://7-eleven.com/");
