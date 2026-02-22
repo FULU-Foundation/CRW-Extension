@@ -12,6 +12,8 @@ type DatasetCacheRecord = {
 };
 
 const DATASET_CACHE_VERSION = 1;
+const REMOTE_FETCH_MAX_ATTEMPTS = 3;
+const REMOTE_FETCH_BASE_DELAY_MS = 500;
 
 export const load = async (): Promise<LoadResult> => {
   console.log(`${Constants.LOG_PREFIX} Loading dataset...`);
@@ -26,7 +28,7 @@ export const load = async (): Promise<LoadResult> => {
   }
 
   try {
-    const refreshed = await refreshCache(cached, now);
+    const refreshed = await refreshCacheWithRetry(cached, now);
     return buildLoadResult(refreshed.raw, cached ? "remote+cache" : "remote");
   } catch (error) {
     if (cached) {
@@ -37,7 +39,11 @@ export const load = async (): Promise<LoadResult> => {
       return buildLoadResult(cached.raw, "stale-cache");
     }
 
-    throw error;
+    console.error(
+      `${Constants.LOG_PREFIX} Remote dataset unavailable and no cache found, using empty dataset fallback`,
+      error,
+    );
+    return buildLoadResult(createEmptyRawDataset(), "empty-fallback");
   }
 };
 
@@ -147,4 +153,47 @@ const writeCache = async (record: DatasetCacheRecord): Promise<void> => {
   await browser.storage.local.set({
     [Constants.STORAGE.DATASET_CACHE]: record,
   });
+};
+
+const refreshCacheWithRetry = async (
+  cached: DatasetCacheRecord | null,
+  now: number,
+): Promise<DatasetCacheRecord> => {
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= REMOTE_FETCH_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      return await refreshCache(cached, now);
+    } catch (error) {
+      lastError = error;
+
+      if (attempt >= REMOTE_FETCH_MAX_ATTEMPTS) break;
+
+      const delayMs = REMOTE_FETCH_BASE_DELAY_MS * 2 ** (attempt - 1);
+      console.warn(
+        `${Constants.LOG_PREFIX} Dataset fetch attempt ${attempt} failed, retrying in ${delayMs}ms`,
+        error,
+      );
+      await sleep(delayMs);
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Dataset fetch failed");
+};
+
+const sleep = async (ms: number): Promise<void> => {
+  await new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+};
+
+const createEmptyRawDataset = (): Record<string, unknown> => {
+  return {
+    Company: [],
+    Incident: [],
+    Product: [],
+    ProductLine: [],
+  };
 };
