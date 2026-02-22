@@ -8,7 +8,10 @@ import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
 import { InlinePopup } from "@/content/InlinePopup";
 import { InlineEmptyState } from "@/content/InlineEmptyState";
-import { getInlinePopupInstruction } from "@/content/messageRouting";
+import {
+  getInlinePopupInstruction,
+  type InlinePopupInstruction,
+} from "@/content/messageRouting";
 
 console.log(
   `${Constants.LOG_PREFIX} Content script loaded on:`,
@@ -16,6 +19,12 @@ console.log(
 );
 
 const POPUP_ID = "crw-inline-alert";
+const ASSET_URLS = {
+  logo: browser.runtime.getURL("crw_logo.png"),
+  settings: browser.runtime.getURL("settings.svg"),
+  close: browser.runtime.getURL("close.svg"),
+  external: browser.runtime.getURL("open-in-new.svg"),
+};
 
 let popupHost: HTMLDivElement | null = null;
 let popupRoot: Root | null = null;
@@ -187,20 +196,18 @@ const renderInlinePopup = async (
     return;
   }
 
-  if (!ignorePreferences && (await isCurrentSiteSuppressed())) {
+  const currentlySuppressed = await isCurrentSiteSuppressed();
+  if (!ignorePreferences && currentlySuppressed) {
     removeInlinePopup();
     return;
   }
-
-  const currentlySuppressed = await isCurrentSiteSuppressed();
   forcePopupVisible = ignorePreferences;
   const root = ensurePopupRoot();
   if (filteredMatches.length === 0) {
     root.render(
       <InlineEmptyState
-        logoUrl={browser.runtime.getURL("crw_logo.png")}
-        settingsIconUrl={browser.runtime.getURL("settings.svg")}
-        closeIconUrl={browser.runtime.getURL("close.svg")}
+        logoUrl={ASSET_URLS.logo}
+        settingsIconUrl={ASSET_URLS.settings}
         onOpenSettings={openOptions}
         onClose={removeInlinePopup}
       />,
@@ -208,26 +215,44 @@ const renderInlinePopup = async (
     return;
   }
 
+  const handleDisableWarnings = async () => {
+    if (ignorePreferences && !currentlyWarningsEnabled) {
+      await setWarningsEnabled(true);
+      void renderInlinePopup(filteredMatches, true);
+      return;
+    }
+
+    await setWarningsEnabled(false);
+    removeInlinePopup();
+  };
+
+  const handleSuppressPageNameClick = async () => {
+    const topPageName = String(filteredMatches[0]?.PageName || "");
+    await suppressPageName(topPageName);
+    void renderInlinePopup(matches, ignorePreferences);
+  };
+
+  const handleSuppressSiteClick = async () => {
+    if (ignorePreferences && currentlySuppressed) {
+      await unsuppressCurrentSite();
+      void renderInlinePopup(filteredMatches, true);
+      return;
+    }
+
+    await suppressCurrentSite();
+    removeInlinePopup();
+  };
+
   root.render(
     <InlinePopup
       matches={filteredMatches}
-      logoUrl={browser.runtime.getURL("crw_logo.png")}
-      externalIconUrl={browser.runtime.getURL("open-in-new.svg")}
-      settingsIconUrl={browser.runtime.getURL("settings.svg")}
-      closeIconUrl={browser.runtime.getURL("close.svg")}
+      logoUrl={ASSET_URLS.logo}
+      externalIconUrl={ASSET_URLS.external}
+      settingsIconUrl={ASSET_URLS.settings}
+      closeIconUrl={ASSET_URLS.close}
       onClose={removeInlinePopup}
       onOpenSettings={openOptions}
-      onDisableWarnings={() => {
-        void (async () => {
-          if (ignorePreferences && !currentlyWarningsEnabled) {
-            await setWarningsEnabled(true);
-            void renderInlinePopup(filteredMatches, true);
-          } else {
-            await setWarningsEnabled(false);
-            removeInlinePopup();
-          }
-        })();
-      }}
+      onDisableWarnings={() => void handleDisableWarnings()}
       disableWarningsLabel={
         ignorePreferences && !currentlyWarningsEnabled
           ? "Show this for all sites"
@@ -238,24 +263,8 @@ const renderInlinePopup = async (
           ? "Always show for this site"
           : "Hide for this site"
       }
-      onSuppressPageName={() => {
-        void (async () => {
-          const topPageName = String(filteredMatches[0]?.PageName || "");
-          await suppressPageName(topPageName);
-          void renderInlinePopup(matches, ignorePreferences);
-        })();
-      }}
-      onSuppressSite={() => {
-        void (async () => {
-          if (ignorePreferences && currentlySuppressed) {
-            await unsuppressCurrentSite();
-            void renderInlinePopup(filteredMatches, true);
-          } else {
-            await suppressCurrentSite();
-            removeInlinePopup();
-          }
-        })();
-      }}
+      onSuppressPageName={() => void handleSuppressPageNameClick()}
+      onSuppressSite={() => void handleSuppressSiteClick()}
     />,
   );
 };
@@ -303,25 +312,28 @@ const runContentScript = async () => {
   );
 };
 
-browser.runtime.onMessage.addListener((msg: unknown) => {
-  const instruction = getInlinePopupInstruction(msg);
-  if (!instruction) return;
-
+const handleInlinePopupInstruction = async (
+  instruction: InlinePopupInstruction,
+) => {
   if (!instruction.ignorePreferences) {
-    void (async () => {
-      if (forcePopupVisible && !(await isWarningsEnabled())) return;
-      void renderInlinePopup(instruction.matches, false);
-    })();
+    if (forcePopupVisible && !(await isWarningsEnabled())) return;
+    void renderInlinePopup(instruction.matches, false);
     return;
   }
 
   void renderInlinePopup(instruction.matches, true);
+};
+
+browser.runtime.onMessage.addListener((msg: unknown) => {
+  const instruction = getInlinePopupInstruction(msg);
+  if (!instruction) return;
+  void handleInlinePopupInstruction(instruction);
 });
 
 browser.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local") return;
 
-  void (async () => {
+  const syncPopupStateWithStorage = async () => {
     if (
       changes[Constants.STORAGE.WARNINGS_ENABLED] &&
       !(await isWarningsEnabled())
@@ -338,7 +350,9 @@ browser.storage.onChanged.addListener((changes, areaName) => {
     if (changes[Constants.STORAGE.SUPPRESSED_PAGE_NAMES]) {
       void runContentScript();
     }
-  })();
+  };
+
+  void syncPopupStateWithStorage();
 });
 
 void runContentScript();

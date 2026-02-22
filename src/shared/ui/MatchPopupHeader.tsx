@@ -27,7 +27,9 @@ export const MatchPopupHeader = (props: MatchPopupHeaderProps) => {
     onClose,
   } = props;
 
-  const showHeaderActions = showCloseButton || !!onOpenSettings;
+  const canShowSettingsButton = !!onOpenSettings && !!settingsIconUrl;
+  const canShowCloseButton = showCloseButton && !!onClose && !!closeIconUrl;
+  const showHeaderActions = canShowSettingsButton || canShowCloseButton;
   const headerRowStyle: React.CSSProperties = {
     ...POPUP_LAYOUT.headerRow,
     justifyContent: showHeaderActions ? "space-between" : "flex-start",
@@ -90,7 +92,7 @@ export const MatchPopupHeader = (props: MatchPopupHeaderProps) => {
 
       {showHeaderActions && (
         <div style={POPUP_LAYOUT.headerActions}>
-          {onOpenSettings && settingsIconUrl && (
+          {canShowSettingsButton && (
             <button
               type="button"
               onClick={onOpenSettings}
@@ -113,7 +115,7 @@ export const MatchPopupHeader = (props: MatchPopupHeaderProps) => {
               />
             </button>
           )}
-          {showCloseButton && onClose && closeIconUrl && (
+          {canShowCloseButton && (
             <button
               type="button"
               onClick={onClose}

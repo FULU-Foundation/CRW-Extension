@@ -15,15 +15,6 @@ export const getIncidentPrimaryStatus = (entry: CargoEntry): string => {
   return primaryStatus || "";
 };
 
-const shouldShowExternalIcon = (entry: CargoEntry): boolean => {
-  return (
-    entry._type === "Company" ||
-    entry._type === "Incident" ||
-    entry._type === "Product" ||
-    entry._type === "ProductLine"
-  );
-};
-
 const entryHref = (entry: CargoEntry): string => {
   return `https://consumerrights.wiki/${encodeURIComponent(entry.PageName)}`;
 };
@@ -90,19 +81,17 @@ export const EntryLink = (props: {
           {statusLozenge}
         </span>
       )}
-      {shouldShowExternalIcon(entry) && (
-        <img
-          src={externalIconUrl}
-          alt=""
-          style={{
-            width: `${iconSize}px`,
-            height: `${iconSize}px`,
-            flexShrink: 0,
-            filter: "brightness(0) saturate(100%) invert(100%)",
-            opacity: 0.9,
-          }}
-        />
-      )}
+      <img
+        src={externalIconUrl}
+        alt=""
+        style={{
+          width: `${iconSize}px`,
+          height: `${iconSize}px`,
+          flexShrink: 0,
+          filter: "brightness(0) saturate(100%) invert(100%)",
+          opacity: 0.9,
+        }}
+      />
     </a>
   );
 };
