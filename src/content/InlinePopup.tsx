@@ -8,6 +8,7 @@ type InlinePopupProps = {
   logoUrl: string;
   externalIconUrl: string;
   settingsIconUrl: string;
+  closeIconUrl: string;
   onClose: () => void;
   onOpenSettings: () => void;
   onSuppressSite: () => void;
@@ -24,6 +25,7 @@ export const InlinePopup = (props: InlinePopupProps) => {
     logoUrl,
     externalIconUrl,
     settingsIconUrl,
+    closeIconUrl,
     onClose,
     onOpenSettings,
     onSuppressSite,
@@ -42,6 +44,7 @@ export const InlinePopup = (props: InlinePopupProps) => {
       onClose={onClose}
       onOpenSettings={onOpenSettings}
       settingsIconUrl={settingsIconUrl}
+      closeIconUrl={closeIconUrl}
       onSuppressSite={onSuppressSite}
       onSuppressPageName={onSuppressPageName}
       onDisableWarnings={onDisableWarnings}

@@ -20,27 +20,16 @@
     "48": "crw_logo.png",
     "128": "crw_logo.png"
   },
-  "permissions": [
-    "tabs",
-    "storage"
-  ],
-  "host_permissions": [
-    "<all_urls>"
-  ],
+  "permissions": ["tabs", "storage"],
+  "host_permissions": ["<all_urls>"],
   "background": {
-    "scripts": [
-      "background.js"
-    ],
+    "scripts": ["background.js"],
     "type": "module"
   },
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "assets/content.js"
-      ],
+      "matches": ["<all_urls>"],
+      "js": ["assets/content.js"],
       "run_at": "document_idle"
     }
   ],
@@ -50,11 +39,10 @@
         "assets/data.json",
         "crw_logo.png",
         "open-in-new.svg",
-        "settings.svg"
+        "settings.svg",
+        "close.svg"
       ],
-      "matches": [
-        "<all_urls>"
-      ]
+      "matches": ["<all_urls>"]
     }
   ]
 }
