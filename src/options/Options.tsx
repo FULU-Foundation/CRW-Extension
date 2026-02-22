@@ -32,26 +32,51 @@ const readSuppressedDomains = async (): Promise<string[]> => {
     .filter((entry) => entry.length > 0);
 };
 
+const normalizePageName = (pageName: string): string => {
+  return pageName.trim().toLowerCase();
+};
+
+const readSuppressedPageNames = async (): Promise<string[]> => {
+  const stored = await browser.storage.local.get(
+    Constants.STORAGE.SUPPRESSED_PAGE_NAMES,
+  );
+  const value = stored[Constants.STORAGE.SUPPRESSED_PAGE_NAMES];
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((entry): entry is string => typeof entry === "string")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+};
+
 const writeSuppressedDomains = async (domains: string[]): Promise<void> => {
   await browser.storage.local.set({
     [Constants.STORAGE.SUPPRESSED_DOMAINS]: domains,
   });
 };
 
+const writeSuppressedPageNames = async (pageNames: string[]): Promise<void> => {
+  await browser.storage.local.set({
+    [Constants.STORAGE.SUPPRESSED_PAGE_NAMES]: pageNames,
+  });
+};
+
 const Options = () => {
   const [warningsEnabled, setWarningsEnabled] = useState<boolean>(true);
   const [suppressedDomains, setSuppressedDomains] = useState<string[]>([]);
+  const [suppressedPageNames, setSuppressedPageNames] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     void (async () => {
       try {
-        const [enabled, domains] = await Promise.all([
+        const [enabled, domains, pageNames] = await Promise.all([
           readWarningsEnabled(),
           readSuppressedDomains(),
+          readSuppressedPageNames(),
         ]);
         setWarningsEnabled(enabled);
         setSuppressedDomains(domains);
+        setSuppressedPageNames(pageNames);
       } finally {
         setLoading(false);
       }
@@ -72,16 +97,29 @@ const Options = () => {
     await writeSuppressedDomains(next);
   };
 
+  const onRemoveSuppressedPageName = async (pageName: string) => {
+    const normalized = normalizePageName(pageName);
+    const next = suppressedPageNames.filter(
+      (value) => normalizePageName(value) !== normalized,
+    );
+    setSuppressedPageNames(next);
+    await writeSuppressedPageNames(next);
+  };
+
   return (
     <OptionsView
       warningsEnabled={warningsEnabled}
       suppressedDomains={suppressedDomains}
+      suppressedPageNames={suppressedPageNames}
       loading={loading}
       onToggleWarnings={(enabled) => {
         void onToggleWarnings(enabled);
       }}
       onRemoveSuppressedDomain={(domain) => {
         void onRemoveSuppressedDomain(domain);
+      }}
+      onRemoveSuppressedPageName={(pageName) => {
+        void onRemoveSuppressedPageName(pageName);
       }}
     />
   );

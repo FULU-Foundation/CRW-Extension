@@ -22,6 +22,7 @@ type MatchPopupCardProps = {
   logoUrl: string;
   externalIconUrl: string;
   onSuppressSite: () => void;
+  onSuppressPageName?: () => void;
   onDisableWarnings?: () => void;
   onClose?: () => void;
   domainLabel?: string;
@@ -29,6 +30,7 @@ type MatchPopupCardProps = {
   hideRelatedButtonWhenEmpty?: boolean;
   containerStyle?: React.CSSProperties;
   suppressButtonLabel?: string;
+  suppressPageNameLabel?: string;
   disableWarningsLabel?: string;
   onOpenSettings?: () => void;
   settingsIconUrl?: string;
@@ -179,6 +181,11 @@ const entryHref = (entry: CargoEntry): string => {
   return `https://consumerrights.wiki/${encodeURIComponent(entry.PageName)}`;
 };
 
+const getSuppressScopeLabel = (entry: CargoEntry): string => {
+  if (entry._type === "ProductLine") return "product";
+  return entry._type.toLowerCase();
+};
+
 const linkHoverHandlers = {
   onMouseEnter: (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.currentTarget.style.color = POPUP_CSS.link;
@@ -195,21 +202,6 @@ const linkHoverHandlers = {
   onBlur: (event: React.FocusEvent<HTMLAnchorElement>) => {
     event.currentTarget.style.color = POPUP_CSS.text;
     event.currentTarget.style.textDecoration = "none";
-  },
-};
-
-const solidButtonHoverHandlers = {
-  onMouseEnter: (event: React.MouseEvent<HTMLButtonElement>) => {
-    if (event.currentTarget.disabled) return;
-    event.currentTarget.style.background = POPUP_CSS.buttonBgHover;
-    event.currentTarget.style.color = POPUP_CSS.text;
-    event.currentTarget.style.borderColor = POPUP_CSS.buttonBgHover;
-  },
-  onMouseLeave: (event: React.MouseEvent<HTMLButtonElement>) => {
-    if (event.currentTarget.disabled) return;
-    event.currentTarget.style.background = POPUP_CSS.buttonBg;
-    event.currentTarget.style.color = POPUP_CSS.buttonText;
-    event.currentTarget.style.borderColor = POPUP_CSS.buttonBg;
   },
 };
 
@@ -461,20 +453,21 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     logoUrl,
     externalIconUrl,
     onSuppressSite,
+    onSuppressPageName,
     onDisableWarnings,
     onClose,
     domainLabel,
     showCloseButton = false,
     hideRelatedButtonWhenEmpty = false,
     containerStyle,
-    suppressButtonLabel = "Don't show for this site",
+    suppressButtonLabel = "Hide for this site",
+    suppressPageNameLabel,
     disableWarningsLabel = "Don't show me this again",
     onOpenSettings,
     settingsIconUrl,
   } = props;
 
   const [logoError, setLogoError] = useState(false);
-  const [showAllIncidents, setShowAllIncidents] = useState(false);
   const [showRelatedPages, setShowRelatedPages] = useState(false);
 
   const derived = useMemo(() => {
@@ -494,17 +487,55 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
       relatedItems.filter((item) => item._type === "Incident"),
       incidentFocus,
     );
-    const relatedOtherCount =
-      groupedRelated.Product.length + groupedRelated.ProductLine.length;
-    return { topMatch, groupedRelated, relatedOtherCount, companyMatch };
+    const hiddenRelatedPagesCount =
+      Math.max(groupedRelated.Incident.length - 5, 0) +
+      groupedRelated.Product.length +
+      groupedRelated.ProductLine.length;
+    return {
+      topMatch,
+      groupedRelated,
+      hiddenRelatedPagesCount,
+      companyMatch,
+    };
   }, [matches]);
 
   if (!derived.topMatch) return null;
 
-  const visibleIncidents = showAllIncidents
-    ? derived.groupedRelated.Incident
-    : derived.groupedRelated.Incident.slice(0, 5);
   const showHeaderActions = showCloseButton || !!onOpenSettings;
+  const visibleIncidents = derived.groupedRelated.Incident.slice(0, 5);
+  const expandedIncidents = derived.groupedRelated.Incident.slice(5);
+  const hasExpandableRelatedGroups =
+    expandedIncidents.length > 0 ||
+    derived.groupedRelated.Product.length > 0 ||
+    derived.groupedRelated.ProductLine.length > 0;
+  const showsRelatedPagesToggle =
+    !hideRelatedButtonWhenEmpty || derived.hiddenRelatedPagesCount > 0;
+  const hasBodyContentAfterTopMatch =
+    derived.groupedRelated.Incident.length > 0 || showsRelatedPagesToggle;
+  const secondaryActionButtonStyle: React.CSSProperties = {
+    appearance: "none",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    height: "32px",
+    margin: 0,
+    border: `1px solid ${POPUP_CSS.buttonSecondaryBorder}`,
+    background: "transparent",
+    color: POPUP_CSS.buttonSecondaryText,
+    borderRadius: "10px",
+    boxSizing: "border-box",
+    padding: "0 14px",
+    fontSize: "14px",
+    fontWeight: 600,
+    lineHeight: 1,
+    whiteSpace: "nowrap",
+    flexShrink: 0,
+    outline: "none",
+    cursor: "pointer",
+  };
+  const resolvedSuppressPageNameLabel =
+    suppressPageNameLabel ||
+    `Hide for this ${getSuppressScopeLabel(derived.topMatch)}`;
 
   return (
     <div
@@ -527,7 +558,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
           display: "flex",
           alignItems: "center",
           justifyContent: showHeaderActions ? "space-between" : "flex-start",
-          gap: "8px"
+          gap: "8px",
         }}
       >
         <div
@@ -675,13 +706,13 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: "10px",
+          gap: hasBodyContentAfterTopMatch ? "10px" : "0",
           background: POPUP_CSS.panel,
           borderRadius: "10px",
-          padding: "10px 0 0 0",
-          overflowY: "auto",
+          padding: hasBodyContentAfterTopMatch ? "10px 0 6px 0" : "10px 0 0 0",
+          overflowY: hasBodyContentAfterTopMatch ? "auto" : "visible",
           minHeight: 0,
-          flex: 1,
+          flex: hasBodyContentAfterTopMatch ? 1 : "0 0 auto",
         }}
       >
         <TopMatchBlock
@@ -698,91 +729,91 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
               externalIconUrl={externalIconUrl}
               showIncidentStatus
             />
-            {derived.groupedRelated.Incident.length > 5 && (
-              <button
-                type="button"
-                {...ghostButtonHoverHandlers}
-                style={{
-                  marginTop: "6px",
-                  border: `1px solid ${POPUP_CSS.divider}`,
-                  background: "transparent",
-                  color: POPUP_CSS.text,
-                  borderRadius: "8px",
-                  padding: "5px 9px",
-                  fontSize: "12px",
-                  cursor: "pointer",
-                }}
-                onClick={() => setShowAllIncidents((value) => !value)}
-              >
-                {showAllIncidents
-                  ? "Show fewer incidents"
-                  : `Show more incidents (${derived.groupedRelated.Incident.length - 5})`}
-              </button>
-            )}
           </div>
         )}
 
-        <div
-          style={{
-            display: showRelatedPages ? "flex" : "none",
-            padding: "8px 6px 0 6px",
-            borderTop: `1px solid ${POPUP_CSS.divider}`,
-            flexDirection: "column",
-            gap: "10px",
-          }}
-        >
-          {derived.groupedRelated.Product.length > 0 && (
-            <RelatedGroup
-              title="Related Products"
-              entries={derived.groupedRelated.Product}
-              externalIconUrl={externalIconUrl}
-            />
-          )}
-          {derived.groupedRelated.ProductLine.length > 0 && (
-            <RelatedGroup
-              title="Related Product Lines"
-              entries={derived.groupedRelated.ProductLine}
-              externalIconUrl={externalIconUrl}
-            />
-          )}
-        </div>
+        {showsRelatedPagesToggle && (
+          <div style={{ padding: "0 6px" }}>
+            <button
+              type="button"
+              disabled={derived.hiddenRelatedPagesCount === 0}
+              onClick={() => setShowRelatedPages((value) => !value)}
+              {...ghostButtonHoverHandlers}
+              style={{
+                marginTop: "0",
+                border: `1px solid ${POPUP_CSS.divider}`,
+                background: "transparent",
+                color: POPUP_CSS.text,
+                borderRadius: "8px",
+                padding: "5px 9px",
+                fontSize: "12px",
+                cursor:
+                  derived.hiddenRelatedPagesCount === 0
+                    ? "not-allowed"
+                    : "pointer",
+                opacity: derived.hiddenRelatedPagesCount === 0 ? 0.6 : 1,
+              }}
+            >
+              {showRelatedPages
+                ? "Show fewer related pages"
+                : `Show ${derived.hiddenRelatedPagesCount} related pages`}
+            </button>
+          </div>
+        )}
+
+        {showRelatedPages && hasExpandableRelatedGroups && (
+          <div
+            style={{
+              padding: "8px 6px 0 6px",
+              borderTop: `1px solid ${POPUP_CSS.divider}`,
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            }}
+          >
+            {expandedIncidents.length > 0 && (
+              <RelatedGroup
+                title="More Related Incidents"
+                entries={expandedIncidents}
+                externalIconUrl={externalIconUrl}
+                showIncidentStatus
+              />
+            )}
+            {derived.groupedRelated.Product.length > 0 && (
+              <RelatedGroup
+                title="Related Products"
+                entries={derived.groupedRelated.Product}
+                externalIconUrl={externalIconUrl}
+              />
+            )}
+            {derived.groupedRelated.ProductLine.length > 0 && (
+              <RelatedGroup
+                title="Related Product Lines"
+                entries={derived.groupedRelated.ProductLine}
+                externalIconUrl={externalIconUrl}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       <div
         style={{
           display: "flex",
+          alignItems: "center",
           justifyContent: "center",
           gap: "8px",
-          marginTop: "12px",
+          marginTop: hasBodyContentAfterTopMatch ? "12px" : "8px",
         }}
       >
-        {(!hideRelatedButtonWhenEmpty || derived.relatedOtherCount > 0) && (
+        {onSuppressPageName && (
           <button
             type="button"
-            disabled={derived.relatedOtherCount === 0}
-            onClick={() => setShowRelatedPages((value) => !value)}
-            {...solidButtonHoverHandlers}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              minHeight: "20px",
-              border: `1px solid ${POPUP_CSS.buttonBg}`,
-              background: POPUP_CSS.buttonBg,
-              color: POPUP_CSS.buttonText,
-              borderRadius: "10px",
-              padding: "5px 14px",
-              fontSize: "14px",
-              fontWeight: 700,
-              lineHeight: 1,
-              cursor:
-                derived.relatedOtherCount === 0 ? "not-allowed" : "pointer",
-              opacity: derived.relatedOtherCount === 0 ? 0.6 : 1,
-            }}
+            onClick={onSuppressPageName}
+            {...ghostButtonHoverHandlers}
+            style={secondaryActionButtonStyle}
           >
-            {showRelatedPages
-              ? "Hide related pages"
-              : `Show ${derived.relatedOtherCount} related page${derived.relatedOtherCount === 1 ? "" : "s"}`}
+            {resolvedSuppressPageNameLabel}
           </button>
         )}
 
@@ -790,21 +821,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
           type="button"
           onClick={onSuppressSite}
           {...ghostButtonHoverHandlers}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "20px",
-            border: `1px solid ${POPUP_CSS.buttonSecondaryBorder}`,
-            background: "transparent",
-            color: POPUP_CSS.buttonSecondaryText,
-            borderRadius: "10px",
-            padding: "5px 14px",
-            fontSize: "14px",
-            fontWeight: 600,
-            lineHeight: 1,
-            cursor: "pointer",
-          }}
+          style={secondaryActionButtonStyle}
         >
           {suppressButtonLabel}
         </button>

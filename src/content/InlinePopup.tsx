@@ -11,7 +11,9 @@ type InlinePopupProps = {
   onClose: () => void;
   onOpenSettings: () => void;
   onSuppressSite: () => void;
+  onSuppressPageName?: () => void;
   onDisableWarnings?: () => void;
+  suppressPageNameLabel?: string;
   suppressButtonLabel?: string;
   disableWarningsLabel?: string;
 };
@@ -25,7 +27,9 @@ export const InlinePopup = (props: InlinePopupProps) => {
     onClose,
     onOpenSettings,
     onSuppressSite,
+    onSuppressPageName,
     onDisableWarnings,
+    suppressPageNameLabel,
     suppressButtonLabel,
     disableWarningsLabel,
   } = props;
@@ -39,7 +43,9 @@ export const InlinePopup = (props: InlinePopupProps) => {
       onOpenSettings={onOpenSettings}
       settingsIconUrl={settingsIconUrl}
       onSuppressSite={onSuppressSite}
+      onSuppressPageName={onSuppressPageName}
       onDisableWarnings={onDisableWarnings}
+      suppressPageNameLabel={suppressPageNameLabel}
       suppressButtonLabel={suppressButtonLabel}
       disableWarningsLabel={disableWarningsLabel}
       showCloseButton

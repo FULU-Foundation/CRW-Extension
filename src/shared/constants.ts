@@ -15,5 +15,6 @@ export const STORAGE = {
     return `crw_matched_${tabId}`;
   },
   SUPPRESSED_DOMAINS: "crw_suppressed_domains",
+  SUPPRESSED_PAGE_NAMES: "crw_suppressed_page_names",
   WARNINGS_ENABLED: "crw_warnings_enabled",
 };
