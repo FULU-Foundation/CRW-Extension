@@ -11,8 +11,7 @@ export default defineConfig({
     react(),
     viteStaticCopy({
       targets: [
-        { src: getManifestSrc(), dest: ".", rename: "manifest.json" },
-        { src: "all_cargo_combined.json", dest: "./assets" }
+        { src: getManifestSrc(), dest: ".", rename: "manifest.json" }
       ]
     })
   ],
