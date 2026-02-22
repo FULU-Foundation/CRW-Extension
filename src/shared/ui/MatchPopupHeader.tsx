@@ -13,6 +13,7 @@ type MatchPopupHeaderProps = {
   domainLabel?: string;
   onOpenSettings?: () => void;
   settingsIconUrl?: string;
+  closeIconUrl?: string;
   showCloseButton?: boolean;
   onClose?: () => void;
 };
@@ -25,6 +26,7 @@ export const MatchPopupHeader = (props: MatchPopupHeaderProps) => {
     domainLabel,
     onOpenSettings,
     settingsIconUrl,
+    closeIconUrl,
     showCloseButton = false,
     onClose,
   } = props;
@@ -138,26 +140,27 @@ export const MatchPopupHeader = (props: MatchPopupHeaderProps) => {
               />
             </button>
           )}
-          {showCloseButton && onClose && (
+          {showCloseButton && onClose && closeIconUrl && (
             <button
               type="button"
               onClick={onClose}
               {...ghostButtonHoverHandlers}
               style={{
                 ...headerIconButtonStyle,
-                fontSize: "24px",
-                lineHeight: 1,
               }}
             >
-              <span
+              <img
+                src={closeIconUrl}
+                alt=""
                 aria-hidden="true"
                 style={{
+                  width: "18px",
+                  height: "18px",
                   display: "block",
-                  lineHeight: 1,
+                  filter: "brightness(0) saturate(100%) invert(100%)",
+                  opacity: 0.82,
                 }}
-              >
-                ×
-              </span>
+              />
             </button>
           )}
         </div>

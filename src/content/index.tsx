@@ -200,6 +200,7 @@ const renderInlinePopup = async (
       <InlineEmptyState
         logoUrl={browser.runtime.getURL("crw_logo.png")}
         settingsIconUrl={browser.runtime.getURL("settings.svg")}
+        closeIconUrl={browser.runtime.getURL("close.svg")}
         onOpenSettings={openOptions}
         onClose={removeInlinePopup}
       />,
@@ -213,6 +214,7 @@ const renderInlinePopup = async (
       logoUrl={browser.runtime.getURL("crw_logo.png")}
       externalIconUrl={browser.runtime.getURL("open-in-new.svg")}
       settingsIconUrl={browser.runtime.getURL("settings.svg")}
+      closeIconUrl={browser.runtime.getURL("close.svg")}
       onClose={removeInlinePopup}
       onOpenSettings={openOptions}
       onDisableWarnings={() => {

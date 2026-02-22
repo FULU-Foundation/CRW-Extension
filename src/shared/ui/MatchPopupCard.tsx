@@ -27,6 +27,7 @@ type MatchPopupCardProps = {
   disableWarningsLabel?: string;
   onOpenSettings?: () => void;
   settingsIconUrl?: string;
+  closeIconUrl?: string;
 };
 
 const getEntryKey = (entry: CargoEntry): string => {
@@ -184,6 +185,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     disableWarningsLabel = "Don't show me this again",
     onOpenSettings,
     settingsIconUrl,
+    closeIconUrl,
   } = props;
 
   const [logoError, setLogoError] = useState(false);
@@ -242,6 +244,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
         domainLabel={domainLabel}
         onOpenSettings={onOpenSettings}
         settingsIconUrl={settingsIconUrl}
+        closeIconUrl={closeIconUrl}
         showCloseButton={showCloseButton}
         onClose={onClose}
       />
