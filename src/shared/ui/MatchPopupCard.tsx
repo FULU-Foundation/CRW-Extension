@@ -527,8 +527,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
           display: "flex",
           alignItems: "center",
           justifyContent: showHeaderActions ? "space-between" : "flex-start",
-          gap: "8px",
-          marginBottom: "7px",
+          gap: "8px"
         }}
       >
         <div
@@ -580,7 +579,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
                 fontWeight: 700,
                 color: POPUP_CSS.text,
                 fontSize: "12px",
-                lineHeight: 1.1,
+                lineHeight: 1.2,
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -612,8 +611,8 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
                   background: "transparent",
                   color: POPUP_CSS.muted,
                   borderRadius: "0",
-                  width: "32px",
-                  height: "32px",
+                  width: "22px",
+                  height: "22px",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -644,19 +643,28 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
                   border: 0,
                   background: "transparent",
                   color: POPUP_CSS.muted,
-                  width: "32px",
-                  height: "32px",
+                  width: "22px",
+                  height: "22px",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
                   alignSelf: "center",
                   fontSize: "24px",
-                  lineHeight: "24px",
+                  lineHeight: 1,
                   cursor: "pointer",
                   padding: 0,
                 }}
               >
-                ×
+                <span
+                  aria-hidden="true"
+                  style={{
+                    display: "block",
+                    lineHeight: 1,
+                    transform: "translateY(-1px)",
+                  }}
+                >
+                  ×
+                </span>
               </button>
             )}
           </div>
