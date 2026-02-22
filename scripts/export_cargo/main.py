@@ -90,7 +90,7 @@ def query_all_pages(table, where_clause=None):
             "format": "json",
             "tables": table,
             "fields": ",".join(fields),
-            # "limit": PAGE_SIZE,
+            "limit": PAGE_SIZE,
             "offset": offset,
         }
         if where_clause:
@@ -98,9 +98,7 @@ def query_all_pages(table, where_clause=None):
 
         response = session.get(api_url, params=params)
         response.raise_for_status()
-        print(response.text)
         data = response.json().get("cargoquery", [])
-        print(data)
         if not data:
             break
         all_data.extend([entry["title"] for entry in data])
@@ -147,6 +145,7 @@ def export_all_tables_combined(out_format, out_dir, where_clause=None):
         data = query_all_pages(table, where_clause)
         combined_data[table] = data
         total_records += len(data)
+        print(f"Fetched {len(data)} records for {table}")
 
     filename = os.path.join(out_dir, f"all_cargo_combined.{out_format}")
 
