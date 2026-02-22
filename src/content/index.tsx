@@ -82,6 +82,16 @@ const suppressPageName = async (pageName: string): Promise<void> => {
   });
 };
 
+const unsuppressPageName = async (pageName: string): Promise<void> => {
+  const normalized = normalizePageName(pageName);
+  if (!normalized) return;
+  const names = await getSuppressedPageNames();
+  const next = names.filter((name) => normalizePageName(name) !== normalized);
+  await browser.storage.local.set({
+    [Constants.STORAGE.SUPPRESSED_PAGE_NAMES]: next,
+  });
+};
+
 const isWarningsEnabled = async (): Promise<boolean> => {
   const stored = await browser.storage.local.get(
     Constants.STORAGE.WARNINGS_ENABLED,
@@ -184,7 +194,9 @@ const renderInlinePopup = async (
           return true;
         });
 
-  if (filteredMatches.length === 0 && !ignorePreferences) {
+  const visibleMatches = ignorePreferences ? matches : filteredMatches;
+
+  if (visibleMatches.length === 0 && !ignorePreferences) {
     removeInlinePopup();
     return;
   }
@@ -203,7 +215,7 @@ const renderInlinePopup = async (
   }
   forcePopupVisible = ignorePreferences;
   const root = ensurePopupRoot();
-  if (filteredMatches.length === 0) {
+  if (visibleMatches.length === 0) {
     root.render(
       <InlineEmptyState
         logoUrl={ASSET_URLS.logo}
@@ -218,7 +230,7 @@ const renderInlinePopup = async (
   const handleDisableWarnings = async () => {
     if (ignorePreferences && !currentlyWarningsEnabled) {
       await setWarningsEnabled(true);
-      void renderInlinePopup(filteredMatches, true);
+      void renderInlinePopup(visibleMatches, true);
       return;
     }
 
@@ -226,16 +238,69 @@ const renderInlinePopup = async (
     removeInlinePopup();
   };
 
-  const handleSuppressPageNameClick = async () => {
-    const topPageName = String(filteredMatches[0]?.PageName || "");
-    await suppressPageName(topPageName);
-    void renderInlinePopup(matches, ignorePreferences);
+  const topVisibleMatch = visibleMatches[0];
+  const topVisiblePageName = String(topVisibleMatch?.PageName || "").trim();
+  const topVisiblePageNameNormalized = normalizePageName(topVisiblePageName);
+  const topVisibleCompanyName = String(topVisibleMatch?.Company || "").trim();
+  const topVisibleCompanyNormalized = normalizePageName(topVisibleCompanyName);
+  const topVisibleScopeType = topVisibleMatch?._type;
+  const topVisibleTypeUsesCompanyToggle =
+    topVisibleScopeType === "Product" ||
+    topVisibleScopeType === "ProductLine" ||
+    topVisibleScopeType === "Incident";
+  const topVisiblePageSuppressed =
+    Boolean(topVisiblePageNameNormalized) &&
+    suppressedPageNameSet.has(topVisiblePageNameNormalized);
+  const topVisibleCompanySuppressed =
+    topVisibleTypeUsesCompanyToggle &&
+    Boolean(topVisibleCompanyNormalized) &&
+    suppressedPageNameSet.has(topVisibleCompanyNormalized);
+
+  const getSuppressPageNameAction = () => {
+    if (
+      ignorePreferences &&
+      topVisibleCompanySuppressed &&
+      topVisibleCompanyName
+    ) {
+      return {
+        label: "Show this company",
+        run: async () => {
+          await unsuppressPageName(topVisibleCompanyName);
+          void renderInlinePopup(matches, true);
+        },
+      };
+    }
+
+    if (ignorePreferences && topVisiblePageSuppressed && topVisibleMatch) {
+      const scope =
+        topVisibleMatch._type === "ProductLine"
+          ? "product"
+          : topVisibleMatch._type.toLowerCase();
+      return {
+        label: `Show this ${scope}`,
+        run: async () => {
+          await unsuppressPageName(topVisiblePageName);
+          void renderInlinePopup(matches, true);
+        },
+      };
+    }
+
+    return {
+      label: undefined,
+      run: async () => {
+        if (!topVisiblePageName) return;
+        await suppressPageName(topVisiblePageName);
+        void renderInlinePopup(matches, ignorePreferences);
+      },
+    };
   };
+
+  const suppressPageNameAction = getSuppressPageNameAction();
 
   const handleSuppressSiteClick = async () => {
     if (ignorePreferences && currentlySuppressed) {
       await unsuppressCurrentSite();
-      void renderInlinePopup(filteredMatches, true);
+      void renderInlinePopup(matches, true);
       return;
     }
 
@@ -245,7 +310,7 @@ const renderInlinePopup = async (
 
   root.render(
     <InlinePopup
-      matches={filteredMatches}
+      matches={visibleMatches}
       logoUrl={ASSET_URLS.logo}
       externalIconUrl={ASSET_URLS.external}
       settingsIconUrl={ASSET_URLS.settings}
@@ -260,10 +325,11 @@ const renderInlinePopup = async (
       }
       suppressButtonLabel={
         ignorePreferences && currentlySuppressed
-          ? "Always show for this site"
+          ? "Show this site"
           : "Hide for this site"
       }
-      onSuppressPageName={() => void handleSuppressPageNameClick()}
+      suppressPageNameLabel={suppressPageNameAction.label}
+      onSuppressPageName={() => void suppressPageNameAction.run()}
       onSuppressSite={() => void handleSuppressSiteClick()}
     />,
   );

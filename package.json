@@ -6,7 +6,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npm-run-all --parallel build-chrome && npm run build-firefox",
+    "build": "npm run build-chrome && npm run build-firefox",
     "build-firefox": "cross-env BROWSER=firefox vite build --config vite.background.config.ts && cross-env BROWSER=firefox vite build --config vite.content.config.ts && cross-env BROWSER=firefox vite build --config vite.config.ts",
     "build-chrome": "cross-env BROWSER=chrome vite build --config vite.background.config.ts && cross-env BROWSER=chrome vite build --config vite.content.config.ts && cross-env BROWSER=chrome vite build --config vite.config.ts",
     "build:watch": "chokidar \"src/**/*\" -c \"npm run build\"",
@@ -24,8 +24,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@tailwindcss/vite": "^4.1.16",
-    "@types/node": "^24.9.2",
+    "@types/node": "^25.3.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@types/webextension-polyfill": "^0.12.4",
@@ -34,21 +33,13 @@
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
     "eslint": "^10.0.0",
-    "globals": "^16.4.0",
-    "npm-run-all": "^4.1.5",
+    "globals": "^17.3.0",
     "prettier": "^3.6.2",
-    "prettier-plugin-tailwindcss": "^0.7.1",
-    "rollup-plugin-visualizer": "^6.0.5",
-    "tailwindcss": "^4.1.16",
+    "rollup-plugin-visualizer": "^7.0.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.0",
     "vite": "^7.1.12",
     "vite-plugin-static-copy": "^3.1.4"
-  },
-  "prettier": {
-    "plugins": [
-      "prettier-plugin-tailwindcss"
-    ]
   }
 }
