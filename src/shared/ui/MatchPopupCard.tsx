@@ -4,6 +4,10 @@ import { CargoEntry } from "@/shared/types";
 import { MatchPopupBody } from "@/shared/ui/MatchPopupBody";
 import { MatchPopupFooterActions } from "@/shared/ui/MatchPopupFooterActions";
 import { MatchPopupHeader } from "@/shared/ui/MatchPopupHeader";
+import {
+  getEntryKey,
+  getIncidentPrimaryStatus,
+} from "@/shared/ui/MatchPopupPrimitives";
 import { POPUP_CSS, POPUP_LAYOUT } from "@/shared/ui/matchPopupStyles";
 
 type MatchPopupCardProps = {
@@ -28,10 +32,6 @@ type MatchPopupCardProps = {
 
 const VISIBLE_INCIDENT_LIMIT = 4;
 
-const getEntryKey = (entry: CargoEntry): string => {
-  return `${entry._type}:${entry.PageID}`;
-};
-
 const normalizeEntityToken = (value: string): string => {
   return value
     .toLowerCase()
@@ -54,14 +54,6 @@ const addIfPresent = (target: Set<string>, value: unknown) => {
   const normalized = normalizeEntityToken(value);
   if (!normalized) return;
   target.add(normalized);
-};
-
-const getIncidentPrimaryStatus = (entry: CargoEntry): string => {
-  if (typeof entry.Status !== "string") return "";
-  const [primaryStatus] = entry.Status.split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
-  return primaryStatus || "";
 };
 
 const isActiveIncident = (entry: CargoEntry): boolean => {
