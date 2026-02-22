@@ -30,6 +30,8 @@ type MatchPopupCardProps = {
   containerStyle?: React.CSSProperties;
   suppressButtonLabel?: string;
   disableWarningsLabel?: string;
+  onOpenSettings?: () => void;
+  settingsIconUrl?: string;
 };
 
 const getEntryKey = (entry: CargoEntry): string => {
@@ -467,6 +469,8 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     containerStyle,
     suppressButtonLabel = "Don't show for this site",
     disableWarningsLabel = "Don't show me this again",
+    onOpenSettings,
+    settingsIconUrl,
   } = props;
 
   const [logoError, setLogoError] = useState(false);
@@ -500,6 +504,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
   const visibleIncidents = showAllIncidents
     ? derived.groupedRelated.Incident
     : derived.groupedRelated.Incident.slice(0, 5);
+  const showHeaderActions = showCloseButton || !!onOpenSettings;
 
   return (
     <div
@@ -521,7 +526,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
         style={{
           display: "flex",
           alignItems: "center",
-          justifyContent: showCloseButton ? "space-between" : "flex-start",
+          justifyContent: showHeaderActions ? "space-between" : "flex-start",
           gap: "8px",
           marginBottom: "7px",
         }}
@@ -591,29 +596,70 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
           </div>
         </div>
 
-        {showCloseButton && (
-          <button
-            type="button"
-            onClick={onClose}
-            {...ghostButtonHoverHandlers}
-            style={{
-              border: 0,
-              background: "transparent",
-              color: POPUP_CSS.muted,
-              width: "32px",
-              height: "32px",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              alignSelf: "center",
-              fontSize: "24px",
-              lineHeight: "24px",
-              cursor: "pointer",
-              padding: 0,
-            }}
+        {showHeaderActions && (
+          <div
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
           >
-            ×
-          </button>
+            {onOpenSettings && settingsIconUrl && (
+              <button
+                type="button"
+                onClick={onOpenSettings}
+                {...ghostButtonHoverHandlers}
+                aria-label="Open extension settings"
+                title="Open settings"
+                style={{
+                  border: 0,
+                  background: "transparent",
+                  color: POPUP_CSS.muted,
+                  borderRadius: "0",
+                  width: "32px",
+                  height: "32px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              >
+                <img
+                  src={settingsIconUrl}
+                  alt=""
+                  aria-hidden="true"
+                  style={{
+                    width: "18px",
+                    height: "18px",
+                    display: "block",
+                    filter: "brightness(0) saturate(100%) invert(100%)",
+                    opacity: 0.82,
+                  }}
+                />
+              </button>
+            )}
+            {showCloseButton && (
+              <button
+                type="button"
+                onClick={onClose}
+                {...ghostButtonHoverHandlers}
+                style={{
+                  border: 0,
+                  background: "transparent",
+                  color: POPUP_CSS.muted,
+                  width: "32px",
+                  height: "32px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  alignSelf: "center",
+                  fontSize: "24px",
+                  lineHeight: "24px",
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              >
+                ×
+              </button>
+            )}
+          </div>
         )}
       </div>
 

@@ -22,6 +22,7 @@ export function createBackgroundMessageHandler(handlers: {
     payload: PageContext,
     sender: browser.Runtime.MessageSender,
   ) => void;
+  onOpenOptionsPage?: (sender: browser.Runtime.MessageSender) => void;
 }) {
   browser.runtime.onMessage.addListener(
     (msg: CRWMessage | any, sender: browser.Runtime.MessageSender) => {
@@ -30,6 +31,9 @@ export function createBackgroundMessageHandler(handlers: {
       switch (msg.type) {
         case MessageType.PAGE_CONTEXT_UPDATE:
           handlers.onPageContextUpdated?.(msg.payload, sender);
+          break;
+        case MessageType.OPEN_OPTIONS_PAGE:
+          handlers.onOpenOptionsPage?.(sender);
           break;
 
         default:

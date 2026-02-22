@@ -142,6 +142,94 @@ const Popup = () => {
     void browser.tabs.create({ url: "https://consumerrights.wiki" });
   };
 
+  const closePopup = () => {
+    window.close();
+  };
+
+  const renderSettingsButton = () => {
+    return (
+      <button
+        type="button"
+        onClick={openOptions}
+        aria-label="Open extension settings"
+        title="Open settings"
+        style={{
+          border: "1px solid rgba(255,255,255,0.38)",
+          background: "transparent",
+          color: "#FFFFFF",
+          borderRadius: "10px",
+          width: "32px",
+          height: "32px",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          padding: 0,
+        }}
+      >
+        <img
+          src={safeRuntimeUrl("settings.svg")}
+          alt=""
+          aria-hidden="true"
+          style={{
+            width: "18px",
+            height: "18px",
+            display: "block",
+            filter: "brightness(0) saturate(100%) invert(100%)",
+            opacity: 0.9,
+          }}
+        />
+      </button>
+    );
+  };
+
+  const renderDismissButton = () => {
+    return (
+      <button
+        type="button"
+        onClick={closePopup}
+        aria-label="Dismiss popup"
+        title="Dismiss"
+        style={{
+          border: "1px solid rgba(255,255,255,0.38)",
+          background: "transparent",
+          color: "#FFFFFF",
+          borderRadius: "10px",
+          width: "32px",
+          height: "32px",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          padding: 0,
+          fontSize: "14px",
+          fontWeight: 700,
+          lineHeight: 1,
+        }}
+      >
+        X
+      </button>
+    );
+  };
+
+  const renderTopRightActions = () => {
+    return (
+      <div
+        style={{
+          position: "absolute",
+          top: "12px",
+          right: "12px",
+          display: "flex",
+          gap: "8px",
+          zIndex: 1,
+        }}
+      >
+        {renderSettingsButton()}
+        {renderDismissButton()}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div
@@ -154,8 +242,10 @@ const Popup = () => {
           alignItems: "center",
           justifyContent: "center",
           fontFamily: "ui-sans-serif,system-ui,sans-serif",
+          position: "relative",
         }}
       >
+        {renderTopRightActions()}
         Checking Consumer Rights Wiki matches...
       </div>
     );
@@ -177,8 +267,10 @@ const Popup = () => {
           fontFamily: "ui-sans-serif,system-ui,sans-serif",
           textAlign: "center",
           padding: "20px",
+          position: "relative",
         }}
       >
+        {renderTopRightActions()}
         <img
           src={safeRuntimeUrl("crw_logo.png")}
           alt="Consumer Rights Wiki"
@@ -218,8 +310,10 @@ const Popup = () => {
           fontFamily: "ui-sans-serif,system-ui,sans-serif",
           padding: "16px",
           textAlign: "center",
+          position: "relative",
         }}
       >
+        {renderTopRightActions()}
         <div>Alerts are disabled for {domain}.</div>
         <button
           type="button"
@@ -256,11 +350,14 @@ const Popup = () => {
         boxShadow: "0 14px 36px rgba(0,0,0,0.35)",
         fontFamily: "ui-sans-serif,system-ui,sans-serif",
         padding: "14px",
+        paddingTop: "52px",
+        position: "relative",
         display: "flex",
         flexDirection: "column",
         gap: "10px",
       }}
     >
+      {renderTopRightActions()}
       <div
         style={{
           display: "flex",
@@ -417,22 +514,6 @@ const Popup = () => {
           }}
         >
           Open Wiki
-        </button>
-        <button
-          type="button"
-          onClick={openOptions}
-          style={{
-            border: "1px solid rgba(255,255,255,0.38)",
-            background: "transparent",
-            color: "#FFFFFF",
-            borderRadius: "10px",
-            padding: "6px 12px",
-            fontSize: "12px",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          Options
         </button>
         <button
           type="button"

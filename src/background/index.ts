@@ -101,6 +101,9 @@ browser.action.onClicked.addListener(async (tab) => {
 });
 
 Messaging.createBackgroundMessageHandler({
+  onOpenOptionsPage() {
+    void browser.runtime.openOptionsPage();
+  },
   async onPageContextUpdated(payload, sender) {
     const tabId = sender.tab?.id;
     if (!tabId) return;

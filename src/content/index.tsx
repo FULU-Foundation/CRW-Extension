@@ -61,6 +61,12 @@ const setWarningsEnabled = async (enabled: boolean): Promise<void> => {
   });
 };
 
+const openOptions = () => {
+  void browser.runtime.sendMessage(
+    Messaging.createMessage(MessageType.OPEN_OPTIONS_PAGE, "content"),
+  );
+};
+
 const suppressCurrentSite = async (): Promise<void> => {
   const current = normalizeHostname(location.hostname || "");
   if (!current) return;
@@ -134,6 +140,8 @@ const renderInlinePopup = async (
     root.render(
       <InlineEmptyState
         logoUrl={browser.runtime.getURL("crw_logo.png")}
+        settingsIconUrl={browser.runtime.getURL("settings.svg")}
+        onOpenSettings={openOptions}
         onClose={removeInlinePopup}
       />,
     );
@@ -145,7 +153,9 @@ const renderInlinePopup = async (
       matches={matches}
       logoUrl={browser.runtime.getURL("crw_logo.png")}
       externalIconUrl={browser.runtime.getURL("open-in-new.svg")}
+      settingsIconUrl={browser.runtime.getURL("settings.svg")}
       onClose={removeInlinePopup}
+      onOpenSettings={openOptions}
       onDisableWarnings={() => {
         void (async () => {
           if (ignorePreferences && !currentlyWarningsEnabled) {
