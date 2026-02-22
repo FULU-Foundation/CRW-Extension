@@ -4,10 +4,6 @@ import { CargoEntry } from "@/shared/types";
 import { MatchPopupBody } from "@/shared/ui/MatchPopupBody";
 import { MatchPopupFooterActions } from "@/shared/ui/MatchPopupFooterActions";
 import { MatchPopupHeader } from "@/shared/ui/MatchPopupHeader";
-import {
-  getEntryKey,
-  getIncidentPrimaryStatus,
-} from "@/shared/ui/MatchPopupPrimitives";
 import { POPUP_CSS, POPUP_LAYOUT } from "@/shared/ui/matchPopupStyles";
 
 type MatchPopupCardProps = {
@@ -29,6 +25,8 @@ type MatchPopupCardProps = {
   settingsIconUrl?: string;
   closeIconUrl?: string;
 };
+
+const VISIBLE_INCIDENT_LIMIT = 4;
 
 const getEntryKey = (entry: CargoEntry): string => {
   return `${entry._type}:${entry.PageID}`;
@@ -188,7 +186,6 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     closeIconUrl,
   } = props;
 
-  const [logoError, setLogoError] = useState(false);
   const [showRelatedPages, setShowRelatedPages] = useState(false);
 
   const derived = useMemo(() => {
@@ -209,7 +206,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
       incidentFocus,
     );
     const hiddenRelatedPagesCount =
-      Math.max(groupedRelated.Incident.length - 4, 0) +
+      Math.max(groupedRelated.Incident.length - VISIBLE_INCIDENT_LIMIT, 0) +
       groupedRelated.Product.length +
       groupedRelated.ProductLine.length;
     return {
@@ -222,8 +219,13 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
 
   if (!derived.topMatch) return null;
 
-  const visibleIncidents = derived.groupedRelated.Incident.slice(0, 4);
-  const expandedIncidents = derived.groupedRelated.Incident.slice(4);
+  const visibleIncidents = derived.groupedRelated.Incident.slice(
+    0,
+    VISIBLE_INCIDENT_LIMIT,
+  );
+  const expandedIncidents = derived.groupedRelated.Incident.slice(
+    VISIBLE_INCIDENT_LIMIT,
+  );
   const showsRelatedPagesToggle =
     !hideRelatedButtonWhenEmpty || derived.hiddenRelatedPagesCount > 0;
   const resolvedSuppressPageNameLabel =
@@ -239,8 +241,6 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     >
       <MatchPopupHeader
         logoUrl={logoUrl}
-        logoError={logoError}
-        onLogoError={() => setLogoError(true)}
         domainLabel={domainLabel}
         onOpenSettings={onOpenSettings}
         settingsIconUrl={settingsIconUrl}
