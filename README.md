@@ -78,5 +78,5 @@ npm run match:preview -- --examples
 Example with limits:
 
 ```shell
-npm run match:preview -- "https://github.com/FULU-Foundation/CRW-Extension" --limit=10 --relations-limit=25
+npm run match:preview -- "https://www.apple.com/airpods-max/" --limit=10 --relations-limit=25
 ```
