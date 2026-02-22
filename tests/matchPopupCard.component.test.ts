@@ -71,3 +71,23 @@ test("MatchPopupCard incident list shows first status token and sorts active inc
   assert.ok(html.includes(">Active<"));
   assert.equal(html.includes("Investigating"), false);
 });
+
+test("MatchPopupCard renders page suppression action when handler is provided", () => {
+  const html = renderToStaticMarkup(
+    React.createElement(MatchPopupCard, {
+      matches: [
+        entry({
+          _type: "ProductLine",
+          PageID: "pl-airpods",
+          PageName: "AirPods",
+        }),
+      ],
+      logoUrl: "/logo.png",
+      externalIconUrl: "/open-in-new.svg",
+      onSuppressSite: noop,
+      onSuppressPageName: noop,
+    }),
+  );
+
+  assert.ok(html.includes("Hide for this product"));
+});

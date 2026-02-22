@@ -14,18 +14,22 @@ const PAGE_CSS = {
 export type OptionsViewProps = {
   warningsEnabled: boolean;
   suppressedDomains: string[];
+  suppressedPageNames: string[];
   loading: boolean;
   onToggleWarnings: (enabled: boolean) => void;
   onRemoveSuppressedDomain: (domain: string) => void;
+  onRemoveSuppressedPageName: (pageName: string) => void;
 };
 
 export const OptionsView = (props: OptionsViewProps) => {
   const {
     warningsEnabled,
     suppressedDomains,
+    suppressedPageNames,
     loading,
     onToggleWarnings,
     onRemoveSuppressedDomain,
+    onRemoveSuppressedPageName,
   } = props;
 
   return (
@@ -151,6 +155,103 @@ export const OptionsView = (props: OptionsViewProps) => {
               ? "Enabled: matching popups can show automatically."
               : "Disabled: popups will not auto-show on page load."}
           </p>
+        </section>
+
+        <section
+          style={{
+            border: `1px solid ${PAGE_CSS.border}`,
+            borderRadius: "12px",
+            padding: "14px",
+            background: PAGE_CSS.subtleBg,
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "16px",
+              lineHeight: 1.2,
+              fontWeight: 700,
+              color: PAGE_CSS.text,
+            }}
+          >
+            Hidden Products and Companies
+          </h2>
+          <p
+            style={{
+              margin: "6px 0 10px 0",
+              fontSize: "13px",
+              color: PAGE_CSS.muted,
+            }}
+          >
+            Remove an item from this list to show matches for it again.
+          </p>
+
+          {suppressedPageNames.length === 0 && (
+            <div
+              style={{
+                border: `1px solid ${PAGE_CSS.border}`,
+                borderRadius: "10px",
+                padding: "10px 12px",
+                fontSize: "13px",
+                color: PAGE_CSS.muted,
+              }}
+            >
+              No hidden products or companies.
+            </div>
+          )}
+
+          {suppressedPageNames.length > 0 && (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            >
+              {suppressedPageNames.map((pageName) => (
+                <div
+                  key={pageName}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "8px",
+                    border: `1px solid ${PAGE_CSS.border}`,
+                    borderRadius: "10px",
+                    padding: "8px 10px",
+                    fontSize: "13px",
+                    color: PAGE_CSS.text,
+                  }}
+                >
+                  <span
+                    style={{
+                      minWidth: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {pageName}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onRemoveSuppressedPageName(pageName);
+                    }}
+                    style={{
+                      border: `1px solid ${PAGE_CSS.buttonBorder}`,
+                      background: PAGE_CSS.buttonBg,
+                      color: PAGE_CSS.buttonText,
+                      borderRadius: "8px",
+                      padding: "4px 10px",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         <section

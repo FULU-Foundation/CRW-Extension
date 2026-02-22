@@ -46,6 +46,33 @@ const isCurrentSiteSuppressed = async (): Promise<boolean> => {
   return current.length > 0 && domains.includes(current);
 };
 
+const normalizePageName = (pageName: string): string => {
+  return pageName.trim().toLowerCase();
+};
+
+const getSuppressedPageNames = async (): Promise<string[]> => {
+  const stored = await browser.storage.local.get(
+    Constants.STORAGE.SUPPRESSED_PAGE_NAMES,
+  );
+  const value = stored[Constants.STORAGE.SUPPRESSED_PAGE_NAMES];
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((entry): entry is string => typeof entry === "string")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+};
+
+const suppressPageName = async (pageName: string): Promise<void> => {
+  const trimmed = pageName.trim();
+  const normalized = normalizePageName(pageName);
+  if (!normalized) return;
+  const names = await getSuppressedPageNames();
+  if (names.some((name) => normalizePageName(name) === normalized)) return;
+  await browser.storage.local.set({
+    [Constants.STORAGE.SUPPRESSED_PAGE_NAMES]: [...names, trimmed],
+  });
+};
+
 const isWarningsEnabled = async (): Promise<boolean> => {
   const stored = await browser.storage.local.get(
     Constants.STORAGE.WARNINGS_ENABLED,
@@ -116,7 +143,39 @@ const renderInlinePopup = async (
   matches: CargoEntry[],
   ignorePreferences = false,
 ) => {
-  if (matches.length === 0 && !ignorePreferences) {
+  const suppressedPageNames = await getSuppressedPageNames();
+  const suppressedPageNameSet = new Set(
+    suppressedPageNames.map((name) => normalizePageName(name)),
+  );
+  const filteredMatches =
+    suppressedPageNameSet.size === 0
+      ? matches
+      : matches.filter((match) => {
+          const normalizedPageName = normalizePageName(
+            String(match.PageName || ""),
+          );
+          if (suppressedPageNameSet.has(normalizedPageName)) return false;
+
+          if (
+            match._type === "Product" ||
+            match._type === "ProductLine" ||
+            match._type === "Incident"
+          ) {
+            const normalizedCompany = normalizePageName(
+              String(match.Company || ""),
+            );
+            if (
+              normalizedCompany &&
+              suppressedPageNameSet.has(normalizedCompany)
+            ) {
+              return false;
+            }
+          }
+
+          return true;
+        });
+
+  if (filteredMatches.length === 0 && !ignorePreferences) {
     removeInlinePopup();
     return;
   }
@@ -136,7 +195,7 @@ const renderInlinePopup = async (
   const currentlySuppressed = await isCurrentSiteSuppressed();
   forcePopupVisible = ignorePreferences;
   const root = ensurePopupRoot();
-  if (matches.length === 0) {
+  if (filteredMatches.length === 0) {
     root.render(
       <InlineEmptyState
         logoUrl={browser.runtime.getURL("crw_logo.png")}
@@ -150,7 +209,7 @@ const renderInlinePopup = async (
 
   root.render(
     <InlinePopup
-      matches={matches}
+      matches={filteredMatches}
       logoUrl={browser.runtime.getURL("crw_logo.png")}
       externalIconUrl={browser.runtime.getURL("open-in-new.svg")}
       settingsIconUrl={browser.runtime.getURL("settings.svg")}
@@ -160,7 +219,7 @@ const renderInlinePopup = async (
         void (async () => {
           if (ignorePreferences && !currentlyWarningsEnabled) {
             await setWarningsEnabled(true);
-            void renderInlinePopup(matches, true);
+            void renderInlinePopup(filteredMatches, true);
           } else {
             await setWarningsEnabled(false);
             removeInlinePopup();
@@ -175,13 +234,20 @@ const renderInlinePopup = async (
       suppressButtonLabel={
         ignorePreferences && currentlySuppressed
           ? "Always show for this site"
-          : "Don't show for this site"
+          : "Hide for this site"
       }
+      onSuppressPageName={() => {
+        void (async () => {
+          const topPageName = String(filteredMatches[0]?.PageName || "");
+          await suppressPageName(topPageName);
+          void renderInlinePopup(matches, ignorePreferences);
+        })();
+      }}
       onSuppressSite={() => {
         void (async () => {
           if (ignorePreferences && currentlySuppressed) {
             await unsuppressCurrentSite();
-            void renderInlinePopup(matches, true);
+            void renderInlinePopup(filteredMatches, true);
           } else {
             await suppressCurrentSite();
             removeInlinePopup();
@@ -266,6 +332,9 @@ browser.storage.onChanged.addListener((changes, areaName) => {
       (await isCurrentSiteSuppressed())
     ) {
       removeInlinePopup();
+    }
+    if (changes[Constants.STORAGE.SUPPRESSED_PAGE_NAMES]) {
+      void runContentScript();
     }
   })();
 });
