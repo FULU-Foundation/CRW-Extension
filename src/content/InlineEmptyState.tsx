@@ -47,7 +47,7 @@ export const InlineEmptyState = (props: InlineEmptyStateProps) => {
               flexShrink: 0,
             }}
           />
-          <div style={{ fontSize: "14px", fontWeight: 700, lineHeight: 1.2 }}>
+          <div style={{ fontSize: "14px", fontWeight: 700, lineHeight: 2 }}>
             Consumer Rights Wiki
           </div>
         </div>
@@ -120,7 +120,7 @@ export const InlineEmptyState = (props: InlineEmptyStateProps) => {
           textAlign: "center",
         }}
       >
-        There are no matching arcitcles.
+        There are no matching articles.
       </div>
     </div>
   );
