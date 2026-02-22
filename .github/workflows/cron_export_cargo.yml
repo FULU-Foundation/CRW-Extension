@@ -5,6 +5,9 @@ on:
     - cron: '0 0 * * *'  # Every day at 00:00 UTC
   workflow_dispatch:     # allows manual trigger from GitHub UI
 
+permissions:
+  contents: write
+
 jobs:
   export_cargo:
     runs-on: ubuntu-latest
