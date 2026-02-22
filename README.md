@@ -52,3 +52,31 @@ The compiled extension will be output in the `dist` folder and vite will watch f
 ```shell
 npm run format
 ```
+
+## URL Match Preview Script
+
+Use the URL match preview script to inspect URL seed matches and related-entry expansion against the local `all_cargo_combined.json` dataset.
+
+### Run against a specific URL
+
+```shell
+npm run match:preview -- "https://www.amazon.com/example-product"
+```
+
+### Run built-in examples from Cargo website fields
+
+```shell
+npm run match:preview -- --examples
+```
+
+### Optional flags
+
+- `--limit=<n>`: max seed URL matches to return (default: `20`)
+- `--relations-limit=<n>`: max related expansion rows shown in the table (default: `50`)
+- `--max-examples=<n>`: max example URLs to run when using `--examples` (default: `25`)
+
+Example with limits:
+
+```shell
+npm run match:preview -- "https://www.apple.com/airpods-max/" --limit=10 --relations-limit=25
+```

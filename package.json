@@ -1,6 +1,6 @@
 {
   "name": "crw-ext",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "license": "MIT",
   "author": "jake@fulu.org",
   "private": true,
@@ -10,15 +10,20 @@
     "build-firefox": "cross-env BROWSER=firefox vite build --config vite.background.config.ts && cross-env BROWSER=firefox vite build --config vite.content.config.ts && cross-env BROWSER=firefox vite build --config vite.config.ts",
     "build-chrome": "cross-env BROWSER=chrome vite build --config vite.background.config.ts && cross-env BROWSER=chrome vite build --config vite.content.config.ts && cross-env BROWSER=chrome vite build --config vite.config.ts",
     "build:watch": "chokidar \"src/**/*\" -c \"npm run build\"",
-    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\""
+    "lint": "eslint \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/**/*.ts\"",
+    "lint:fix": "eslint --fix \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\"",
+    "match:preview": "node --experimental-strip-types scripts/url-match-preview.ts",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:coverage": "node --import tsx --test --experimental-test-coverage tests/*.test.ts"
   },
   "dependencies": {
-    "fuse.js": "^7.1.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "webextension-polyfill": "^0.12.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.1.16",
     "@types/node": "^24.9.2",
     "@types/react": "^19.2.2",
@@ -28,13 +33,16 @@
     "chokidar-cli": "^3.0.0",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
+    "eslint": "^10.0.0",
     "globals": "^16.4.0",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.7.1",
     "rollup-plugin-visualizer": "^6.0.5",
     "tailwindcss": "^4.1.16",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.0",
     "vite": "^7.1.12",
     "vite-plugin-static-copy": "^3.1.4"
   },

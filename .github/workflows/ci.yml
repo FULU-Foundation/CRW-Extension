@@ -22,11 +22,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Prettier check
-        run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,html}"
+      - name: Run ESLint
+        run: npm run lint
 
       - name: Run Type check
         run: npx tsc --noEmit
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run Prettier check
+        run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,html}"
 
       - name: Build
         run: npm run build
