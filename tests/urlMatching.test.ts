@@ -207,3 +207,31 @@ test("prefers repo-specific github entry over github root company entry", () => 
   assert.equal(results[0].entry.PageID, "pl-crw-extension");
   assert.equal(results[0].matchType, "exact");
 });
+
+test("does not suppress github root match when domain is not configured", () => {
+  setMatchingConfig({ specificPathDomainMatches: [] });
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-github",
+      PageName: "GitHub",
+      Website: "github.com",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-crw-extension",
+      PageName: "Consumer Rights Wiki Extension",
+      Website: "https://github.com/FULU-Foundation/CRW-Extension/",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://github.com/FULU-Foundation/CRW-Extension/",
+    10,
+  );
+
+  assert.equal(results.length, 2);
+  assert.equal(results[0].entry.PageID, "pl-crw-extension");
+  assert.equal(results[1].entry.PageID, "company-github");
+});
