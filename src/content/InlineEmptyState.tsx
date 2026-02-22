@@ -2,11 +2,13 @@ import React from "react";
 
 type InlineEmptyStateProps = {
   logoUrl: string;
+  settingsIconUrl: string;
+  onOpenSettings: () => void;
   onClose: () => void;
 };
 
 export const InlineEmptyState = (props: InlineEmptyStateProps) => {
-  const { logoUrl, onClose } = props;
+  const { logoUrl, settingsIconUrl, onOpenSettings, onClose } = props;
 
   return (
     <div
@@ -49,26 +51,62 @@ export const InlineEmptyState = (props: InlineEmptyStateProps) => {
             Consumer Rights Wiki
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            border: 0,
-            background: "transparent",
-            color: "rgba(255,255,255,0.82)",
-            width: "32px",
-            height: "32px",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "24px",
-            lineHeight: "24px",
-            cursor: "pointer",
-            padding: 0,
-          }}
+        <div
+          style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
         >
-          ×
-        </button>
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            aria-label="Open extension settings"
+            title="Open settings"
+            style={{
+              border: 0,
+              background: "transparent",
+              color: "rgba(255,255,255,0.82)",
+              borderRadius: 0,
+              width: "32px",
+              height: "32px",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            <img
+              src={settingsIconUrl}
+              alt=""
+              aria-hidden="true"
+              style={{
+                width: "18px",
+                height: "18px",
+                display: "block",
+                filter: "brightness(0) saturate(100%) invert(100%)",
+                opacity: 0.82,
+              }}
+            />
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              border: 0,
+              background: "transparent",
+              color: "rgba(255,255,255,0.82)",
+              width: "32px",
+              height: "32px",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "24px",
+              lineHeight: "24px",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            ×
+          </button>
+        </div>
       </div>
       <div
         style={{

@@ -49,7 +49,8 @@
       "resources": [
         "assets/data.json",
         "crw_logo.png",
-        "open-in-new.svg"
+        "open-in-new.svg",
+        "settings.svg"
       ],
       "matches": [
         "<all_urls>"

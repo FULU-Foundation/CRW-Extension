@@ -7,7 +7,9 @@ type InlinePopupProps = {
   matches: CargoEntry[];
   logoUrl: string;
   externalIconUrl: string;
+  settingsIconUrl: string;
   onClose: () => void;
+  onOpenSettings: () => void;
   onSuppressSite: () => void;
   onDisableWarnings?: () => void;
   suppressButtonLabel?: string;
@@ -19,7 +21,9 @@ export const InlinePopup = (props: InlinePopupProps) => {
     matches,
     logoUrl,
     externalIconUrl,
+    settingsIconUrl,
     onClose,
+    onOpenSettings,
     onSuppressSite,
     onDisableWarnings,
     suppressButtonLabel,
@@ -32,6 +36,8 @@ export const InlinePopup = (props: InlinePopupProps) => {
       logoUrl={logoUrl}
       externalIconUrl={externalIconUrl}
       onClose={onClose}
+      onOpenSettings={onOpenSettings}
+      settingsIconUrl={settingsIconUrl}
       onSuppressSite={onSuppressSite}
       onDisableWarnings={onDisableWarnings}
       suppressButtonLabel={suppressButtonLabel}

@@ -11,10 +11,13 @@ test("InlineEmptyState renders CRW branding and empty-state message", () => {
   const html = renderToStaticMarkup(
     React.createElement(InlineEmptyState, {
       logoUrl: "/logo.png",
+      settingsIconUrl: "/settings.svg",
+      onOpenSettings: noop,
       onClose: noop,
     }),
   );
 
   assert.ok(html.includes("Consumer Rights Wiki"));
+  assert.ok(html.includes("Open extension settings"));
   assert.ok(html.includes("There are no matching arcitcles."));
 });
