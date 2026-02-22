@@ -1,14 +1,11 @@
-import fs from "node:fs";
-import path from "node:path";
 import type { CargoEntry, CargoEntryType } from "../src/shared/types.ts";
+import { DATA_REMOTE_URL } from "../src/shared/constants.ts";
 import {
   expandRelatedEntries,
   matchEntriesByUrl,
   safeParseUrl,
 } from "../src/lib/matching/matching.ts";
 import type { UrlEntryMatch } from "../src/lib/matching/matching.ts";
-
-const DATASET_PATH = path.resolve(process.cwd(), "all_cargo_combined.json");
 const DATASET_SECTIONS: CargoEntryType[] = [
   "Company",
   "Incident",
@@ -78,7 +75,16 @@ const toRelationRows = (expanded: CargoEntry[], seedIds: Set<string>) => {
   }));
 };
 
-const run = () => {
+const fetchDataset = async (): Promise<Record<string, unknown>> => {
+  const response = await fetch(DATA_REMOTE_URL, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch dataset (${response.status})`);
+  }
+
+  return (await response.json()) as Record<string, unknown>;
+};
+
+const run = async () => {
   const [, , urlArg, ...rest] = process.argv;
   const runExamples = !urlArg || urlArg === "--examples";
 
@@ -91,7 +97,7 @@ const run = () => {
   );
   const relationLimit = Number(relationLimitArg?.split("=")[1] || 50);
 
-  const raw = JSON.parse(fs.readFileSync(DATASET_PATH, "utf8"));
+  const raw = await fetchDataset();
   const dataset = flattenDataset(raw);
   const urls = runExamples ? getCargoExampleUrls(dataset, maxExamples) : [urlArg];
 
@@ -127,4 +133,4 @@ const run = () => {
   }
 };
 
-run();
+void run();
