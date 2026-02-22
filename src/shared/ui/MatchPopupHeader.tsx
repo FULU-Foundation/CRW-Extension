@@ -8,8 +8,6 @@ import {
 
 type MatchPopupHeaderProps = {
   logoUrl: string;
-  logoError: boolean;
-  onLogoError: () => void;
   domainLabel?: string;
   onOpenSettings?: () => void;
   settingsIconUrl?: string;
@@ -21,8 +19,6 @@ type MatchPopupHeaderProps = {
 export const MatchPopupHeader = (props: MatchPopupHeaderProps) => {
   const {
     logoUrl,
-    logoError,
-    onLogoError,
     domainLabel,
     onOpenSettings,
     settingsIconUrl,
@@ -42,8 +38,8 @@ export const MatchPopupHeader = (props: MatchPopupHeaderProps) => {
     background: "transparent",
     color: POPUP_CSS.muted,
     margin: 0,
-    width: "22px",
-    height: "22px",
+    width: "24px",
+    height: "24px",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -58,48 +54,25 @@ export const MatchPopupHeader = (props: MatchPopupHeaderProps) => {
   return (
     <div style={headerRowStyle}>
       <div style={POPUP_LAYOUT.headerBrand}>
-        {!logoError && (
-          <img
-            src={logoUrl}
-            alt="CRW"
-            style={{
-              width: "22px",
-              height: "22px",
-              borderRadius: "6px",
-              flexShrink: 0,
-              objectFit: "cover",
-            }}
-            onError={onLogoError}
-          />
-        )}
-        {logoError && (
-          <span
-            style={{
-              width: "22px",
-              height: "22px",
-              borderRadius: "6px",
-              flexShrink: 0,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: POPUP_CSS.panel,
-              color: POPUP_CSS.link,
-              fontSize: "6px",
-              fontWeight: 700,
-              letterSpacing: "0.4px",
-            }}
-          >
-            CRW
-          </span>
-        )}
+        <img
+          src={logoUrl}
+          alt="Consumer Rights Wiki"
+          style={{
+            width: "32px",
+            height: "32px",
+            borderRadius: "6px",
+            flexShrink: 0,
+            objectFit: "cover",
+          }}
+        />
 
         <div style={{ minWidth: 0 }}>
           <div
             style={{
               fontWeight: 700,
               color: POPUP_CSS.text,
-              fontSize: "12px",
-              lineHeight: 1.2,
+              fontSize: "16px",
+              lineHeight: 2.2,
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
