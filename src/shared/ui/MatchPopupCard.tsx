@@ -533,6 +533,24 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     outline: "none",
     cursor: "pointer",
   };
+  const headerIconButtonStyle: React.CSSProperties = {
+    appearance: "none",
+    border: 0,
+    background: "transparent",
+    color: POPUP_CSS.muted,
+    margin: 0,
+    width: "22px",
+    height: "22px",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "4px",
+    cursor: "pointer",
+    padding: 0,
+    outline: "none",
+    boxSizing: "border-box",
+    flexShrink: 0,
+  };
   const resolvedSuppressPageNameLabel =
     suppressPageNameLabel ||
     `Hide for this ${getSuppressScopeLabel(derived.topMatch)}`;
@@ -637,19 +655,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
                 {...ghostButtonHoverHandlers}
                 aria-label="Open extension settings"
                 title="Open settings"
-                style={{
-                  border: 0,
-                  background: "transparent",
-                  color: POPUP_CSS.muted,
-                  borderRadius: "0",
-                  width: "22px",
-                  height: "22px",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  padding: 0,
-                }}
+                style={headerIconButtonStyle}
               >
                 <img
                   src={settingsIconUrl}
@@ -671,19 +677,9 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
                 onClick={onClose}
                 {...ghostButtonHoverHandlers}
                 style={{
-                  border: 0,
-                  background: "transparent",
-                  color: POPUP_CSS.muted,
-                  width: "22px",
-                  height: "22px",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  alignSelf: "center",
+                  ...headerIconButtonStyle,
                   fontSize: "24px",
                   lineHeight: 1,
-                  cursor: "pointer",
-                  padding: 0,
                 }}
               >
                 <span
@@ -691,7 +687,6 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
                   style={{
                     display: "block",
                     lineHeight: 1,
-                    transform: "translateY(-1px)",
                   }}
                 >
                   ×
