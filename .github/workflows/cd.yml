@@ -25,6 +25,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Stamp release version
+        run: npm run update-version
+        env:
+          RELEASE_VERSION: 1.0.${{ github.run_number }}
+          AMO_EXTENSION_ID: ${{ secrets.AMO_EXTENSION_ID }}
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Type check
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        run: npm test
+
       - name: Build
         run: npm run build
 
@@ -68,4 +83,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Continue delivery to webstore(s) here
+      - name: Publish to Chrome Web Store
+        if: ${{ secrets.CHROME_EXTENSION_ID != '' && secrets.CHROME_CLIENT_ID != '' && secrets.CHROME_CLIENT_SECRET != '' && secrets.CHROME_REFRESH_TOKEN != '' }}
+        uses: mnao305/chrome-extension-upload@v5.0.0
+        with:
+          file-path: chrome-extension.zip
+          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+          client-id: ${{ secrets.CHROME_CLIENT_ID }}
+          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          publish: true
+
+      - name: Publish to Firefox Add-ons (AMO)
+        if: ${{ secrets.AMO_API_KEY != '' && secrets.AMO_API_SECRET != '' }}
+        uses: kewisch/action-web-ext@v1
+        with:
+          cmd: sign
+          source: firefox-extension.zip
+          channel: listed
+          apiKey: ${{ secrets.AMO_API_KEY }}
+          apiSecret: ${{ secrets.AMO_API_SECRET }}
+          timeout: 900000
