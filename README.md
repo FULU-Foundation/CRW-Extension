@@ -16,10 +16,6 @@ Contributions are welcome!
 Please read the [CONTRIBUTING.md](CONTRIBUTING.md) guide for details on how to ask questions, report bugs, suggest enhancements, and submit Pull Requests.  
 You can also check the [project board](https://github.com/FULU-Foundation/CRW-Extension/projects) and look for issues labelled **good first issue** to get started.
 
-## Releases
-
-For release publishing steps (GitHub Actions CD workflow, versioning, and required GitHub secrets for Chrome Web Store / Firefox AMO), see [RELEASE.md](RELEASE.md).
-
 # Development
 
 ## Clone and build the extension:
