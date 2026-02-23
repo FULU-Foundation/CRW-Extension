@@ -100,7 +100,7 @@ jobs:
         with:
           cmd: sign
           source: firefox-extension.zip
-          channel: listed
+          channel: unlisted
           apiKey: ${{ secrets.AMO_API_KEY }}
           apiSecret: ${{ secrets.AMO_API_SECRET }}
           timeout: 900000
