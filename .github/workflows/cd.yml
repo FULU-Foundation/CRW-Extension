@@ -11,6 +11,13 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+      CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+      CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+      CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+      AMO_API_KEY: ${{ secrets.AMO_API_KEY }}
+      AMO_API_SECRET: ${{ secrets.AMO_API_SECRET }}
 
     steps:
       - name: Checkout
@@ -84,7 +91,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to Chrome Web Store
-        if: ${{ secrets.CHROME_EXTENSION_ID != '' && secrets.CHROME_CLIENT_ID != '' && secrets.CHROME_CLIENT_SECRET != '' && secrets.CHROME_REFRESH_TOKEN != '' }}
         uses: mnao305/chrome-extension-upload@v5.0.0
         with:
           file-path: chrome-extension.zip
@@ -95,7 +101,6 @@ jobs:
           publish: false
 
       - name: Publish to Firefox Add-ons (AMO)
-        if: ${{ secrets.AMO_API_KEY != '' && secrets.AMO_API_SECRET != '' }}
         uses: kewisch/action-web-ext@v1
         with:
           cmd: sign
