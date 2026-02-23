@@ -109,9 +109,37 @@ const setWarningsEnabled = async (enabled: boolean): Promise<void> => {
 };
 
 const openOptions = () => {
-  void browser.runtime.sendMessage(
-    Messaging.createMessage(MessageType.OPEN_OPTIONS_PAGE, "content"),
-  );
+  void (async () => {
+    try {
+      await browser.runtime.openOptionsPage();
+      return;
+    } catch (directOpenError) {
+      try {
+        await browser.runtime.sendMessage(
+          Messaging.createMessage(MessageType.OPEN_OPTIONS_PAGE, "content"),
+        );
+        return;
+      } catch (messageOpenError) {
+        const error =
+          messageOpenError instanceof Error
+            ? messageOpenError
+            : directOpenError;
+        const message = error instanceof Error ? error.message : String(error);
+
+        if (message.includes("Extension context invalidated")) {
+          window.alert(
+            "The extension was updated or reloaded. Please refresh this page, then try opening settings again.",
+          );
+          return;
+        }
+
+        console.error(
+          `${Constants.LOG_PREFIX} Failed to open options page`,
+          error,
+        );
+      }
+    }
+  })();
 };
 
 const suppressCurrentSite = async (): Promise<void> => {

@@ -9,6 +9,7 @@ import { CargoEntry } from "@/shared/types";
 
 let datasetCache: CargoEntry[] = [];
 let datasetLoadPromise: Promise<CargoEntry[]> | null = null;
+let nextDatasetRefreshCheckAt = 0;
 
 const getBadgeText = (count: number): string => {
   if (count <= 0) return "";
@@ -36,13 +37,47 @@ const sendMatchUpdateToTab = async (
   }
 };
 
-const loadDatasetCache = async (): Promise<CargoEntry[]> => {
-  if (datasetCache.length > 0) return datasetCache;
+const readDatasetRefreshInfo = async (): Promise<{
+  fetchedAt: number | null;
+  lastCheckedAt: number | null;
+}> => {
+  const stored = await browser.storage.local.get(
+    Constants.STORAGE.DATASET_CACHE,
+  );
+  const cache = stored[Constants.STORAGE.DATASET_CACHE] as
+    | { fetchedAt?: unknown; lastCheckedAt?: unknown }
+    | undefined;
+
+  return {
+    fetchedAt: typeof cache?.fetchedAt === "number" ? cache.fetchedAt : null,
+    lastCheckedAt:
+      typeof cache?.lastCheckedAt === "number" ? cache.lastCheckedAt : null,
+  };
+};
+
+const loadDatasetCache = async (options?: {
+  forceRefresh?: boolean;
+}): Promise<CargoEntry[]> => {
+  const forceRefresh = options?.forceRefresh === true;
+  const now = Date.now();
+
+  if (
+    !forceRefresh &&
+    datasetCache.length > 0 &&
+    now < nextDatasetRefreshCheckAt
+  ) {
+    return datasetCache;
+  }
+
   if (datasetLoadPromise) return datasetLoadPromise;
 
   datasetLoadPromise = (async () => {
-    const loaded = await Dataset.load();
+    const loaded = forceRefresh
+      ? await Dataset.refreshNow()
+      : await Dataset.load();
     datasetCache = loaded.all;
+    const refreshIntervalMs = await Dataset.readConfiguredRefreshIntervalMs();
+    nextDatasetRefreshCheckAt = Date.now() + refreshIntervalMs;
     return datasetCache;
   })();
 
@@ -51,6 +86,7 @@ const loadDatasetCache = async (): Promise<CargoEntry[]> => {
   } catch (error) {
     console.log(`${Constants.LOG_PREFIX} Dataset load failed`, error);
     datasetCache = [];
+    nextDatasetRefreshCheckAt = 0;
     return datasetCache;
   } finally {
     datasetLoadPromise = null;
@@ -67,6 +103,14 @@ browser.runtime.onInstalled.addListener(async () => {
 
 browser.runtime.onStartup.addListener(async () => {
   await loadDatasetCache();
+});
+
+browser.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local") return;
+
+  if (changes[Constants.STORAGE.DATA_REFRESH_INTERVAL_MS]) {
+    nextDatasetRefreshCheckAt = 0;
+  }
 });
 
 browser.tabs.onActivated.addListener(async ({ tabId }) => {
@@ -102,7 +146,11 @@ browser.action.onClicked.addListener(async (tab) => {
 
 Messaging.createBackgroundMessageHandler({
   onOpenOptionsPage() {
-    void browser.runtime.openOptionsPage();
+    return browser.runtime.openOptionsPage();
+  },
+  async onRefreshDatasetNow() {
+    await loadDatasetCache({ forceRefresh: true });
+    return await readDatasetRefreshInfo();
   },
   async onPageContextUpdated(payload, sender) {
     const tabId = sender.tab?.id;
