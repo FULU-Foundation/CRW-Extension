@@ -102,6 +102,8 @@ jobs:
 
       - name: Publish to Firefox Add-ons (AMO)
         uses: kewisch/action-web-ext@v1
+        env:
+          WEB_EXT_APPROVAL_TIMEOUT: 0
         with:
           cmd: sign
           source: firefox-extension.zip
