@@ -137,6 +137,19 @@ test("classifies cross-TLD alias match when enableMatchAcrossTLDs is enabled", (
   assert.equal(result.crossTldAlias, true);
 });
 
+test("classifies dyson.co.uk and dyson.com as cross-TLD aliases when enabled", () => {
+  setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
+  const visited = safeParseUrl("https://www.dyson.co.uk/");
+  const candidate = safeParseUrl("https://www.dyson.com/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "subdomain");
+  assert.equal(result.crossTldAlias, true);
+});
+
 test("does not cross-match unrelated brand TLD hosts sharing generic label", () => {
   setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
   const visited = safeParseUrl("https://global.honda/");
@@ -159,10 +172,32 @@ test("does not bridge brand/generic TLD pairs without compound suffix evidence",
   assert.equal(result, null);
 });
 
+test("does not cross-match custom TLD host to brand .com without compound suffix evidence", () => {
+  setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
+  const visited = safeParseUrl("https://global.canon/");
+  const candidate = safeParseUrl("https://www.canon.com/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
 test("does not cross-match generic .live TLD sites to yubo.live", () => {
   setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
   const visited = safeParseUrl("https://live.com/");
   const candidate = safeParseUrl("https://yubo.live/en");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
+test("does not cross-match yubo.live to live.com in reverse direction", () => {
+  setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
+  const visited = safeParseUrl("https://yubo.live/en");
+  const candidate = safeParseUrl("https://live.com/");
   assert.ok(visited);
   assert.ok(candidate);
 
