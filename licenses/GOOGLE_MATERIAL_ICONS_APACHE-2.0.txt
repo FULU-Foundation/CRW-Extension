@@ -3,6 +3,7 @@ Used in this project for:
 - public/settings.svg
 - public/close.svg
 - public/open-in-new.svg
+- public/refresh.svg
 
 Source / licensing references:
 - https://developers.google.com/fonts/docs/material_icons

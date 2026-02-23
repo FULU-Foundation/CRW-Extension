@@ -11,6 +11,11 @@ type DatasetCacheRecord = {
   lastCheckedAt: number;
 };
 
+type DatasetRefreshErrorRecord = {
+  message: string;
+  failedAt: number;
+};
+
 const DATASET_CACHE_VERSION = 1;
 const REMOTE_FETCH_MAX_ATTEMPTS = 3;
 const REMOTE_FETCH_BASE_DELAY_MS = 500;
@@ -20,8 +25,8 @@ export const load = async (): Promise<LoadResult> => {
 
   const cached = await readCache();
   const now = Date.now();
-  const isFresh =
-    cached && now - cached.lastCheckedAt < Constants.DATA_CACHE_TTL_MS;
+  const refreshIntervalMs = await readConfiguredRefreshIntervalMs();
+  const isFresh = cached && now - cached.lastCheckedAt < refreshIntervalMs;
 
   if (isFresh) {
     return buildLoadResult(cached.raw, "cache");
@@ -31,6 +36,7 @@ export const load = async (): Promise<LoadResult> => {
     const refreshed = await refreshCacheWithRetry(cached, now);
     return buildLoadResult(refreshed.raw, cached ? "remote+cache" : "remote");
   } catch (error) {
+    await writeRefreshError(error);
     if (cached) {
       console.warn(
         `${Constants.LOG_PREFIX} Remote dataset refresh failed, using stale cache`,
@@ -44,6 +50,21 @@ export const load = async (): Promise<LoadResult> => {
       error,
     );
     return buildLoadResult(createEmptyRawDataset(), "empty-fallback");
+  }
+};
+
+export const refreshNow = async (): Promise<LoadResult> => {
+  console.log(`${Constants.LOG_PREFIX} Forcing dataset refresh...`);
+
+  try {
+    const cached = await readCache();
+    const refreshed = await refreshCacheWithRetry(cached, Date.now(), {
+      forceNetworkFetch: true,
+    });
+    return buildLoadResult(refreshed.raw, cached ? "remote+cache" : "remote");
+  } catch (error) {
+    await writeRefreshError(error);
+    throw error;
   }
 };
 
@@ -97,6 +118,44 @@ const readCache = async (): Promise<DatasetCacheRecord | null> => {
   return value;
 };
 
+export const readConfiguredRefreshIntervalMs = async (): Promise<number> => {
+  const stored = await browser.storage.local.get(
+    Constants.STORAGE.DATA_REFRESH_INTERVAL_MS,
+  );
+  const value = stored[Constants.STORAGE.DATA_REFRESH_INTERVAL_MS];
+
+  if (
+    typeof value === "number" &&
+    Constants.DATA_REFRESH_INTERVAL_OPTIONS_MS.includes(
+      value as (typeof Constants.DATA_REFRESH_INTERVAL_OPTIONS_MS)[number],
+    )
+  ) {
+    return value;
+  }
+
+  return Constants.DEFAULT_DATA_REFRESH_INTERVAL_MS;
+};
+
+const writeRefreshError = async (error: unknown): Promise<void> => {
+  const message =
+    error instanceof Error && error.message
+      ? error.message
+      : "Unknown dataset fetch error";
+
+  const record: DatasetRefreshErrorRecord = {
+    message,
+    failedAt: Date.now(),
+  };
+
+  await browser.storage.local.set({
+    [Constants.STORAGE.DATA_REFRESH_ERROR]: record,
+  });
+};
+
+const clearRefreshError = async (): Promise<void> => {
+  await browser.storage.local.remove(Constants.STORAGE.DATA_REFRESH_ERROR);
+};
+
 const isValidCacheRecord = (value: any): value is DatasetCacheRecord => {
   return Boolean(
     value &&
@@ -112,9 +171,14 @@ const isValidCacheRecord = (value: any): value is DatasetCacheRecord => {
 const refreshCache = async (
   cached: DatasetCacheRecord | null,
   now: number,
+  options?: {
+    forceNetworkFetch?: boolean;
+  },
 ): Promise<DatasetCacheRecord> => {
   const headers = new Headers();
-  if (cached?.etag) headers.set("If-None-Match", cached.etag);
+  if (!options?.forceNetworkFetch && cached?.etag) {
+    headers.set("If-None-Match", cached.etag);
+  }
 
   const response = await fetch(Constants.DATA_REMOTE_URL, {
     headers,
@@ -127,6 +191,7 @@ const refreshCache = async (
       lastCheckedAt: now,
     };
     await writeCache(updated);
+    await clearRefreshError();
     return updated;
   }
 
@@ -146,6 +211,7 @@ const refreshCache = async (
   };
 
   await writeCache(record);
+  await clearRefreshError();
   return record;
 };
 
@@ -158,12 +224,15 @@ const writeCache = async (record: DatasetCacheRecord): Promise<void> => {
 const refreshCacheWithRetry = async (
   cached: DatasetCacheRecord | null,
   now: number,
+  options?: {
+    forceNetworkFetch?: boolean;
+  },
 ): Promise<DatasetCacheRecord> => {
   let lastError: unknown = null;
 
   for (let attempt = 1; attempt <= REMOTE_FETCH_MAX_ATTEMPTS; attempt += 1) {
     try {
-      return await refreshCache(cached, now);
+      return await refreshCache(cached, now, options);
     } catch (error) {
       lastError = error;
 

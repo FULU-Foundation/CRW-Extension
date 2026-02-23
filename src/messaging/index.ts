@@ -21,8 +21,13 @@ export function createBackgroundMessageHandler(handlers: {
   onPageContextUpdated?: (
     payload: PageContext,
     sender: browser.Runtime.MessageSender,
-  ) => void;
-  onOpenOptionsPage?: (sender: browser.Runtime.MessageSender) => void;
+  ) => void | Promise<void>;
+  onOpenOptionsPage?: (
+    sender: browser.Runtime.MessageSender,
+  ) => void | Promise<void>;
+  onRefreshDatasetNow?: (
+    sender: browser.Runtime.MessageSender,
+  ) => unknown | Promise<unknown>;
 }) {
   browser.runtime.onMessage.addListener(
     (msg: CRWMessage | any, sender: browser.Runtime.MessageSender) => {
@@ -33,15 +38,16 @@ export function createBackgroundMessageHandler(handlers: {
           handlers.onPageContextUpdated?.(msg.payload, sender);
           break;
         case MessageType.OPEN_OPTIONS_PAGE:
-          handlers.onOpenOptionsPage?.(sender);
-          break;
+          return handlers.onOpenOptionsPage?.(sender);
+        case MessageType.REFRESH_DATASET_NOW:
+          return handlers.onRefreshDatasetNow?.(sender);
 
         default:
           console.warn(
             `${Constants.LOG_PREFIX} Unknown message type:`,
             msg.type,
           );
-          break;
+          return;
       }
     },
   );

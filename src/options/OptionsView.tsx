@@ -11,14 +11,40 @@ const PAGE_CSS = {
   buttonBorder: "#FFFFFF",
 };
 
+const REFRESH_INTERVAL_OPTIONS = [
+  { value: 60 * 60 * 1000, label: "1 hour" },
+  { value: 12 * 60 * 60 * 1000, label: "12 hours" },
+  { value: 24 * 60 * 60 * 1000, label: "24 hours" },
+  { value: 7 * 24 * 60 * 60 * 1000, label: "1 week" },
+] as const;
+
 export type OptionsViewProps = {
   warningsEnabled: boolean;
   suppressedDomains: string[];
   suppressedPageNames: string[];
+  refreshIntervalMs: number;
+  lastRefreshedAt: number | null;
+  refreshingNow: boolean;
+  refreshError: string | null;
+  lastRefreshError: string | null;
   loading: boolean;
   onToggleWarnings: (enabled: boolean) => void;
+  onChangeRefreshInterval: (refreshIntervalMs: number) => void;
+  onRefreshNow: () => void;
   onRemoveSuppressedDomain: (domain: string) => void;
   onRemoveSuppressedPageName: (pageName: string) => void;
+};
+
+const formatLastRefreshed = (value: number | null): string => {
+  if (typeof value !== "number") return "Never";
+
+  return new Date(value).toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 };
 
 export const OptionsView = (props: OptionsViewProps) => {
@@ -26,8 +52,15 @@ export const OptionsView = (props: OptionsViewProps) => {
     warningsEnabled,
     suppressedDomains,
     suppressedPageNames,
+    refreshIntervalMs,
+    lastRefreshedAt,
+    refreshingNow,
+    refreshError,
+    lastRefreshError,
     loading,
     onToggleWarnings,
+    onChangeRefreshInterval,
+    onRefreshNow,
     onRemoveSuppressedDomain,
     onRemoveSuppressedPageName,
   } = props;
@@ -41,6 +74,11 @@ export const OptionsView = (props: OptionsViewProps) => {
         fontFamily: "ui-sans-serif,system-ui,sans-serif",
       }}
     >
+      <style>
+        {
+          "@keyframes crwOptionsSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }"
+        }
+      </style>
       <div
         style={{
           maxWidth: "760px",
@@ -349,6 +387,141 @@ export const OptionsView = (props: OptionsViewProps) => {
               ))}
             </div>
           )}
+        </section>
+
+        <section
+          style={{
+            border: `1px solid ${PAGE_CSS.border}`,
+            borderRadius: "12px",
+            padding: "14px",
+            background: PAGE_CSS.subtleBg,
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "16px",
+              lineHeight: 1.2,
+              fontWeight: 700,
+              color: PAGE_CSS.text,
+            }}
+          >
+            Data Refresh
+          </h2>
+          <p
+            style={{
+              margin: "6px 0 10px 0",
+              fontSize: "13px",
+              color: PAGE_CSS.muted,
+            }}
+          >
+            Choose how often the extension checks for updated data.
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+              border: `1px solid ${PAGE_CSS.border}`,
+              borderRadius: "10px",
+              padding: "10px 12px",
+              fontSize: "13px",
+              color: PAGE_CSS.text,
+            }}
+          >
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
+              }}
+            >
+              <span>Refresh interval</span>
+              <select
+                value={String(refreshIntervalMs)}
+                disabled={loading || refreshingNow}
+                onChange={(event) => {
+                  onChangeRefreshInterval(Number(event.target.value));
+                }}
+                style={{
+                  borderRadius: "8px",
+                  border: `1px solid ${PAGE_CSS.buttonBorder}`,
+                  background: "#FFFFFF",
+                  color: PAGE_CSS.buttonText,
+                  padding: "7px 10px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                }}
+              >
+                {REFRESH_INTERVAL_OPTIONS.map((option) => (
+                  <option key={option.value} value={String(option.value)}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div style={{ fontSize: "12px", color: PAGE_CSS.muted }}>
+              Last refreshed: {formatLastRefreshed(lastRefreshedAt)}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                type="button"
+                disabled={loading || refreshingNow}
+                onClick={onRefreshNow}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  border: `1px solid ${PAGE_CSS.buttonBorder}`,
+                  background: PAGE_CSS.buttonBg,
+                  color: PAGE_CSS.buttonText,
+                  borderRadius: "8px",
+                  padding: "6px 10px",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  cursor: loading || refreshingNow ? "default" : "pointer",
+                  opacity: loading ? 0.75 : 1,
+                }}
+              >
+                <img
+                  src="/refresh.svg"
+                  alt=""
+                  aria-hidden="true"
+                  style={{
+                    width: "14px",
+                    height: "14px",
+                    flexShrink: 0,
+                    animation: refreshingNow
+                      ? "crwOptionsSpin 0.9s linear infinite"
+                      : "none",
+                  }}
+                />
+                {refreshingNow ? "Refreshing..." : "Refresh now"}
+              </button>
+
+              {refreshError && (
+                <span style={{ fontSize: "12px", color: "#FFE2E2" }}>
+                  {refreshError}
+                </span>
+              )}
+            </div>
+
+            {lastRefreshError && (
+              <div style={{ fontSize: "12px", color: "#FFE2E2" }}>
+                Last fetch error: {lastRefreshError}
+              </div>
+            )}
+          </div>
         </section>
       </div>
     </div>
