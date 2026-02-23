@@ -71,3 +71,51 @@ test("matches entities from og:title and og:description", () => {
   assert.ok(ids.includes("company-apple"));
   assert.ok(ids.includes("pl-airpods"));
 });
+
+test("matches two-letter company names like HP on ecommerce listings", () => {
+  const results = matchEntriesByPageContext(
+    [
+      ...fixture(),
+      entry({
+        _type: "Company",
+        PageID: "company-hp",
+        PageName: "HP",
+      }),
+    ],
+    {
+      url: "https://www.amazon.com/HP-15-6-inch-Laptop/dp/B000000001",
+      hostname: "www.amazon.com",
+      title: "HP 15.6-inch Laptop : Amazon.com",
+      meta: {
+        description: "HP laptop for home and office",
+      },
+    },
+  );
+
+  const ids = results.map((entryItem) => entryItem.PageID);
+  assert.ok(ids.includes("company-hp"));
+});
+
+test("matches company aliases when legal suffixes are omitted in listing titles", () => {
+  const results = matchEntriesByPageContext(
+    [
+      ...fixture(),
+      entry({
+        _type: "Company",
+        PageID: "company-brother",
+        PageName: "Brother Industries Ltd.",
+      }),
+    ],
+    {
+      url: "https://www.amazon.com/Brother-Laser-Printer/dp/B000000002",
+      hostname: "www.amazon.com",
+      title: "Brother Compact Monochrome Laser Printer : Amazon.com",
+      meta: {
+        description: "Brother printer for small office use",
+      },
+    },
+  );
+
+  const ids = results.map((entryItem) => entryItem.PageID);
+  assert.ok(ids.includes("company-brother"));
+});

@@ -1,4 +1,5 @@
 import type { CargoEntry, PageContext } from "@/shared/types";
+import { matchingConfig } from "./matchingConfig.ts";
 import { expandRelatedEntries } from "./relations.ts";
 import { matchEntriesByUrl } from "./urlMatching.ts";
 import { matchEntriesByPageContext } from "./pageContextMatching.ts";
@@ -45,6 +46,42 @@ const hasWebsite = (entry: CargoEntry): boolean => {
   return typeof entry.Website === "string" && entry.Website.trim().length > 0;
 };
 
+const hostnameMatchesSuffix = (hostname: string, suffix: string): boolean => {
+  const normalizedHost = hostname.toLowerCase();
+  const normalizedSuffix = suffix.toLowerCase();
+  return (
+    normalizedHost === normalizedSuffix ||
+    normalizedHost.endsWith(`.${normalizedSuffix}`)
+  );
+};
+
+const isSuppressedSearchResultsPage = (context: PageContext): boolean => {
+  if (!matchingConfig.enableSearchResultsPageSuppressions) return false;
+
+  const hostname = (context.hostname || "").toLowerCase();
+
+  try {
+    const parsed = new URL(context.url);
+    return matchingConfig.searchResultsPageSuppressions.some((rule) => {
+      const hostHit = rule.hostSuffixes.some((suffix) =>
+        hostnameMatchesSuffix(hostname, suffix),
+      );
+      if (!hostHit) return false;
+      if (!rule.paths.includes(parsed.pathname)) return false;
+
+      const requiredQueryParams = rule.requiredQueryParams || [];
+      if (requiredQueryParams.length === 0) return true;
+
+      return requiredQueryParams.every((param) => {
+        const value = parsed.searchParams.get(param);
+        return value !== null && value.trim().length > 0;
+      });
+    });
+  } catch {
+    return false;
+  }
+};
+
 const prioritizePageContextSeeds = (
   urlMatches: UrlEntryMatch[],
   metaSeeds: CargoEntry[],
@@ -81,6 +118,8 @@ export const matchByPageContext = (
   entries: CargoEntry[],
   context: PageContext,
 ): CargoEntry[] => {
+  if (isSuppressedSearchResultsPage(context)) return [];
+
   const urlMatches = matchEntriesByUrl(entries, context.url, 3);
   const metaSeeds = matchEntriesByPageContext(entries, context, 5);
   const isEcommerceHost = isKnownEcommerceHost(context.hostname || "");

@@ -1,3 +1,15 @@
+export type SearchResultsPageSuppressionRule = {
+  hostSuffixes: string[];
+  paths: string[];
+  requiredQueryParams?: string[];
+};
+
+export type CompanyAliasSuffixStrippingConfig = {
+  enabled: boolean;
+  legalSuffixTokens: string[];
+  genericTrailingTokens: string[];
+};
+
 export type MatchingConfig = {
   enableSubdomainMatching: boolean;
   enableMatchAcrossTLDs: boolean;
@@ -23,6 +35,9 @@ export type MatchingConfig = {
   };
   pageContextMinEntityNameLength: number;
   marketplaceBrandDenylist: string[];
+  companyAliasSuffixStripping: CompanyAliasSuffixStrippingConfig;
+  enableSearchResultsPageSuppressions: boolean;
+  searchResultsPageSuppressions: SearchResultsPageSuppressionRule[];
   ecommerceDomainFamilyMap: Record<string, string>;
   specificPathDomainMatches: string[];
 };
@@ -52,6 +67,64 @@ const DEFAULT_MATCHING_CONFIG: MatchingConfig = {
   },
   pageContextMinEntityNameLength: 3,
   marketplaceBrandDenylist: ["amazon", "ebay"],
+  companyAliasSuffixStripping: {
+    enabled: true,
+    legalSuffixTokens: [
+      "inc",
+      "incorporated",
+      "corp",
+      "corporation",
+      "co",
+      "company",
+      "ltd",
+      "limited",
+      "llc",
+      "plc",
+      "lp",
+      "llp",
+      "gmbh",
+      "ag",
+      "sa",
+      "nv",
+      "bv",
+      "oy",
+      "oyj",
+      "pte",
+      "pty",
+    ],
+    genericTrailingTokens: [
+      "group",
+      "holdings",
+      "industries",
+      "industry",
+      "systems",
+      "technology",
+      "technologies",
+    ],
+  },
+  enableSearchResultsPageSuppressions: true,
+  searchResultsPageSuppressions: [
+    {
+      hostSuffixes: ["google.com"],
+      paths: ["/search"],
+      requiredQueryParams: ["q"],
+    },
+    {
+      hostSuffixes: ["bing.com"],
+      paths: ["/search"],
+      requiredQueryParams: ["q"],
+    },
+    {
+      hostSuffixes: ["search.yahoo.com"],
+      paths: ["/search"],
+      requiredQueryParams: ["p"],
+    },
+    {
+      hostSuffixes: ["duckduckgo.com"],
+      paths: ["/"],
+      requiredQueryParams: ["q"],
+    },
+  ],
   specificPathDomainMatches: ["github.com"],
   ecommerceDomainFamilyMap: {
     "amazon.com": "amazon",

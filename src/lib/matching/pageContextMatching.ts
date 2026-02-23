@@ -1,4 +1,5 @@
 import type { CargoEntry, PageContext } from "@/shared/types";
+import { matchingConfig } from "./matchingConfig.ts";
 
 type TextMatch = {
   entry: CargoEntry;
@@ -54,6 +55,51 @@ const typeBoost = (entry: CargoEntry): number => {
   return 0;
 };
 
+const getCompanyAliasCandidates = (pageName: string): string[] => {
+  if (!matchingConfig.companyAliasSuffixStripping.enabled) return [];
+
+  const tokens = pageName.split(" ").filter(Boolean);
+  if (tokens.length < 2) return [];
+
+  const trimmed = [...tokens];
+  let changed = false;
+  const legalSuffixTokens = new Set(
+    matchingConfig.companyAliasSuffixStripping.legalSuffixTokens,
+  );
+  const genericTrailingTokens = new Set(
+    matchingConfig.companyAliasSuffixStripping.genericTrailingTokens,
+  );
+
+  while (trimmed.length > 1) {
+    const last = trimmed[trimmed.length - 1];
+    if (!legalSuffixTokens.has(last)) break;
+    trimmed.pop();
+    changed = true;
+  }
+
+  while (trimmed.length > 1) {
+    const last = trimmed[trimmed.length - 1];
+    if (!genericTrailingTokens.has(last)) break;
+    trimmed.pop();
+    changed = true;
+  }
+
+  if (!changed) return [];
+
+  const alias = trimmed.join(" ").trim();
+  if (!alias || alias === pageName) return [];
+  return [alias];
+};
+
+const getNameCandidates = (entry: CargoEntry): string[] => {
+  const pageName = normalizeText(entry.PageName || "");
+  if (!pageName) return [];
+
+  if (entry._type !== "Company") return [pageName];
+
+  return [pageName, ...getCompanyAliasCandidates(pageName)];
+};
+
 const rankMatches = (matches: TextMatch[], limit: number): CargoEntry[] => {
   matches.sort((left, right) => {
     if (right.score !== left.score) return right.score - left.score;
@@ -95,15 +141,31 @@ export const matchEntriesByPageContext = (
   for (const entry of entries) {
     if (entry._type === "Incident") continue;
 
-    const pageName = normalizeText(entry.PageName || "");
-    if (pageName.length < 3) continue;
+    const nameCandidates = getNameCandidates(entry);
+    const pageName = nameCandidates[0] || "";
+    if (pageName.length < 2) continue;
     if (MARKETPLACE_BRANDS.has(pageName)) continue;
 
-    const titleHit = phraseScore(title, pageName);
-    const metaTitleHit = phraseScore(metaTitle, pageName);
-    const descriptionHit = phraseScore(description, pageName);
-    const ogTitleHit = phraseScore(ogTitle, pageName);
-    const ogDescriptionHit = phraseScore(ogDescription, pageName);
+    let titleHit = 0;
+    let metaTitleHit = 0;
+    let descriptionHit = 0;
+    let ogTitleHit = 0;
+    let ogDescriptionHit = 0;
+
+    for (const candidate of nameCandidates) {
+      if (candidate.length < 2) continue;
+      titleHit = Math.max(titleHit, phraseScore(title, candidate));
+      metaTitleHit = Math.max(metaTitleHit, phraseScore(metaTitle, candidate));
+      descriptionHit = Math.max(
+        descriptionHit,
+        phraseScore(description, candidate),
+      );
+      ogTitleHit = Math.max(ogTitleHit, phraseScore(ogTitle, candidate));
+      ogDescriptionHit = Math.max(
+        ogDescriptionHit,
+        phraseScore(ogDescription, candidate),
+      );
+    }
     if (
       titleHit === 0 &&
       metaTitleHit === 0 &&

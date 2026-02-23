@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { matchByPageContext, matchByUrl } from "../src/lib/matching/matching.ts";
 import {
   resetMatchingConfig,
+  setMatchingConfig,
 } from "../src/lib/matching/matchingConfig.ts";
 import { entry, relationFixture } from "./helpers.ts";
 import type { CargoEntry } from "../src/shared/types.ts";
@@ -180,4 +181,197 @@ test("matchByPageContext promotes wallet meta match when URL seed is company", (
   });
 
   assert.equal(results[0]?.PageID, "pl-wallet");
+});
+
+test("matchByPageContext does not use search results page text on google search pages", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-google",
+      PageName: "Google",
+      Website: "https://google.com/",
+    }),
+    entry({
+      _type: "Company",
+      PageID: "company-fitbit",
+      PageName: "Fitbit",
+      Website: "https://fitbit.com/",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-fitbit",
+      PageName: "Fitbit",
+      Company: "Google",
+    }),
+  ];
+
+  const results = matchByPageContext(dataset, {
+    url: "https://www.google.com/search?q=fitbit",
+    hostname: "www.google.com",
+    title: "fitbit - Google Search",
+    meta: {
+      description: "Search results for fitbit",
+      "og:title": "fitbit - Google Search",
+      "og:description": "Search the world's information, including webpages about fitbit",
+    },
+  });
+
+  const ids = results.map((item) => item.PageID);
+  assert.equal(ids.includes("company-google"), false);
+  assert.equal(ids.includes("company-fitbit"), false);
+  assert.equal(ids.includes("pl-fitbit"), false);
+  assert.equal(results.length, 0);
+});
+
+test("matchByPageContext suppresses duckduckgo root search pages only when q is present", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-duckduckgo",
+      PageName: "DuckDuckGo",
+      Website: "https://duckduckgo.com/",
+    }),
+  ];
+
+  const searchResults = matchByPageContext(dataset, {
+    url: "https://duckduckgo.com/?q=hello&ia=web",
+    hostname: "duckduckgo.com",
+    title: "hello at DuckDuckGo",
+    meta: {
+      description: "DuckDuckGo search results",
+    },
+  });
+  assert.equal(searchResults.length, 0);
+
+  const homepageResults = matchByPageContext(dataset, {
+    url: "https://duckduckgo.com/",
+    hostname: "duckduckgo.com",
+    title: "DuckDuckGo",
+    meta: {
+      description: "Privacy, simplified.",
+    },
+  });
+
+  const ids = homepageResults.map((item) => item.PageID);
+  assert.ok(ids.includes("company-duckduckgo"));
+});
+
+test("matchByPageContext suppresses bing and yahoo search result pages by default", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-bing",
+      PageName: "Bing",
+      Website: "https://www.bing.com/",
+    }),
+    entry({
+      _type: "Company",
+      PageID: "company-yahoo",
+      PageName: "Yahoo",
+      Website: "https://search.yahoo.com/",
+    }),
+  ];
+
+  const bingResults = matchByPageContext(dataset, {
+    url: "https://www.bing.com/search?q=hello",
+    hostname: "www.bing.com",
+    title: "hello - Search",
+    meta: {
+      description: "Bing search results",
+    },
+  });
+  assert.equal(bingResults.length, 0);
+
+  const yahooResults = matchByPageContext(dataset, {
+    url: "https://search.yahoo.com/search?p=hello",
+    hostname: "search.yahoo.com",
+    title: "hello - Yahoo Search Results",
+    meta: {
+      description: "Yahoo Search results",
+    },
+  });
+  assert.equal(yahooResults.length, 0);
+});
+
+test("matchByPageContext search-results suppression is configurable", () => {
+  setMatchingConfig({
+    searchResultsPageSuppressions: [],
+  });
+
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-google",
+      PageName: "Google",
+      Website: "https://google.com/",
+    }),
+  ];
+
+  const results = matchByPageContext(dataset, {
+    url: "https://www.google.com/search?q=foobar",
+    hostname: "www.google.com",
+    title: "foobar - Google Search",
+    meta: {
+      description: "Search results for foobar",
+    },
+  });
+
+  const ids = results.map((item) => item.PageID);
+  assert.ok(ids.includes("company-google"));
+});
+
+test("matchByPageContext search-results suppression can be disabled via flag", () => {
+  setMatchingConfig({
+    enableSearchResultsPageSuppressions: false,
+  });
+
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-google",
+      PageName: "Google",
+      Website: "https://google.com/",
+    }),
+  ];
+
+  const results = matchByPageContext(dataset, {
+    url: "https://www.google.com/search?q=foobar",
+    hostname: "www.google.com",
+    title: "foobar - Google Search",
+    meta: {
+      description: "Search results for foobar",
+    },
+  });
+
+  const ids = results.map((item) => item.PageID);
+  assert.ok(ids.includes("company-google"));
+});
+
+test("matchByPageContext company alias suffix stripping is configurable", () => {
+  setMatchingConfig({
+    companyAliasSuffixStripping: {
+      enabled: false,
+      legalSuffixTokens: [],
+      genericTrailingTokens: [],
+    },
+  });
+
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-brother",
+      PageName: "Brother Industries Ltd.",
+    }),
+  ];
+
+  const results = matchByPageContext(dataset, {
+    url: "https://www.amazon.com/Brother-Laser-Printer/dp/B000000002",
+    hostname: "www.amazon.com",
+    title: "Brother Compact Monochrome Laser Printer : Amazon.com",
+    meta: {
+      description: "Brother printer for small office use",
+    },
+  });
+
+  assert.equal(results.length, 0);
 });
