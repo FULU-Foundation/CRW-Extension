@@ -121,7 +121,9 @@ const openOptions = () => {
         return;
       } catch (messageOpenError) {
         const error =
-          messageOpenError instanceof Error ? messageOpenError : directOpenError;
+          messageOpenError instanceof Error
+            ? messageOpenError
+            : directOpenError;
         const message = error instanceof Error ? error.message : String(error);
 
         if (message.includes("Extension context invalidated")) {
@@ -131,7 +133,10 @@ const openOptions = () => {
           return;
         }
 
-        console.error(`${Constants.LOG_PREFIX} Failed to open options page`, error);
+        console.error(
+          `${Constants.LOG_PREFIX} Failed to open options page`,
+          error,
+        );
       }
     }
   })();
