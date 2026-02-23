@@ -121,3 +121,25 @@ npm run match:compare-subdomains -- "https://optus.com.au/"
 - `--limit=<n>`: max URL matches to compare per URL (default: `10`)
 - `--max-diffs=<n>`: max changed URL comparisons to print (default: `25`)
 - `--include-unchanged`: print all URL comparisons, not just changed ones
+
+## Compare Cross-TLD Matching (Testing)
+
+Use this testing script to compare Cargo URL matches with `enableMatchAcrossTLDs` disabled vs enabled (for cases like `dyson.com` / `dyson.co.uk` / `dyson.com.au`).
+
+### Run against all Cargo `Website` URLs
+
+```shell
+npm run match:compare-tlds
+```
+
+### Run against a specific URL
+
+```shell
+npm run match:compare-tlds -- "https://www.dyson.com.au/"
+```
+
+### Optional flags
+
+- `--limit=<n>`: max URL matches to compare per URL (default: `10`)
+- `--max-diffs=<n>`: max changed URL comparisons to print (default: `25`)
+- `--include-unchanged`: print all URL comparisons, not just changed ones

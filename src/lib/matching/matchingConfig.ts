@@ -1,5 +1,6 @@
 export type MatchingConfig = {
   enableSubdomainMatching: boolean;
+  enableMatchAcrossTLDs: boolean;
   enableEcommerceFamilyAliasMatching: boolean;
   urlSeedLimit: number;
   metaSeedLimit: number;
@@ -28,6 +29,7 @@ export type MatchingConfig = {
 
 const DEFAULT_MATCHING_CONFIG: MatchingConfig = {
   enableSubdomainMatching: true,
+  enableMatchAcrossTLDs: true,
   enableEcommerceFamilyAliasMatching: true,
   urlSeedLimit: 3,
   metaSeedLimit: 5,

@@ -15,6 +15,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\"",
     "match:preview": "node --experimental-strip-types scripts/url-match-preview.ts",
     "match:compare-subdomains": "node --experimental-strip-types scripts/compare-subdomain-matching.ts",
+    "match:compare-tlds": "node --experimental-strip-types scripts/compare-tld-matching.ts",
     "verify:matching": "node --experimental-strip-types scripts/verify-matching.ts",
     "update-version": "node --experimental-strip-types scripts/update-version.ts",
     "test": "node --import tsx --test tests/*.test.ts",

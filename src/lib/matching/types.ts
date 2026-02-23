@@ -8,6 +8,7 @@ export type UrlMatchDetail = {
   visitedHost: string;
   candidateHost: string;
   ecommerceFamilyAlias?: boolean;
+  crossTldAlias?: boolean;
 };
 
 export type UrlEntryMatch = {

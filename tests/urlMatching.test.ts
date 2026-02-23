@@ -113,6 +113,63 @@ test("does not classify subdomain match when subdomain matching is disabled", ()
   assert.equal(result, null);
 });
 
+test("does not classify cross-TLD alias match when enableMatchAcrossTLDs is disabled", () => {
+  setMatchingConfig({ enableMatchAcrossTLDs: false, enableSubdomainMatching: true });
+  const visited = safeParseUrl("https://www.dyson.co.uk/");
+  const candidate = safeParseUrl("https://www.dyson.com/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
+test("classifies cross-TLD alias match when enableMatchAcrossTLDs is enabled", () => {
+  setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
+  const visited = safeParseUrl("https://www.dyson.com.au/");
+  const candidate = safeParseUrl("https://www.dyson.co.uk/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "subdomain");
+  assert.equal(result.crossTldAlias, true);
+});
+
+test("does not cross-match unrelated brand TLD hosts sharing generic label", () => {
+  setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
+  const visited = safeParseUrl("https://global.honda/");
+  const candidate = safeParseUrl("https://global.canon/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
+test("does not bridge brand/generic TLD pairs without compound suffix evidence", () => {
+  setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
+  const visited = safeParseUrl("https://global.brother/");
+  const candidate = safeParseUrl("https://www.brother.com/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
+test("does not cross-match generic .live TLD sites to yubo.live", () => {
+  setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
+  const visited = safeParseUrl("https://live.com/");
+  const candidate = safeParseUrl("https://yubo.live/en");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
 test("does not classify unrelated .com.au domains as subdomain matches", () => {
   setMatchingConfig({ enableSubdomainMatching: true });
   const visited = safeParseUrl("https://optus.com.au/");

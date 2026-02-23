@@ -1,5 +1,5 @@
 import type { CargoEntry } from "@/shared/types";
-import { getDomain } from "tldts";
+import { getDomain, parse } from "tldts";
 import type { UrlEntryMatch, UrlMatchDetail, UrlMatchType } from "./types";
 import { getEcommerceFamily } from "./ecommerce.ts";
 import { matchingConfig } from "./matchingConfig.ts";
@@ -42,6 +42,13 @@ export const getDomainRoot = (hostname: string): string => {
   const parts = normalized.split(".").filter(Boolean);
   if (parts.length <= 2) return parts.join(".");
   return parts.slice(-2).join(".");
+};
+
+const getCrossTldAliasKey = (hostname: string): string | null => {
+  const normalized = hostname.toLowerCase().replace(/^www\./, "");
+  const parsed = parse(normalized, { allowPrivateDomains: true });
+  if (!parsed.domainWithoutSuffix || !parsed.publicSuffix) return null;
+  return `${parsed.domainWithoutSuffix}|${parsed.publicSuffix}`;
 };
 
 const normalizeMatchHostname = (hostname: string): string => {
@@ -106,6 +113,35 @@ export const classifyUrlMatch = (
     }
   }
 
+  if (matchingConfig.enableMatchAcrossTLDs) {
+    const visitedAliasKey = getCrossTldAliasKey(visitedHost);
+    const candidateAliasKey = getCrossTldAliasKey(candidateHost);
+    const visitedRoot = getDomainRoot(visitedHost);
+    const candidateRoot = getDomainRoot(candidateHost);
+    const [visitedLabel, visitedSuffix] = visitedAliasKey?.split("|") ?? [];
+    const [candidateLabel, candidateSuffix] =
+      candidateAliasKey?.split("|") ?? [];
+    const hasCompoundSuffix =
+      Boolean(visitedSuffix?.includes(".")) ||
+      Boolean(candidateSuffix?.includes("."));
+
+    if (
+      visitedLabel &&
+      candidateLabel &&
+      visitedLabel === candidateLabel &&
+      hasCompoundSuffix &&
+      visitedRoot !== candidateRoot
+    ) {
+      return {
+        matchType: "subdomain",
+        matchedPath: null,
+        visitedHost,
+        candidateHost,
+        crossTldAlias: true,
+      };
+    }
+  }
+
   return null;
 };
 
@@ -129,6 +165,9 @@ const getMatchReasons = (detail: UrlMatchDetail): string[] => {
   if (detail.matchType === "partial") return ["host_equal", "path_prefix"];
   if (detail.ecommerceFamilyAlias) {
     return ["ecommerce_family_alias", "subdomain_match"];
+  }
+  if (detail.crossTldAlias) {
+    return ["cross_tld_alias", "subdomain_match"];
   }
   return ["root_domain_equal", "subdomain_match"];
 };
