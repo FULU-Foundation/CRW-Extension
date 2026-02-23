@@ -27,6 +27,7 @@ const ASSET_URLS = {
 };
 
 let popupHost: HTMLDivElement | null = null;
+let popupShadowMount: HTMLDivElement | null = null;
 let popupRoot: Root | null = null;
 let forcePopupVisible = false;
 
@@ -134,15 +135,37 @@ const unsuppressCurrentSite = async (): Promise<void> => {
 };
 
 const ensurePopupRoot = (): Root => {
-  if (popupRoot && popupHost?.isConnected) return popupRoot;
+  if (popupRoot && popupHost?.isConnected && popupShadowMount?.isConnected) {
+    return popupRoot;
+  }
 
   const existing = document.getElementById(POPUP_ID);
   if (existing) existing.remove();
 
   popupHost = document.createElement("div");
   popupHost.id = POPUP_ID;
+  popupHost.style.all = "initial";
+  popupHost.style.position = "static";
+  popupHost.style.display = "block";
+
+  const shadowRoot = popupHost.attachShadow({ mode: "open" });
+  const resetStyle = document.createElement("style");
+  resetStyle.textContent = `
+    :host {
+      all: initial;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+  `;
+  shadowRoot.appendChild(resetStyle);
+
+  popupShadowMount = document.createElement("div");
+  popupShadowMount.style.all = "initial";
+  shadowRoot.appendChild(popupShadowMount);
+
   document.documentElement.appendChild(popupHost);
-  popupRoot = createRoot(popupHost);
+  popupRoot = createRoot(popupShadowMount);
   return popupRoot;
 };
 
@@ -152,6 +175,7 @@ const removeInlinePopup = () => {
     popupRoot.unmount();
   }
   popupRoot = null;
+  popupShadowMount = null;
   if (popupHost?.isConnected) {
     popupHost.remove();
   }

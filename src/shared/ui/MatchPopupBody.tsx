@@ -43,12 +43,14 @@ export const MatchPopupBody = (props: MatchPopupBodyProps) => {
     relatedProductLines.length > 0;
   const hasBodySections =
     visibleIncidents.length > 0 || showsRelatedPagesToggle;
-  const shouldGrowBody =
+  const shouldUseScrollableBody =
     hasBodySections || (showRelatedPages && hasExpandableRelatedGroups);
   const bodyPanelStyle: React.CSSProperties = {
     ...POPUP_LAYOUT.bodyPanel,
-    overflowY: shouldGrowBody ? "auto" : "visible",
-    flex: shouldGrowBody ? 1 : "0 0 auto",
+    overflowY: shouldUseScrollableBody ? "auto" : "visible",
+    // Allow the panel to shrink under the popup max-height without forcing it
+    // to expand and fill unused space.
+    flex: shouldUseScrollableBody ? "0 1 auto" : "0 0 auto",
   };
 
   return (
@@ -78,12 +80,21 @@ export const MatchPopupBody = (props: MatchPopupBodyProps) => {
             onClick={onToggleRelatedPages}
             {...ghostButtonHoverHandlers}
             style={{
-              marginTop: "0",
+              appearance: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              alignSelf: "flex-start",
+              boxSizing: "border-box",
+              margin: 0,
               border: `1px solid ${POPUP_CSS.divider}`,
               background: "transparent",
               color: POPUP_CSS.text,
               borderRadius: "8px",
               padding: "5px 9px",
+              minHeight: "28px",
+              lineHeight: 1.2,
+              whiteSpace: "nowrap",
               fontSize: "12px",
               cursor: hiddenRelatedPagesCount === 0 ? "not-allowed" : "pointer",
               opacity: hiddenRelatedPagesCount === 0 ? 0.6 : 1,
