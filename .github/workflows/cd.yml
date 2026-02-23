@@ -97,6 +97,8 @@ jobs:
       - name: Publish to Firefox Add-ons (AMO)
         if: ${{ secrets.AMO_API_KEY != '' && secrets.AMO_API_SECRET != '' }}
         uses: kewisch/action-web-ext@v1
+        env:
+          WEB_EXT_APPROVAL_TIMEOUT: 0
         with:
           cmd: sign
           source: firefox-extension.zip
