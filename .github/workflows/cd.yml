@@ -92,7 +92,7 @@ jobs:
           client-id: ${{ secrets.CHROME_CLIENT_ID }}
           client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
           refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
-          publish: true
+          publish: false
 
       - name: Publish to Firefox Add-ons (AMO)
         if: ${{ secrets.AMO_API_KEY != '' && secrets.AMO_API_SECRET != '' }}
