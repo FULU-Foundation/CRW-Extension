@@ -5,6 +5,10 @@ on:
     - cron: '0 0 * * *'  # Every day at 00:00 UTC
   workflow_dispatch:     # allows manual trigger from GitHub UI
 
+concurrency:
+  group: export_cargo
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -36,11 +40,13 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global push.autoSetupRemote true
+
           git switch export_cargo 2>/dev/null || git switch -c export_cargo
           git add all_cargo_combined.json
+
           if ! git diff --cached --quiet; then
             git commit -m "Update Cargo export"
-            git push
+            git push --force-with-lease origin HEAD:export_cargo
           else
             echo "No changes to commit"
           fi
