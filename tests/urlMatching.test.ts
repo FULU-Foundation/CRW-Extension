@@ -113,6 +113,29 @@ test("does not classify subdomain match when subdomain matching is disabled", ()
   assert.equal(result, null);
 });
 
+test("does not classify unrelated .com.au domains as subdomain matches", () => {
+  setMatchingConfig({ enableSubdomainMatching: true });
+  const visited = safeParseUrl("https://optus.com.au/");
+  const candidate = safeParseUrl("https://www.qantas.com.au/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
+test("classifies .co.uk subdomains using registrable domain", () => {
+  setMatchingConfig({ enableSubdomainMatching: true });
+  const visited = safeParseUrl("https://support.bbc.co.uk/help");
+  const candidate = safeParseUrl("https://www.bbc.co.uk/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "subdomain");
+});
+
 test("returns null when domains are unrelated", () => {
   const visited = safeParseUrl("https://example.com/path");
   const candidate = safeParseUrl("https://ally.com/invest/");

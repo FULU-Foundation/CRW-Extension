@@ -1,4 +1,5 @@
 import type { CargoEntry } from "@/shared/types";
+import { getDomain } from "tldts";
 import type { UrlEntryMatch, UrlMatchDetail, UrlMatchType } from "./types";
 import { getEcommerceFamily } from "./ecommerce.ts";
 import { matchingConfig } from "./matchingConfig.ts";
@@ -32,7 +33,13 @@ export const normalizePath = (pathname: string): string => {
 };
 
 export const getDomainRoot = (hostname: string): string => {
-  const parts = hostname.toLowerCase().split(".").filter(Boolean);
+  const normalized = hostname.toLowerCase().replace(/^www\./, "");
+  const registrableDomain = getDomain(normalized, {
+    allowPrivateDomains: true,
+  });
+  if (registrableDomain) return registrableDomain;
+
+  const parts = normalized.split(".").filter(Boolean);
   if (parts.length <= 2) return parts.join(".");
   return parts.slice(-2).join(".");
 };

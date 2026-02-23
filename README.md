@@ -99,3 +99,25 @@ The script prints a summary and then lists any Cargo entries with:
 - `Website` URL(s) that do not produce a self-match
 
 It exits with a non-zero status when any failures are found.
+
+## Compare Subdomain Matching (Testing)
+
+Use this testing script to compare Cargo URL matches with `enableSubdomainMatching` disabled vs enabled, and print the differences.
+
+### Run against all Cargo `Website` URLs
+
+```shell
+npm run match:compare-subdomains
+```
+
+### Run against a specific URL
+
+```shell
+npm run match:compare-subdomains -- "https://optus.com.au/"
+```
+
+### Optional flags
+
+- `--limit=<n>`: max URL matches to compare per URL (default: `10`)
+- `--max-diffs=<n>`: max changed URL comparisons to print (default: `25`)
+- `--include-unchanged`: print all URL comparisons, not just changed ones

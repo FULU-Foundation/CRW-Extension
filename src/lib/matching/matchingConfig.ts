@@ -27,7 +27,7 @@ export type MatchingConfig = {
 };
 
 const DEFAULT_MATCHING_CONFIG: MatchingConfig = {
-  enableSubdomainMatching: false,
+  enableSubdomainMatching: true,
   enableEcommerceFamilyAliasMatching: true,
   urlSeedLimit: 3,
   metaSeedLimit: 5,

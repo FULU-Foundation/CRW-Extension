@@ -14,6 +14,7 @@
     "lint:fix": "eslint --fix \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/**/*.ts\"",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\"",
     "match:preview": "node --experimental-strip-types scripts/url-match-preview.ts",
+    "match:compare-subdomains": "node --experimental-strip-types scripts/compare-subdomain-matching.ts",
     "verify:matching": "node --experimental-strip-types scripts/verify-matching.ts",
     "update-version": "node --experimental-strip-types scripts/update-version.ts",
     "test": "node --import tsx --test tests/*.test.ts",
@@ -22,6 +23,7 @@
   "dependencies": {
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "tldts": "^7.0.23",
     "webextension-polyfill": "^0.12.0"
   },
   "devDependencies": {
