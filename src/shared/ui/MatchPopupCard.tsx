@@ -157,6 +157,30 @@ const getSuppressScopeLabel = (entry: CargoEntry): string => {
   return entry._type.toLowerCase();
 };
 
+const getNormalizedPageName = (entry: CargoEntry): string => {
+  return normalizeEntityToken(entry.PageName || "");
+};
+
+const resolveCompanyMatch = (
+  matches: CargoEntry[],
+  topMatch: CargoEntry | undefined,
+): CargoEntry | undefined => {
+  if (!topMatch) return undefined;
+  if (topMatch._type === "Company") return topMatch;
+
+  const companyEntries = matches.filter((item) => item._type === "Company");
+  if (companyEntries.length === 0) return undefined;
+
+  const explicitCompanyRefs = toNormalizedReferenceSet(topMatch.Company);
+  if (explicitCompanyRefs.size > 0) {
+    return companyEntries.find((item) =>
+      explicitCompanyRefs.has(getNormalizedPageName(item)),
+    );
+  }
+
+  return companyEntries[0];
+};
+
 export const MatchPopupCard = (props: MatchPopupCardProps) => {
   const {
     matches,
@@ -191,7 +215,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
       Product: relatedItems.filter((item) => item._type === "Product"),
       ProductLine: relatedItems.filter((item) => item._type === "ProductLine"),
     };
-    const companyMatch = matches.find((item) => item._type === "Company");
+    const companyMatch = resolveCompanyMatch(matches, topMatch);
     const incidentFocus = getIncidentFocus(topMatch, companyMatch);
     groupedRelated.Incident = sortIncidents(
       relatedItems.filter((item) => item._type === "Incident"),

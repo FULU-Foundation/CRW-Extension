@@ -91,3 +91,58 @@ test("MatchPopupCard renders page suppression action when handler is provided", 
 
   assert.ok(html.includes("Hide for this product"));
 });
+
+test("MatchPopupCard prefers product-linked company over marketplace company", () => {
+  const html = renderToStaticMarkup(
+    React.createElement(MatchPopupCard, {
+      matches: [
+        entry({
+          _type: "ProductLine",
+          PageID: "pl-airpods",
+          PageName: "AirPods",
+          Company: "Apple",
+        }),
+        entry({
+          _type: "Company",
+          PageID: "company-amazon",
+          PageName: "Amazon",
+          Description: "Amazon company description",
+        }),
+        entry({
+          _type: "Company",
+          PageID: "company-apple",
+          PageName: "Apple",
+          Description: "Apple company description",
+        }),
+        entry({
+          _type: "Incident",
+          PageID: "incident-amazon",
+          PageName: "Amazon incident",
+          Company: "Amazon",
+          Status: "Active",
+          StartDate: "2026-01-01",
+        }),
+        entry({
+          _type: "Incident",
+          PageID: "incident-apple",
+          PageName: "Apple incident",
+          Company: "Apple",
+          Status: "Active",
+          StartDate: "2026-01-01",
+        }),
+      ],
+      logoUrl: "/logo.png",
+      externalIconUrl: "/open-in-new.svg",
+      onSuppressSite: noop,
+    }),
+  );
+
+  assert.ok(html.includes("Apple company description"));
+  assert.equal(html.includes("Amazon company description"), false);
+
+  const appleIncidentIndex = html.indexOf("Apple incident");
+  const amazonIncidentIndex = html.indexOf("Amazon incident");
+  assert.ok(appleIncidentIndex >= 0);
+  assert.ok(amazonIncidentIndex >= 0);
+  assert.ok(appleIncidentIndex < amazonIncidentIndex);
+});
