@@ -14,6 +14,7 @@
     "lint:fix": "eslint --fix \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/**/*.ts\"",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\"",
     "match:preview": "node --experimental-strip-types scripts/url-match-preview.ts",
+    "verify:matching": "node --experimental-strip-types scripts/verify-matching.ts",
     "update-version": "node --experimental-strip-types scripts/update-version.ts",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:coverage": "node --import tsx --test --experimental-test-coverage tests/*.test.ts"

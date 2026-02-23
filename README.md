@@ -84,3 +84,18 @@ Example with limits:
 ```shell
 npm run match:preview -- "https://www.apple.com/airpods-max/" --limit=10 --relations-limit=25
 ```
+
+## Verify Cargo URL Matching
+
+Use the matching verification script to download the current Cargo dataset and verify that each Cargo entry's `Website` URL(s) can match back to that same entry using the extension's URL matcher.
+
+```shell
+npm run verify:matching
+```
+
+The script prints a summary and then lists any Cargo entries with:
+
+- invalid `Website` URL values
+- `Website` URL(s) that do not produce a self-match
+
+It exits with a non-zero status when any failures are found.

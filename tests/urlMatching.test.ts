@@ -207,6 +207,57 @@ test("matches amazon.com cargo entries while browsing amazon.com.au", () => {
   assert.equal(results[0].matchType, "subdomain");
 });
 
+test("matches entries with comma-separated Website URLs", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "alliance-laundry",
+      PageName: "Alliance Laundry Solutions and Speed Queen",
+      Website: "https://alliancelaundry.com/,https://speedqueencommercial.com",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(dataset, "https://speedqueencommercial.com/", 10);
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].entry.PageID, "alliance-laundry");
+  assert.equal(results[0].matchType, "exact");
+});
+
+test("matches entries with space-separated Website URLs", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "alliance-laundry",
+      PageName: "Alliance Laundry Solutions and Speed Queen",
+      Website: "https://alliancelaundry.com/ https://speedqueencommercial.com",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(dataset, "https://speedqueencommercial.com/", 10);
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].entry.PageID, "alliance-laundry");
+  assert.equal(results[0].matchType, "exact");
+});
+
+test("matches mediawiki external-link website values when label contains canonical URL", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "ProductLine",
+      PageID: "redbox",
+      PageName: "Redbox",
+      Website:
+        "[https://web.archive.org/web/20241001080426/https://www.redbox.com/ https://www.redbox.com/]",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(dataset, "https://www.redbox.com/", 10);
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].entry.PageID, "redbox");
+});
+
 test("prefers repo-specific github entry over github root company entry", () => {
   const dataset: CargoEntry[] = [
     entry({
