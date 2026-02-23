@@ -121,16 +121,24 @@ const addSignalsToKnownSets = (
   knownCompanyNames: Set<string>,
   knownProductNames: Set<string>,
   knownProductLineNames: Set<string>,
+  includeReferences = true,
 ): boolean => {
-  const companyChanged =
-    mergeSet(knownCompanyNames, signals.companyNames) ||
-    mergeSet(knownCompanyNames, signals.companyRefs);
-  const productChanged =
-    mergeSet(knownProductNames, signals.productNames) ||
-    mergeSet(knownProductNames, signals.productRefs);
-  const productLineChanged =
-    mergeSet(knownProductLineNames, signals.productLineNames) ||
-    mergeSet(knownProductLineNames, signals.productLineRefs);
+  let companyChanged = mergeSet(knownCompanyNames, signals.companyNames);
+  let productChanged = mergeSet(knownProductNames, signals.productNames);
+  let productLineChanged = mergeSet(
+    knownProductLineNames,
+    signals.productLineNames,
+  );
+
+  if (includeReferences) {
+    companyChanged =
+      mergeSet(knownCompanyNames, signals.companyRefs) || companyChanged;
+    productChanged =
+      mergeSet(knownProductNames, signals.productRefs) || productChanged;
+    productLineChanged =
+      mergeSet(knownProductLineNames, signals.productLineRefs) ||
+      productLineChanged;
+  }
 
   return companyChanged || productChanged || productLineChanged;
 };
@@ -181,6 +189,7 @@ export const expandRelatedEntries = (
       knownCompanyNames,
       knownProductNames,
       knownProductLineNames,
+      true,
     );
   }
 
@@ -210,6 +219,7 @@ export const expandRelatedEntries = (
         knownCompanyNames,
         knownProductNames,
         knownProductLineNames,
+        false,
       );
       changed = true;
     }
