@@ -44,5 +44,11 @@
       ],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "@crw-extension",
+      "strict_min_version": "147.0"
+    }
+  }
 }
