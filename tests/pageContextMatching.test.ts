@@ -119,3 +119,84 @@ test("matches company aliases when legal suffixes are omitted in listing titles"
   const ids = results.map((entryItem) => entryItem.PageID);
   assert.ok(ids.includes("company-brother"));
 });
+
+test("matches company aliases from comma-separated CompanyAlias field", () => {
+  const results = matchEntriesByPageContext(
+    [
+      ...fixture(),
+      entry({
+        _type: "Company",
+        PageID: "company-pg",
+        PageName: "Procter & Gamble",
+        CompanyAlias: "P&G, PG",
+      }),
+    ],
+    {
+      url: "https://www.amazon.com/Pampers-Swaddlers/dp/B000000003",
+      hostname: "www.amazon.com",
+      title: "P&G Pampers Swaddlers : Amazon.com",
+      meta: {
+        description: "P&G diapers for newborns",
+      },
+    },
+  );
+
+  const ids = results.map((entryItem) => entryItem.PageID);
+  assert.ok(ids.includes("company-pg"));
+});
+
+test("matches company aliases from space-separated CompanyAlias field", () => {
+  const results = matchEntriesByPageContext(
+    [
+      ...fixture(),
+      entry({
+        _type: "Company",
+        PageID: "company-ibm",
+        PageName: "International Business Machines",
+        CompanyAlias: "IBM BigBlue",
+      }),
+    ],
+    {
+      url: "https://www.example.com/products/server",
+      hostname: "www.example.com",
+      title: "BigBlue rack server",
+      meta: {
+        description: "Enterprise hardware from BigBlue",
+      },
+    },
+  );
+
+  const ids = results.map((entryItem) => entryItem.PageID);
+  assert.ok(ids.includes("company-ibm"));
+});
+
+test("matches provided CompanyAlias values for X Corp record", () => {
+  const results = matchEntriesByPageContext(
+    [
+      ...fixture(),
+      entry({
+        _type: "Company",
+        PageID: "179",
+        PageName: "X Corp",
+        Description:
+          "X Corp. is known for acquiring and rebranding Twitter and developing the AI model Grok.",
+        Industry: "Social media, Artificial intelligence",
+        ParentCompany: "X.AI Corp.",
+        CompanyAlias: "Twitter, X, FailWhale",
+        Type: "Private",
+        Website: "https://x.com/",
+      }),
+    ],
+    {
+      url: "https://www.example.com/news/x-platform-update",
+      hostname: "www.example.com",
+      title: "FailWhale returns: legacy Twitter users report outage",
+      meta: {
+        description: "Twitter outage trends as users discuss FailWhale again",
+      },
+    },
+  );
+
+  const ids = results.map((entryItem) => entryItem.PageID);
+  assert.ok(ids.includes("179"));
+});

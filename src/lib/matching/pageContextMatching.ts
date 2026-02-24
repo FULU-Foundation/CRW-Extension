@@ -91,13 +91,35 @@ const getCompanyAliasCandidates = (pageName: string): string[] => {
   return [alias];
 };
 
+const getExplicitCompanyAliasCandidates = (entry: CargoEntry): string[] => {
+  if (entry._type !== "Company") return [];
+
+  const rawAliasValue =
+    typeof entry.CompanyAlias === "string" ? entry.CompanyAlias.trim() : "";
+  if (!rawAliasValue) return [];
+
+  const parts = rawAliasValue.includes(",")
+    ? rawAliasValue.split(",")
+    : rawAliasValue.split(/\s+/);
+
+  return parts
+    .map((part) => normalizeText(part))
+    .filter((part) => part.length > 0);
+};
+
 const getNameCandidates = (entry: CargoEntry): string[] => {
   const pageName = normalizeText(entry.PageName || "");
   if (!pageName) return [];
 
   if (entry._type !== "Company") return [pageName];
 
-  return [pageName, ...getCompanyAliasCandidates(pageName)];
+  return Array.from(
+    new Set([
+      pageName,
+      ...getCompanyAliasCandidates(pageName),
+      ...getExplicitCompanyAliasCandidates(entry),
+    ]),
+  );
 };
 
 const rankMatches = (matches: TextMatch[], limit: number): CargoEntry[] => {
