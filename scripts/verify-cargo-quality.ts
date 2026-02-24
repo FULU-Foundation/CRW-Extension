@@ -18,9 +18,12 @@ type Args = {
 
 type FindingKind =
   | "missing_description"
+  | "missing_website"
+  | "website_link_sanity"
   | "incident_multiple_statuses"
   | "incident_missing_start_date"
   | "incident_invalid_start_date"
+  | "incident_date_consistency"
   | "short_page_name_for_matching"
   | "short_reference_value_for_matching";
 
@@ -75,6 +78,18 @@ const FINDING_GROUP_DEFINITIONS: FindingGroupDefinition[] = [
       "Entries without a Description can leave the top popover card missing key context.",
   },
   {
+    kind: "missing_website",
+    title: "Missing website links",
+    description:
+      "Company/Product/ProductLine entries without Website values are harder to match from visited pages and may not surface in the popover.",
+  },
+  {
+    kind: "website_link_sanity",
+    title: "Website link sanity",
+    description:
+      "Malformed or unparseable Website values can break URL matching and prevent reliable popover surfacing.",
+  },
+  {
     kind: "incident_multiple_statuses",
     title: "Incidents with multiple statuses",
     description:
@@ -91,6 +106,12 @@ const FINDING_GROUP_DEFINITIONS: FindingGroupDefinition[] = [
     title: "Incidents with invalid start dates",
     description:
       "Invalid StartDate values cannot be parsed for sorting and are treated like missing dates.",
+  },
+  {
+    kind: "incident_date_consistency",
+    title: "Incident date consistency",
+    description:
+      "Inconsistent incident dates (for example EndDate before StartDate, or resolved incidents without EndDate) reduce popover ordering and timeline accuracy.",
   },
   {
     kind: "short_page_name_for_matching",
@@ -142,6 +163,59 @@ const splitReferencePieces = (value: unknown): string[] => {
     .filter(Boolean);
 };
 
+const splitWebsiteField = (website: unknown): string[] => {
+  if (typeof website !== "string") return [];
+
+  const values: string[] = [];
+  const seen = new Set<string>();
+  const pushIfUnique = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || seen.has(trimmed)) return;
+    seen.add(trimmed);
+    values.push(trimmed);
+  };
+
+  const mediaWikiLinkPattern =
+    /\[((?:https?:\/\/|www\.)[^\s\]]+)(?:\s+([^\]]+))?\]/gi;
+
+  const remaining = website.replace(
+    mediaWikiLinkPattern,
+    (_match, target: string, label: string | undefined) => {
+      pushIfUnique(target);
+
+      const labelTrimmed = label?.trim() ?? "";
+      if (/^(?:https?:\/\/|www\.)/i.test(labelTrimmed)) {
+        pushIfUnique(labelTrimmed);
+      }
+
+      return " ";
+    },
+  );
+
+  for (const value of remaining
+    .split(/,(?=\s*(?:https?:\/\/|www\.))|\s+(?=(?:https?:\/\/|www\.))/i)
+    .map((part) => part.trim())
+    .filter(Boolean)) {
+    pushIfUnique(value);
+  }
+
+  return values;
+};
+
+const isParseableWebsiteUrl = (value: string): boolean => {
+  const normalized = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+  try {
+    const parsed = new URL(normalized);
+    return Boolean(parsed.hostname);
+  } catch {
+    return false;
+  }
+};
+
+const hasWebsiteSyntaxMarkers = (value: string): boolean => {
+  return /\[|\]/.test(value);
+};
+
 const pushFinding = (
   groupsByKind: Map<FindingKind, FindingGroup>,
   finding: Finding,
@@ -189,6 +263,36 @@ const validateEntries = (
       });
     }
 
+    const websiteValue =
+      typeof entry.Website === "string" ? entry.Website.trim() : "";
+    if (entry._type !== "Incident" && !websiteValue) {
+      pushFinding(groupsByKind, {
+        kind: "missing_website",
+        entry,
+        field: "Website",
+      });
+    } else if (entry._type !== "Incident") {
+      const websiteUrls = splitWebsiteField(websiteValue);
+      const hasInvalidUrl = websiteUrls.some((url) => !isParseableWebsiteUrl(url));
+      const malformedWikiSyntax =
+        hasWebsiteSyntaxMarkers(websiteValue) && websiteUrls.length === 0;
+
+      if (websiteUrls.length === 0 || hasInvalidUrl || malformedWikiSyntax) {
+        pushFinding(groupsByKind, {
+          kind: "website_link_sanity",
+          entry,
+          field: "Website",
+          value: websiteValue,
+          details:
+            websiteUrls.length === 0
+              ? "No parseable URL found in Website field"
+              : hasInvalidUrl
+                ? "One or more Website URLs are invalid"
+                : "Malformed wiki-style Website link syntax",
+        });
+      }
+    }
+
     if (entry._type === "Incident") {
       const statusParts =
         typeof entry.Status === "string"
@@ -222,6 +326,44 @@ const validateEntries = (
           entry,
           field: "StartDate",
           value: String(entry.StartDate),
+        });
+      }
+
+      const statusValues =
+        typeof entry.Status === "string"
+          ? entry.Status
+              .split(",")
+              .map((value) => value.trim().toLowerCase())
+              .filter(Boolean)
+          : [];
+      const startDateMs =
+        typeof entry.StartDate === "string" && entry.StartDate.trim()
+          ? Date.parse(entry.StartDate)
+          : Number.NaN;
+      const endDateRaw =
+        typeof entry.EndDate === "string" ? entry.EndDate.trim() : "";
+      const endDateMs = endDateRaw ? Date.parse(endDateRaw) : Number.NaN;
+      const hasResolvedStatus = statusValues.includes("resolved");
+      const hasEndDate = endDateRaw.length > 0;
+      const invalidEndDate = hasEndDate && Number.isNaN(endDateMs);
+      const endBeforeStart =
+        !Number.isNaN(startDateMs) &&
+        !Number.isNaN(endDateMs) &&
+        endDateMs < startDateMs;
+      const resolvedWithoutEndDate = hasResolvedStatus && !hasEndDate;
+
+      if (invalidEndDate || endBeforeStart || resolvedWithoutEndDate) {
+        const reasons: string[] = [];
+        if (invalidEndDate) reasons.push("EndDate is invalid");
+        if (endBeforeStart) reasons.push("EndDate is earlier than StartDate");
+        if (resolvedWithoutEndDate)
+          reasons.push("Status includes Resolved but EndDate is missing");
+
+        pushFinding(groupsByKind, {
+          kind: "incident_date_consistency",
+          entry,
+          field: "StartDate/EndDate/Status",
+          details: reasons.join("; "),
         });
       }
     }
@@ -348,9 +490,12 @@ const formatTextReport = (result: ValidationResult, args: Args): string => {
     "PageName",
     "Type",
     "Description",
+    "Website",
+    "Website sanity",
     "Single status",
     "Start date present",
     "Start date valid",
+    "Date consistency",
     "PageName match length",
     "Ref token length",
   ];
@@ -362,14 +507,29 @@ const formatTextReport = (result: ValidationResult, args: Args): string => {
         : hasProblem("missing_description")
           ? "❌"
           : "✅";
+    const websiteCell =
+      entry._type === "Incident"
+        ? "-"
+        : hasProblem("missing_website")
+          ? "❌"
+          : "✅";
+    const websiteSanityCell =
+      entry._type === "Incident"
+        ? "-"
+        : hasProblem("website_link_sanity")
+          ? "❌"
+          : "✅";
 
     return [
       String(entry.PageName ?? "") || "(missing PageName)",
       entry._type,
       descriptionCell,
+      websiteCell,
+      websiteSanityCell,
       hasProblem("incident_multiple_statuses") ? "❌" : "✅",
       hasProblem("incident_missing_start_date") ? "❌" : "✅",
       hasProblem("incident_invalid_start_date") ? "❌" : "✅",
+      hasProblem("incident_date_consistency") ? "❌" : "✅",
       hasProblem("short_page_name_for_matching") ? "❌" : "✅",
       hasProblem("short_reference_value_for_matching") ? "❌" : "✅",
     ];
@@ -396,6 +556,12 @@ const formatTextReport = (result: ValidationResult, args: Args): string => {
     "  Description present: Company/Product/ProductLine entries should include a description so the popover can show useful context instead of a sparse top card. (Incidents show - because this check is not applicable.)",
   );
   lines.push(
+    "  Website: Company/Product/ProductLine entries should include Website links so URL matching can find them reliably from visited pages. (Incidents show - because this check is not applicable.)",
+  );
+  lines.push(
+    "  Website sanity: Website values should contain parseable URLs (including valid wiki-style link syntax) so URL matching can use them reliably. (Incidents show - because this check is not applicable.)",
+  );
+  lines.push(
     "  Single incident status: The popover displays only one incident status, so multi-status values can misrepresent the incident state.",
   );
   lines.push(
@@ -403,6 +569,9 @@ const formatTextReport = (result: ValidationResult, args: Args): string => {
   );
   lines.push(
     "  Incident start date valid: Invalid dates cannot be parsed for sorting and behave like missing dates.",
+  );
+  lines.push(
+    "  Date consistency: Incident dates and status should agree (for example no EndDate before StartDate, and resolved incidents should have an EndDate).",
   );
   lines.push(
     "  PageName long enough for matching: Very short names may be skipped by page-context matching and fail to surface in the popover.",
@@ -467,6 +636,12 @@ const formatWikiReport = (result: ValidationResult, args: Args): string => {
     "* '''Description present''': Company/Product/ProductLine entries have a non-empty Description for popover context (incidents are not applicable).",
   );
   lines.push(
+    "* '''Website''': Company/Product/ProductLine entries have a non-empty Website field so URL matching can surface them in the popover (incidents are not applicable).",
+  );
+  lines.push(
+    "* '''Website sanity''': Company/Product/ProductLine Website values contain parseable URLs / valid wiki-style link syntax so URL matching can use them reliably (incidents are not applicable).",
+  );
+  lines.push(
     "* '''Single incident status''': Incident Status is not a comma-separated multi-status value.",
   );
   lines.push(
@@ -474,6 +649,9 @@ const formatWikiReport = (result: ValidationResult, args: Args): string => {
   );
   lines.push(
     "* '''Incident start date valid''': Incident StartDate parses into a valid date.",
+  );
+  lines.push(
+    "* '''Date consistency''': Incident EndDate is not before StartDate, and resolved incidents should include an EndDate.",
   );
   lines.push(
     "* '''PageName long enough for matching''': Non-incident PageName meets the page-context matching length threshold.",
@@ -484,12 +662,12 @@ const formatWikiReport = (result: ValidationResult, args: Args): string => {
   lines.push("");
   lines.push("== Quality Matrix ==");
   lines.push(
-    '{| class="wikitable sortable"\n! PageName\n! Description\n! Single status\n! Start date present\n! Start date valid\n! PageName match length\n! Ref token length',
+    '{| class="wikitable sortable"\n! PageName\n! Description\n! Website\n! Website sanity\n! Single status\n! Start date present\n! Start date valid\n! Date consistency\n! PageName match length\n! Ref token length',
   );
 
   if (matrixRows.length === 0) {
     lines.push("|-");
-    lines.push("| colspan=\"8\" | No pages with quality issues found.");
+    lines.push("| colspan=\"10\" | No pages with quality issues found.");
   } else {
     for (const { entry, flags } of matrixRows) {
       const hasProblem = (kind: FindingKind) => flags.has(kind);
@@ -504,6 +682,20 @@ const formatWikiReport = (result: ValidationResult, args: Args): string => {
         }`,
       );
       lines.push(
+        `| ${
+          entry._type === "Incident"
+            ? "-"
+            : formatWikiCheckMark(hasProblem("missing_website"))
+        }`,
+      );
+      lines.push(
+        `| ${
+          entry._type === "Incident"
+            ? "-"
+            : formatWikiCheckMark(hasProblem("website_link_sanity"))
+        }`,
+      );
+      lines.push(
         `| ${formatWikiCheckMark(hasProblem("incident_multiple_statuses"))}`,
       );
       lines.push(
@@ -511,6 +703,9 @@ const formatWikiReport = (result: ValidationResult, args: Args): string => {
       );
       lines.push(
         `| ${formatWikiCheckMark(hasProblem("incident_invalid_start_date"))}`,
+      );
+      lines.push(
+        `| ${formatWikiCheckMark(hasProblem("incident_date_consistency"))}`,
       );
       lines.push(
         `| ${formatWikiCheckMark(hasProblem("short_page_name_for_matching"))}`,
