@@ -17,6 +17,7 @@
     "match:compare-subdomains": "node --experimental-strip-types scripts/compare-subdomain-matching.ts",
     "match:compare-tlds": "node --experimental-strip-types scripts/compare-tld-matching.ts",
     "verify:matching": "node --experimental-strip-types scripts/verify-matching.ts",
+    "verify:cargo-quality": "node --experimental-strip-types scripts/verify-cargo-quality.ts",
     "update-version": "node --experimental-strip-types scripts/update-version.ts",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:coverage": "node --import tsx --test --experimental-test-coverage tests/*.test.ts"
