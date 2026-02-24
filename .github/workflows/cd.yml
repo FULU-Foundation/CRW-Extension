@@ -101,13 +101,15 @@ jobs:
           publish: false
 
       - name: Publish to Firefox Add-ons (AMO)
-        uses: kewisch/action-web-ext@v1
+        if: ${{ secrets.AMO_API_KEY != '' && secrets.AMO_API_SECRET != '' }}
+        run: |
+          npx --yes web-ext@8.9.0 sign \
+            --source-dir dist/firefox \
+            --channel unlisted \
+            --api-key "$AMO_API_KEY" \
+            --api-secret "$AMO_API_SECRET" \
+            --api-url-prefix https://addons.mozilla.org/api/v5 \
+            --approval-timeout 0
         env:
-          WEB_EXT_APPROVAL_TIMEOUT: 0
-        with:
-          cmd: sign
-          source: firefox-extension.zip
-          channel: unlisted
-          apiKey: ${{ secrets.AMO_API_KEY }}
-          apiSecret: ${{ secrets.AMO_API_SECRET }}
-          timeout: 900000
+          AMO_API_KEY: ${{ secrets.AMO_API_KEY }}
+          AMO_API_SECRET: ${{ secrets.AMO_API_SECRET }}
