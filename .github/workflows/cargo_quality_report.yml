@@ -1,0 +1,44 @@
+name: Cargo Quality Report Publish
+
+on:
+  push:
+    branches: [export_cargo]
+  workflow_dispatch:
+
+jobs:
+  cargo_quality_report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate cargo quality report (wikimarkup)
+        id: cargo_quality_report
+        continue-on-error: true
+        run: node --experimental-strip-types scripts/verify-cargo-quality.ts --format wiki --out cargo-popover-validation.wiki
+
+      - name: Publish cargo quality report to ConsumerRights.wiki
+        env:
+          WIKI_USERNAME: ${{ secrets.WIKI_USERNAME }}
+          WIKI_BOTNAME: ${{ secrets.WIKI_BOTNAME }}
+          WIKI_PASSWORD: ${{ secrets.WIKI_PASSWORD }}
+        run: >-
+          node --experimental-strip-types scripts/publish-wiki-page.ts
+          --file cargo-popover-validation.wiki
+          --page "Projects:Cargo-complete/report"
+          --summary "Update CI cargo quality report (run ${{ github.run_number }})"
+
+      - name: Fail if cargo quality report contains findings
+        if: steps.cargo_quality_report.outcome == 'failure'
+        run: |
+          echo "Cargo quality validation reported findings. See published wiki report."
+          exit 1
