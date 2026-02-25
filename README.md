@@ -96,6 +96,39 @@ The script prints a summary and then lists any Cargo entries with:
 
 It exits with a non-zero status when any failures are found.
 
+## Verify Cargo Quality
+
+Use the Cargo quality verification script to fetch the latest Cargo export and check fields that affect popover quality and matching reliability (for example descriptions, incident status/date fields, and short matching/reference values).
+
+By default, the script fetches the latest dataset from the remote Cargo export URL. You can optionally override the input with `--input <file>` for local testing.
+
+It exits with a non-zero status when any quality issues are found.
+
+### Text output (console)
+
+This prints an ASCII matrix to the terminal with `✅` / `❌` / `-` indicators and quality-check definitions at the top.
+
+```shell
+npm run verify:cargo-quality
+```
+
+### Wiki markup output (file)
+
+This writes a wiki table matrix with `{{Tick}}` / `{{Cross}}` / `-` markers and linked page names.
+
+When passing flags through `npm run`, use `--` before the script flags:
+
+```shell
+npm run verify:cargo-quality -- --format wiki --out cargo-quality-report.wiki
+```
+
+### Optional flags
+
+- `--format text|wiki`: output as console text matrix (`text`) or wiki markup file (`wiki`) (default: `text`)
+- `--out <file>`: wiki output file path (used with `--format wiki`; default: `cargo-popover-validation.wiki`)
+- `--input <file>`: use a local Cargo JSON file instead of fetching the latest remote export
+- `--min-match-length <n>`: matching-length threshold used for short-name/reference checks (default: `2`)
+
 ## Compare Subdomain Matching (Testing)
 
 Use this testing script to compare Cargo URL matches with `enableSubdomainMatching` disabled vs enabled, and print the differences.
