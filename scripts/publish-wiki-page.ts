@@ -1,5 +1,4 @@
 import { readFile } from "node:fs/promises";
-
 import * as mwn from "mwn";
 
 type Args = {
@@ -88,18 +87,20 @@ const publishPage = async (args: Args) => {
   const wikiUsername = getRequiredEnv("WIKI_USERNAME");
   const wikiBotname = getRequiredEnv("WIKI_BOTNAME");
   const wikiPassword = getRequiredEnv("WIKI_PASSWORD");
+
   const text = await readFile(args.filePath, "utf8");
   const { Mwn } = mwn;
 
-  const bot = new Mwn({
+  const bot = await Mwn.init({
     apiUrl: args.apiUrl,
     username: `${wikiUsername}@${wikiBotname}`,
     password: wikiPassword,
     silent: true,
   });
 
-  await bot.login();
-  await bot.save(args.pageTitle, text, args.summary, { bot: true });
+  await bot.save(args.pageTitle, text, args.summary, {
+    bot: true,
+  });
 };
 
 const run = async () => {
