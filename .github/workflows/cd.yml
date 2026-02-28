@@ -11,13 +11,12 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+
     env:
       CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
       CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
       CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
       CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
-      AMO_API_KEY: ${{ secrets.AMO_API_KEY }}
-      AMO_API_SECRET: ${{ secrets.AMO_API_SECRET }}
 
     steps:
       - name: Checkout
@@ -101,11 +100,15 @@ jobs:
           publish: true
 
       - name: Publish to Firefox Add-ons (AMO)
-        if: ${{ secrets.AMO_API_KEY != '' && secrets.AMO_API_SECRET != '' }}
         run: |
+          if [ -z "$AMO_API_KEY" ] || [ -z "$AMO_API_SECRET" ]; then
+            echo "AMO secrets not set, skipping Firefox publish."
+            exit 0
+          fi
+
           npx --yes web-ext@8.9.0 sign \
             --source-dir dist/firefox \
-            --channel unlisted \
+            --channel listed \
             --api-key "$AMO_API_KEY" \
             --api-secret "$AMO_API_SECRET" \
             --api-url-prefix https://addons.mozilla.org/api/v5 \
