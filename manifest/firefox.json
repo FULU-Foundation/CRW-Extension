@@ -50,7 +50,8 @@
       "id": "@crw-extension",
       "strict_min_version": "147.0",
       "data_collection_permissions": {
-        "required": ["none"]
+        "required": [],
+        "optional": []
       }
     }
   }
