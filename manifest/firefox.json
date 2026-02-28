@@ -47,7 +47,7 @@
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "@crw-extension",
+      "id": "@crw-extension-firefox",
       "strict_min_version": "147.0",
       "data_collection_permissions": {
         "required": ["none"],
