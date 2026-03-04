@@ -29,7 +29,7 @@ cd CRW-Extension
 npm ci
 npm run build
 ```
-The compiled extension will be output in the `dist` folder and vite will watch for changes and update the extension automatically.
+The compiled extension will be output in the `dist` folder. Alternatively run ```npm run build:watch``` and vite will watch for changes and update the extension automatically during development.
 ## Development Installation
 ### For Chrome:
 1. Open Extension settings: e.g. `chrome://extensions/` or `brave://extensions/` etc.
