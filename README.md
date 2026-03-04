@@ -15,7 +15,7 @@ Please read the [CONTRIBUTING.md](CONTRIBUTING.md) guide for details on how to a
 You can also check the [project board](https://github.com/FULU-Foundation/CRW-Extension/projects) and look for issues labelled **good first issue** to get started.
 
 ### Editorial and Wiki Contributions
-The extension matches sites and services against company data sourced from the [Consumer Rights Wiki](https://consumerrights.wiki). You can contribute in two ways:
+The extension matches sites and services against data sourced from the [Consumer Rights Wiki](https://consumerrights.wiki). You can contribute in two ways:
 
 - **Editorial** - Help improve or add articles directly on the [Consumer Rights Wiki](https://consumerrights.wiki)
 - **Cargo data** - Help add structured metadata that powers the extension's matching. You can help by contributing data at the [Cargo completion project](https://consumerrights.wiki/w/Projects:Cargo-complete). A [daily Cargo report](https://consumerrights.wiki/w/Projects:Cargo-complete/report) is also available, which tracks data quality and helps ensure the extension's matching is as accurate as possible.
