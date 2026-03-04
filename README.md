@@ -27,7 +27,7 @@ The extension matches sites and services against data sourced from the [Consumer
 git clone https://github.com/FULU-Foundation/CRW-Extension.git
 cd CRW-Extension
 npm ci
-npm run build:watch
+npm run build
 ```
 The compiled extension will be output in the `dist` folder and vite will watch for changes and update the extension automatically.
 ## Development Installation
