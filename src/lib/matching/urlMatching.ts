@@ -153,13 +153,6 @@ export const scoreUrlMatch = (detail: UrlMatchDetail): number => {
   return base;
 };
 
-const sortMatches = (left: UrlEntryMatch, right: UrlEntryMatch): number => {
-  if (right.score !== left.score) return right.score - left.score;
-  const byName = left.entry.PageName.localeCompare(right.entry.PageName);
-  if (byName !== 0) return byName;
-  return left.entry.PageID.localeCompare(right.entry.PageID);
-};
-
 const getMatchReasons = (detail: UrlMatchDetail): string[] => {
   if (detail.matchType === "exact") return ["host_equal", "path_equal"];
   if (detail.matchType === "partial") return ["host_equal", "path_prefix"];
@@ -177,6 +170,41 @@ type DetailedUrlEntryMatch = {
   detail: UrlMatchDetail;
   score: number;
   reasons: string[];
+};
+
+const getSubdomainDepth = (hostname: string): number => {
+  const hostSegments = hostname.split(".").filter(Boolean).length;
+  const rootSegments = getDomainRoot(hostname)
+    .split(".")
+    .filter(Boolean).length;
+  return Math.max(0, hostSegments - rootSegments);
+};
+
+const compareSubdomainDepth = (
+  left: UrlMatchDetail,
+  right: UrlMatchDetail,
+): number => {
+  if (left.matchType !== "subdomain" || right.matchType !== "subdomain") {
+    return 0;
+  }
+
+  const leftDepth = getSubdomainDepth(left.candidateHost);
+  const rightDepth = getSubdomainDepth(right.candidateHost);
+  return leftDepth - rightDepth;
+};
+
+const sortDetailedMatches = (
+  left: DetailedUrlEntryMatch,
+  right: DetailedUrlEntryMatch,
+): number => {
+  if (right.score !== left.score) return right.score - left.score;
+
+  const byDepth = compareSubdomainDepth(left.detail, right.detail);
+  if (byDepth !== 0) return byDepth;
+
+  const byName = left.entry.PageName.localeCompare(right.entry.PageName);
+  if (byName !== 0) return byName;
+  return left.entry.PageID.localeCompare(right.entry.PageID);
 };
 
 const splitWebsiteUrls = (website: unknown): string[] => {
@@ -296,19 +324,19 @@ export const matchEntriesByUrl = (
   for (const match of filterToMostSpecificPathMatches(matches)) {
     const key = getEntryKey(match.entry);
     const existing = bestMatchByEntry.get(key);
-    if (!existing || match.score > existing.score) {
+    if (!existing || sortDetailedMatches(match, existing) < 0) {
       bestMatchByEntry.set(key, match);
     }
   }
 
-  const pruned = Array.from(bestMatchByEntry.values()).map((match) => ({
+  const pruned = Array.from(bestMatchByEntry.values());
+  pruned.sort(sortDetailedMatches);
+
+  return pruned.slice(0, limit).map((match) => ({
     entry: match.entry,
     matchType: match.detail.matchType,
     matchedPath: match.detail.matchedPath,
     score: match.score,
     reasons: match.reasons,
   }));
-
-  pruned.sort(sortMatches);
-  return pruned.slice(0, limit);
 };

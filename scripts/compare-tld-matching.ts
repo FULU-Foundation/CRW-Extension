@@ -1,7 +1,10 @@
 import type { CargoEntry, CargoEntryType } from "../src/shared/types.ts";
 import { DATA_REMOTE_URL, DATASET_KEYS } from "../src/shared/constants.ts";
 import { decodeEntityStrings } from "../src/shared/html.ts";
-import { matchEntriesByUrl, safeParseUrl } from "../src/lib/matching/matching.ts";
+import {
+  matchEntriesByUrl,
+  safeParseUrl,
+} from "../src/lib/matching/matching.ts";
 import type { UrlEntryMatch } from "../src/lib/matching/matching.ts";
 import {
   resetMatchingConfig,
@@ -216,7 +219,8 @@ const printDiff = (diff: MatchDiff) => {
 
   if (diff.removed.length > 0) {
     console.log("  Removed when enabled:");
-    for (const item of diff.removed) console.log(`    - ${formatSnapshot(item)}`);
+    for (const item of diff.removed)
+      console.log(`    - ${formatSnapshot(item)}`);
   }
 
   if (diff.changed.length > 0) {
@@ -271,9 +275,7 @@ const run = async () => {
   console.log(`Fetching Cargo dataset from ${DATA_REMOTE_URL}`);
   const raw = await fetchDataset();
   const dataset = flattenDataset(raw);
-  const urls = hasExplicitUrl
-    ? [String(maybeUrl)]
-    : collectCargoUrls(dataset);
+  const urls = hasExplicitUrl ? [String(maybeUrl)] : collectCargoUrls(dataset);
 
   console.log(`Dataset entries: ${dataset.length}`);
   console.log(`URLs to compare: ${urls.length}`);
@@ -291,7 +293,12 @@ const run = async () => {
     }
 
     const normalizedUrl = parsed.toString();
-    const disabled = runWithTldSetting(dataset, normalizedUrl, matchLimit, false);
+    const disabled = runWithTldSetting(
+      dataset,
+      normalizedUrl,
+      matchLimit,
+      false,
+    );
     const enabled = runWithTldSetting(dataset, normalizedUrl, matchLimit, true);
     const diff = compareSnapshots(normalizedUrl, disabled, enabled);
 
@@ -336,7 +343,9 @@ const run = async () => {
   const limitedDiffs = outputDiffs.slice(0, maxDiffsToPrint);
 
   if (outputDiffs.length === 0) {
-    console.log("No match differences found between cross-TLD matching disabled vs enabled.");
+    console.log(
+      "No match differences found between cross-TLD matching disabled vs enabled.",
+    );
     return;
   }
 

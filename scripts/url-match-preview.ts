@@ -99,7 +99,9 @@ const run = async () => {
 
   const raw = await fetchDataset();
   const dataset = flattenDataset(raw);
-  const urls = runExamples ? getCargoExampleUrls(dataset, maxExamples) : [urlArg];
+  const urls = runExamples
+    ? getCargoExampleUrls(dataset, maxExamples)
+    : [urlArg];
 
   if (runExamples) {
     console.log(

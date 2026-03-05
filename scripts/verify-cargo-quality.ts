@@ -273,7 +273,9 @@ const validateEntries = (
       });
     } else if (entry._type !== "Incident") {
       const websiteUrls = splitWebsiteField(websiteValue);
-      const hasInvalidUrl = websiteUrls.some((url) => !isParseableWebsiteUrl(url));
+      const hasInvalidUrl = websiteUrls.some(
+        (url) => !isParseableWebsiteUrl(url),
+      );
       const malformedWikiSyntax =
         hasWebsiteSyntaxMarkers(websiteValue) && websiteUrls.length === 0;
 
@@ -296,8 +298,7 @@ const validateEntries = (
     if (entry._type === "Incident") {
       const statusParts =
         typeof entry.Status === "string"
-          ? entry.Status
-              .split(",")
+          ? entry.Status.split(",")
               .map((value) => value.trim())
               .filter(Boolean)
           : [];
@@ -313,7 +314,8 @@ const validateEntries = (
       }
 
       const hasStartDate =
-        typeof entry.StartDate === "string" && entry.StartDate.trim().length > 0;
+        typeof entry.StartDate === "string" &&
+        entry.StartDate.trim().length > 0;
       if (!hasStartDate) {
         pushFinding(groupsByKind, {
           kind: "incident_missing_start_date",
@@ -331,8 +333,7 @@ const validateEntries = (
 
       const statusValues =
         typeof entry.Status === "string"
-          ? entry.Status
-              .split(",")
+          ? entry.Status.split(",")
               .map((value) => value.trim().toLowerCase())
               .filter(Boolean)
           : [];
@@ -403,7 +404,10 @@ const validateEntries = (
   }
 
   const groups = Array.from(groupsByKind.values());
-  const findingCount = groups.reduce((sum, group) => sum + group.items.length, 0);
+  const findingCount = groups.reduce(
+    (sum, group) => sum + group.items.length,
+    0,
+  );
 
   return {
     entries,
@@ -447,10 +451,13 @@ const getMatrixRows = (result: ValidationResult): MatrixRow[] => {
     return String(left.PageID ?? "").localeCompare(String(right.PageID ?? ""));
   });
 
-  return sortedEntries.map((entry) => ({
-    entry,
-    flags: flaggedByEntryKey.get(entryMatrixKey(entry)) ?? new Set<FindingKind>(),
-  })).filter((row) => row.flags.size > 0);
+  return sortedEntries
+    .map((entry) => ({
+      entry,
+      flags:
+        flaggedByEntryKey.get(entryMatrixKey(entry)) ?? new Set<FindingKind>(),
+    }))
+    .filter((row) => row.flags.size > 0);
 };
 
 const padCell = (value: string, width: number): string => {
@@ -549,7 +556,9 @@ const formatTextReport = (result: ValidationResult, args: Args): string => {
   lines.push(
     "Matrix uses ✅ = passes/no issue, ❌ = issue found, - = not applicable",
   );
-  lines.push(`Rows shown: ${matrixRows.length} (pages with at least one issue)`);
+  lines.push(
+    `Rows shown: ${matrixRows.length} (pages with at least one issue)`,
+  );
   lines.push("");
   lines.push("Quality Check Definitions:");
   lines.push(
@@ -629,7 +638,9 @@ const formatWikiReport = (result: ValidationResult, args: Args): string => {
   lines.push(
     "* Matrix uses {{Tick}} = passes/no issue, {{Cross}} = issue found, - = not applicable",
   );
-  lines.push(`* Rows shown: ${matrixRows.length} (pages with at least one issue)`);
+  lines.push(
+    `* Rows shown: ${matrixRows.length} (pages with at least one issue)`,
+  );
   lines.push("");
   lines.push("== Quality Check Definitions ==");
   lines.push(
@@ -667,7 +678,7 @@ const formatWikiReport = (result: ValidationResult, args: Args): string => {
 
   if (matrixRows.length === 0) {
     lines.push("|-");
-    lines.push("| colspan=\"10\" | No pages with quality issues found.");
+    lines.push('| colspan="10" | No pages with quality issues found.');
   } else {
     for (const { entry, flags } of matrixRows) {
       const hasProblem = (kind: FindingKind) => flags.has(kind);
@@ -796,7 +807,9 @@ const loadDataset = async (inputPath?: string): Promise<CargoEntry[]> => {
 
   const response = await fetch(DATA_REMOTE_URL, { cache: "no-store" });
   if (!response.ok) {
-    throw new Error(`Failed to fetch dataset (${response.status}) from ${DATA_REMOTE_URL}`);
+    throw new Error(
+      `Failed to fetch dataset (${response.status}) from ${DATA_REMOTE_URL}`,
+    );
   }
 
   const parsed = (await response.json()) as RawDataset;

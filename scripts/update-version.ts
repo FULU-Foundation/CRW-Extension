@@ -18,9 +18,12 @@ const updateJsonVersion = (filePath: string) => {
 
   if (filePath === "manifest/firefox.json" && amoExtensionId) {
     const browserSpecificSettings =
-      (value.browser_specific_settings as Record<string, unknown> | undefined) ??
+      (value.browser_specific_settings as
+        | Record<string, unknown>
+        | undefined) ?? {};
+    const gecko =
+      (browserSpecificSettings.gecko as Record<string, unknown> | undefined) ??
       {};
-    const gecko = (browserSpecificSettings.gecko as Record<string, unknown> | undefined) ?? {};
 
     gecko.id = amoExtensionId;
     browserSpecificSettings.gecko = gecko;
