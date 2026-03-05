@@ -286,6 +286,37 @@ test("ranks exact above partial above subdomain for non-github hosts", () => {
   assert.equal(results[2].matchType, "subdomain");
 });
 
+test("prefers root domain entries over deeper subdomains when scores tie", () => {
+  setMatchingConfig({ enableSubdomainMatching: true });
+
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-fitbit",
+      PageName: "Fitbit",
+      Website: "https://store.google.com/category/watches_trackers",
+    }),
+    entry({
+      _type: "Company",
+      PageID: "company-google",
+      PageName: "Google",
+      Website: "https://www.google.com/",
+    }),
+    entry({
+      _type: "Product",
+      PageID: "product-google-support",
+      PageName: "Google Support",
+      Website: "https://support.google.com/",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(dataset, "https://messages.google.com/", 10);
+
+  assert.equal(results.length, 3);
+  assert.equal(results[0].entry.PageID, "company-google");
+  assert.equal(results[0].matchType, "subdomain");
+});
+
 test("returns empty array for invalid visited URL", () => {
   const results = matchEntriesByUrl([], "not a valid URL", 10);
   assert.deepEqual(results, []);
