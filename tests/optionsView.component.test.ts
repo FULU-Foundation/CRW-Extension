@@ -60,9 +60,7 @@ test("OptionsView shows disabled state and removable ignored-site entries", () =
     }),
   );
 
-  assert.ok(
-    html.includes("Disabled: popups will not auto-show on page load."),
-  );
+  assert.ok(html.includes("Disabled: popups will not auto-show on page load."));
   assert.ok(html.includes("example.com"));
   assert.ok(html.includes("airpods"));
   assert.ok(html.includes("Remove"));

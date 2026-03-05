@@ -1,7 +1,10 @@
 import test, { afterEach } from "node:test";
 import assert from "node:assert/strict";
 
-import { matchByPageContext, matchByUrl } from "../src/lib/matching/matching.ts";
+import {
+  matchByPageContext,
+  matchByUrl,
+} from "../src/lib/matching/matching.ts";
 import {
   resetMatchingConfig,
   setMatchingConfig,
@@ -212,7 +215,8 @@ test("matchByPageContext does not use search results page text on google search 
     meta: {
       description: "Search results for fitbit",
       "og:title": "fitbit - Google Search",
-      "og:description": "Search the world's information, including webpages about fitbit",
+      "og:description":
+        "Search the world's information, including webpages about fitbit",
     },
   });
 

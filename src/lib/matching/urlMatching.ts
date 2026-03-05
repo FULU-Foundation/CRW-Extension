@@ -174,7 +174,9 @@ type DetailedUrlEntryMatch = {
 
 const getSubdomainDepth = (hostname: string): number => {
   const hostSegments = hostname.split(".").filter(Boolean).length;
-  const rootSegments = getDomainRoot(hostname).split(".").filter(Boolean).length;
+  const rootSegments = getDomainRoot(hostname)
+    .split(".")
+    .filter(Boolean).length;
   return Math.max(0, hostSegments - rootSegments);
 };
 
