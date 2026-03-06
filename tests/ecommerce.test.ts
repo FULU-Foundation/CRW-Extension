@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 
 import {
   ECOMMERCE_DOMAINS,
+  isAmazonEcommerceHost,
+  isEbayEcommerceHost,
   isKnownEcommerceHost,
 } from "../src/lib/matching/ecommerce.ts";
 
@@ -23,4 +25,14 @@ test("detects known ecommerce hosts across Amazon and eBay", () => {
   assert.equal(isKnownEcommerceHost("m.ebay.com.au"), true);
   assert.equal(isKnownEcommerceHost("checkout.ebay.co.uk"), true);
   assert.equal(isKnownEcommerceHost("shop.example.com"), false);
+});
+
+test("classifies Amazon/eBay hosts using ecommerceDomainFamilyMap domains", () => {
+  assert.equal(isAmazonEcommerceHost("www.amazon.com.au"), true);
+  assert.equal(isAmazonEcommerceHost("smile.amazon.co.uk"), true);
+  assert.equal(isAmazonEcommerceHost("www.ebay.com.au"), false);
+
+  assert.equal(isEbayEcommerceHost("www.ebay.com.au"), true);
+  assert.equal(isEbayEcommerceHost("checkout.ebay.de"), true);
+  assert.equal(isEbayEcommerceHost("www.amazon.com.au"), false);
 });
