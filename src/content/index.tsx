@@ -12,6 +12,10 @@ import {
   getInlinePopupInstruction,
   type InlinePopupInstruction,
 } from "@/content/messageRouting";
+import {
+  extractAmazonMarketplaceProperties,
+  extractEbayJsonLdProductProperties,
+} from "@/lib/matching/ecommerce";
 
 console.log(
   `${Constants.LOG_PREFIX} Content script loaded on:`,
@@ -408,6 +412,21 @@ const runContentScript = async () => {
   const metaTitle = getMetaContent('meta[name="title"]');
   const ogTitle = getMetaContent('meta[property="og:title"]');
   const ogDescription = getMetaContent('meta[property="og:description"]');
+  const amazonMarketplaceProperties = extractAmazonMarketplaceProperties(
+    document,
+    location.hostname,
+  );
+  const ebayJsonLdMarketplaceProperties = extractEbayJsonLdProductProperties(
+    document,
+    location.hostname,
+  );
+  const marketplaceProperties =
+    amazonMarketplaceProperties || ebayJsonLdMarketplaceProperties
+      ? {
+          ...(amazonMarketplaceProperties || {}),
+          ...(ebayJsonLdMarketplaceProperties || {}),
+        }
+      : undefined;
 
   const context: PageContext = {
     url: location.href,
@@ -419,6 +438,7 @@ const runContentScript = async () => {
       "og:title": ogTitle,
       "og:description": ogDescription,
     },
+    marketplaceProperties,
   };
 
   browser.runtime.sendMessage(

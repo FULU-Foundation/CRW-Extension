@@ -101,11 +101,6 @@ TBA
 
 TBA
 
-## Styleguides
-
-**FULU Mint:** #1DFDC0 <br/>
-**FULU Secondary:** #0B0E14
-
 ## Join The Project Team
 Join our extension development community on Discord: [Here](https://discord.com/ZkBNngZUnk) Once you’re in, request the extension-dev tag.
 

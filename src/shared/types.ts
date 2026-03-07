@@ -27,4 +27,5 @@ export interface PageContext {
   title?: string;
   meta?: Record<string, string>;
   textContent?: string;
+  marketplaceProperties?: Record<string, string>;
 }

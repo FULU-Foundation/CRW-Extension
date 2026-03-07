@@ -56,7 +56,9 @@ test("preserves path case", () => {
 });
 
 test("treats www and bare domains as equal hosts", () => {
-  const visited = safeParseUrl("https://www.7-eleven.com/7rewards/7-eleven-wallet");
+  const visited = safeParseUrl(
+    "https://www.7-eleven.com/7rewards/7-eleven-wallet",
+  );
   const candidate = safeParseUrl("https://7-eleven.com/");
   assert.ok(visited);
   assert.ok(candidate);
@@ -114,7 +116,10 @@ test("does not classify subdomain match when subdomain matching is disabled", ()
 });
 
 test("does not classify cross-TLD alias match when enableMatchAcrossTLDs is disabled", () => {
-  setMatchingConfig({ enableMatchAcrossTLDs: false, enableSubdomainMatching: true });
+  setMatchingConfig({
+    enableMatchAcrossTLDs: false,
+    enableSubdomainMatching: true,
+  });
   const visited = safeParseUrl("https://www.dyson.co.uk/");
   const candidate = safeParseUrl("https://www.dyson.com/");
   assert.ok(visited);
@@ -125,7 +130,10 @@ test("does not classify cross-TLD alias match when enableMatchAcrossTLDs is disa
 });
 
 test("classifies cross-TLD alias match when enableMatchAcrossTLDs is enabled", () => {
-  setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
   const visited = safeParseUrl("https://www.dyson.com.au/");
   const candidate = safeParseUrl("https://www.dyson.co.uk/");
   assert.ok(visited);
@@ -138,7 +146,10 @@ test("classifies cross-TLD alias match when enableMatchAcrossTLDs is enabled", (
 });
 
 test("classifies dyson.co.uk and dyson.com as cross-TLD aliases when enabled", () => {
-  setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
   const visited = safeParseUrl("https://www.dyson.co.uk/");
   const candidate = safeParseUrl("https://www.dyson.com/");
   assert.ok(visited);
@@ -151,7 +162,10 @@ test("classifies dyson.co.uk and dyson.com as cross-TLD aliases when enabled", (
 });
 
 test("does not cross-match unrelated brand TLD hosts sharing generic label", () => {
-  setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
   const visited = safeParseUrl("https://global.honda/");
   const candidate = safeParseUrl("https://global.canon/");
   assert.ok(visited);
@@ -162,7 +176,10 @@ test("does not cross-match unrelated brand TLD hosts sharing generic label", () 
 });
 
 test("does not bridge brand/generic TLD pairs without compound suffix evidence", () => {
-  setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
   const visited = safeParseUrl("https://global.brother/");
   const candidate = safeParseUrl("https://www.brother.com/");
   assert.ok(visited);
@@ -173,7 +190,10 @@ test("does not bridge brand/generic TLD pairs without compound suffix evidence",
 });
 
 test("does not cross-match custom TLD host to brand .com without compound suffix evidence", () => {
-  setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
   const visited = safeParseUrl("https://global.canon/");
   const candidate = safeParseUrl("https://www.canon.com/");
   assert.ok(visited);
@@ -184,7 +204,10 @@ test("does not cross-match custom TLD host to brand .com without compound suffix
 });
 
 test("does not cross-match generic .live TLD sites to yubo.live", () => {
-  setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
   const visited = safeParseUrl("https://live.com/");
   const candidate = safeParseUrl("https://yubo.live/en");
   assert.ok(visited);
@@ -195,7 +218,10 @@ test("does not cross-match generic .live TLD sites to yubo.live", () => {
 });
 
 test("does not cross-match yubo.live to live.com in reverse direction", () => {
-  setMatchingConfig({ enableMatchAcrossTLDs: true, enableSubdomainMatching: true });
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
   const visited = safeParseUrl("https://yubo.live/en");
   const candidate = safeParseUrl("https://live.com/");
   assert.ok(visited);
@@ -286,6 +312,41 @@ test("ranks exact above partial above subdomain for non-github hosts", () => {
   assert.equal(results[2].matchType, "subdomain");
 });
 
+test("prefers root domain entries over deeper subdomains when scores tie", () => {
+  setMatchingConfig({ enableSubdomainMatching: true });
+
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-fitbit",
+      PageName: "Fitbit",
+      Website: "https://store.google.com/category/watches_trackers",
+    }),
+    entry({
+      _type: "Company",
+      PageID: "company-google",
+      PageName: "Google",
+      Website: "https://www.google.com/",
+    }),
+    entry({
+      _type: "Product",
+      PageID: "product-google-support",
+      PageName: "Google Support",
+      Website: "https://support.google.com/",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://messages.google.com/",
+    10,
+  );
+
+  assert.equal(results.length, 3);
+  assert.equal(results[0].entry.PageID, "company-google");
+  assert.equal(results[0].matchType, "subdomain");
+});
+
 test("returns empty array for invalid visited URL", () => {
   const results = matchEntriesByUrl([], "not a valid URL", 10);
   assert.deepEqual(results, []);
@@ -332,7 +393,11 @@ test("matches entries with comma-separated Website URLs", () => {
     }),
   ];
 
-  const results = matchEntriesByUrl(dataset, "https://speedqueencommercial.com/", 10);
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://speedqueencommercial.com/",
+    10,
+  );
 
   assert.equal(results.length, 1);
   assert.equal(results[0].entry.PageID, "alliance-laundry");
@@ -349,7 +414,11 @@ test("matches entries with space-separated Website URLs", () => {
     }),
   ];
 
-  const results = matchEntriesByUrl(dataset, "https://speedqueencommercial.com/", 10);
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://speedqueencommercial.com/",
+    10,
+  );
 
   assert.equal(results.length, 1);
   assert.equal(results[0].entry.PageID, "alliance-laundry");

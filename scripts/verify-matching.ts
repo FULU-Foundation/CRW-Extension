@@ -120,7 +120,9 @@ const verifyEntryUrls = (
       parsed.toString(),
       Number.MAX_SAFE_INTEGER,
     );
-    const hasSelfMatch = matches.some((match) => entryKey(match.entry) === selfKey);
+    const hasSelfMatch = matches.some(
+      (match) => entryKey(match.entry) === selfKey,
+    );
 
     if (!hasSelfMatch) {
       failures.push({

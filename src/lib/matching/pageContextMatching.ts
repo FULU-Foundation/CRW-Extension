@@ -1,5 +1,6 @@
 import type { CargoEntry, PageContext } from "@/shared/types";
 import { matchingConfig } from "./matchingConfig.ts";
+import { isAmazonEcommerceHost, isEbayEcommerceHost } from "./ecommerce.ts";
 
 type TextMatch = {
   entry: CargoEntry;
@@ -91,13 +92,35 @@ const getCompanyAliasCandidates = (pageName: string): string[] => {
   return [alias];
 };
 
+const getExplicitCompanyAliasCandidates = (entry: CargoEntry): string[] => {
+  if (entry._type !== "Company") return [];
+
+  const rawAliasValue =
+    typeof entry.CompanyAlias === "string" ? entry.CompanyAlias.trim() : "";
+  if (!rawAliasValue) return [];
+
+  const parts = rawAliasValue.includes(",")
+    ? rawAliasValue.split(",")
+    : rawAliasValue.split(/\s+/);
+
+  return parts
+    .map((part) => normalizeText(part))
+    .filter((part) => part.length > 0);
+};
+
 const getNameCandidates = (entry: CargoEntry): string[] => {
   const pageName = normalizeText(entry.PageName || "");
   if (!pageName) return [];
 
   if (entry._type !== "Company") return [pageName];
 
-  return [pageName, ...getCompanyAliasCandidates(pageName)];
+  return Array.from(
+    new Set([
+      pageName,
+      ...getCompanyAliasCandidates(pageName),
+      ...getExplicitCompanyAliasCandidates(entry),
+    ]),
+  );
 };
 
 const rankMatches = (matches: TextMatch[], limit: number): CargoEntry[] => {
@@ -127,13 +150,49 @@ export const matchEntriesByPageContext = (
   context: PageContext,
   limit = 5,
 ): CargoEntry[] => {
+  const isAmazonHost = isAmazonEcommerceHost(context.hostname || "");
+  const isEbayHost = isEbayEcommerceHost(context.hostname || "");
+  const useAmazonPropertySignals =
+    isAmazonHost && matchingConfig.amazonPropertyMatching.enabled;
+  const amazonBrandPropertyText = normalizeText(
+    useAmazonPropertySignals && matchingConfig.amazonPropertyMatching.useBrand
+      ? context.marketplaceProperties?.brand || ""
+      : "",
+  );
+  const amazonManufacturerPropertyText = normalizeText(
+    useAmazonPropertySignals &&
+      matchingConfig.amazonPropertyMatching.useManufacturer
+      ? context.marketplaceProperties?.manufacturer || ""
+      : "",
+  );
+  const hasAmazonPropertySignals =
+    amazonBrandPropertyText.length > 0 ||
+    amazonManufacturerPropertyText.length > 0;
+  const useEbayJsonLdSignals =
+    isEbayHost && matchingConfig.ebayJsonLdProductMatching.enabled;
+  const ebayBrandPropertyText = normalizeText(
+    useEbayJsonLdSignals && matchingConfig.ebayJsonLdProductMatching.useBrand
+      ? context.marketplaceProperties?.schemaProductBrand || ""
+      : "",
+  );
+  const ebayManufacturerPropertyText = normalizeText(
+    useEbayJsonLdSignals &&
+      matchingConfig.ebayJsonLdProductMatching.useManufacturer
+      ? context.marketplaceProperties?.schemaProductManufacturer || ""
+      : "",
+  );
+  const hasEbayPropertySignals =
+    ebayBrandPropertyText.length > 0 || ebayManufacturerPropertyText.length > 0;
+  const hasScopedMarketplacePropertySignals =
+    (useAmazonPropertySignals && hasAmazonPropertySignals) ||
+    (useEbayJsonLdSignals && hasEbayPropertySignals);
   const title = normalizeText(context.title || "");
   const metaTitle = normalizeText(context.meta?.title || "");
   const description = normalizeText(context.meta?.description || "");
   const ogTitle = normalizeText(context.meta?.["og:title"] || "");
   const ogDescription = normalizeText(context.meta?.["og:description"] || "");
   const canonicalText =
-    `${title} ${metaTitle} ${description} ${ogTitle} ${ogDescription}`.trim();
+    `${title} ${metaTitle} ${description} ${ogTitle} ${ogDescription} ${amazonBrandPropertyText} ${amazonManufacturerPropertyText} ${ebayBrandPropertyText} ${ebayManufacturerPropertyText}`.trim();
   if (!canonicalText) return [];
 
   const matches: TextMatch[] = [];
@@ -151,6 +210,10 @@ export const matchEntriesByPageContext = (
     let descriptionHit = 0;
     let ogTitleHit = 0;
     let ogDescriptionHit = 0;
+    let amazonBrandPropertyHit = 0;
+    let amazonManufacturerPropertyHit = 0;
+    let ebayBrandPropertyHit = 0;
+    let ebayManufacturerPropertyHit = 0;
 
     for (const candidate of nameCandidates) {
       if (candidate.length < 2) continue;
@@ -165,13 +228,49 @@ export const matchEntriesByPageContext = (
         ogDescriptionHit,
         phraseScore(ogDescription, candidate),
       );
+      amazonBrandPropertyHit = Math.max(
+        amazonBrandPropertyHit,
+        phraseScore(amazonBrandPropertyText, candidate),
+      );
+      amazonManufacturerPropertyHit = Math.max(
+        amazonManufacturerPropertyHit,
+        phraseScore(amazonManufacturerPropertyText, candidate),
+      );
+      ebayBrandPropertyHit = Math.max(
+        ebayBrandPropertyHit,
+        phraseScore(ebayBrandPropertyText, candidate),
+      );
+      ebayManufacturerPropertyHit = Math.max(
+        ebayManufacturerPropertyHit,
+        phraseScore(ebayManufacturerPropertyText, candidate),
+      );
     }
     if (
       titleHit === 0 &&
       metaTitleHit === 0 &&
       descriptionHit === 0 &&
       ogTitleHit === 0 &&
-      ogDescriptionHit === 0
+      ogDescriptionHit === 0 &&
+      amazonBrandPropertyHit === 0 &&
+      amazonManufacturerPropertyHit === 0 &&
+      ebayBrandPropertyHit === 0 &&
+      ebayManufacturerPropertyHit === 0
+    ) {
+      continue;
+    }
+
+    const marketplacePropertyHitTotal =
+      amazonBrandPropertyHit +
+      amazonManufacturerPropertyHit +
+      ebayBrandPropertyHit +
+      ebayManufacturerPropertyHit;
+
+    // When marketplace-specific structured signals are present, avoid
+    // promoting company matches that come only from generic title/meta text.
+    if (
+      hasScopedMarketplacePropertySignals &&
+      entry._type === "Company" &&
+      marketplacePropertyHitTotal === 0
     ) {
       continue;
     }
@@ -182,6 +281,14 @@ export const matchEntriesByPageContext = (
       descriptionHit * 6 +
       ogTitleHit * 9 +
       ogDescriptionHit * 6 +
+      amazonBrandPropertyHit *
+        matchingConfig.amazonPropertyMatching.brandWeight +
+      amazonManufacturerPropertyHit *
+        matchingConfig.amazonPropertyMatching.manufacturerWeight +
+      ebayBrandPropertyHit *
+        matchingConfig.ebayJsonLdProductMatching.brandWeight +
+      ebayManufacturerPropertyHit *
+        matchingConfig.ebayJsonLdProductMatching.manufacturerWeight +
       typeBoost(entry) +
       pageName.length;
 
