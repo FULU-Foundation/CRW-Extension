@@ -23,6 +23,7 @@
     "test:coverage": "node --import tsx --test --experimental-test-coverage tests/*.test.ts"
   },
   "dependencies": {
+    "he": "^1.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tldts": "^7.0.23",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/he": "^1.2.3",
     "@types/node": "^25.3.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",

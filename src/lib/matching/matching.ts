@@ -121,8 +121,12 @@ export const matchByPageContext = (
   if (isSuppressedSearchResultsPage(context)) return [];
 
   const urlMatches = matchEntriesByUrl(entries, context.url, 3);
-  const metaSeeds = matchEntriesByPageContext(entries, context, 5);
   const isEcommerceHost = isKnownEcommerceHost(context.hostname || "");
+  const shouldUseMetaSeeds =
+    isEcommerceHost || !matchingConfig.restrictMetaPageContextToEcommerceHosts;
+  const metaSeeds = shouldUseMetaSeeds
+    ? matchEntriesByPageContext(entries, context, 5)
+    : [];
 
   if (urlMatches.length === 0) {
     if (!isEcommerceHost || metaSeeds.length === 0) return [];

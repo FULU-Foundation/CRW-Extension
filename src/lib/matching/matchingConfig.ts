@@ -10,10 +10,27 @@ export type CompanyAliasSuffixStrippingConfig = {
   genericTrailingTokens: string[];
 };
 
+export type AmazonPropertyMatchingConfig = {
+  enabled: boolean;
+  useBrand: boolean;
+  useManufacturer: boolean;
+  brandWeight: number;
+  manufacturerWeight: number;
+};
+
+export type EbayJsonLdProductMatchingConfig = {
+  enabled: boolean;
+  useBrand: boolean;
+  useManufacturer: boolean;
+  brandWeight: number;
+  manufacturerWeight: number;
+};
+
 export type MatchingConfig = {
   enableSubdomainMatching: boolean;
   enableMatchAcrossTLDs: boolean;
   enableEcommerceFamilyAliasMatching: boolean;
+  restrictMetaPageContextToEcommerceHosts: boolean;
   urlSeedLimit: number;
   metaSeedLimit: number;
   urlMatchPriority: {
@@ -35,6 +52,8 @@ export type MatchingConfig = {
   };
   pageContextMinEntityNameLength: number;
   marketplaceBrandDenylist: string[];
+  amazonPropertyMatching: AmazonPropertyMatchingConfig;
+  ebayJsonLdProductMatching: EbayJsonLdProductMatchingConfig;
   companyAliasSuffixStripping: CompanyAliasSuffixStrippingConfig;
   enableSearchResultsPageSuppressions: boolean;
   searchResultsPageSuppressions: SearchResultsPageSuppressionRule[];
@@ -46,6 +65,7 @@ const DEFAULT_MATCHING_CONFIG: MatchingConfig = {
   enableSubdomainMatching: true,
   enableMatchAcrossTLDs: true,
   enableEcommerceFamilyAliasMatching: true,
+  restrictMetaPageContextToEcommerceHosts: true,
   urlSeedLimit: 3,
   metaSeedLimit: 5,
   urlMatchPriority: {
@@ -67,6 +87,20 @@ const DEFAULT_MATCHING_CONFIG: MatchingConfig = {
   },
   pageContextMinEntityNameLength: 3,
   marketplaceBrandDenylist: ["amazon", "ebay"],
+  amazonPropertyMatching: {
+    enabled: true,
+    useBrand: true,
+    useManufacturer: true,
+    brandWeight: 16,
+    manufacturerWeight: 12,
+  },
+  ebayJsonLdProductMatching: {
+    enabled: true,
+    useBrand: true,
+    useManufacturer: true,
+    brandWeight: 14,
+    manufacturerWeight: 10,
+  },
   companyAliasSuffixStripping: {
     enabled: true,
     legalSuffixTokens: [
