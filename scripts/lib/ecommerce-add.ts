@@ -241,7 +241,9 @@ export const applyEcommerceConfigUpdate = (
 ): EcommerceConfigUpdateResult => {
   const defaultConfigIndex = source.indexOf("const DEFAULT_MATCHING_CONFIG");
   if (defaultConfigIndex < 0) {
-    throw new Error("Could not find DEFAULT_MATCHING_CONFIG in matchingConfig.ts");
+    throw new Error(
+      "Could not find DEFAULT_MATCHING_CONFIG in matchingConfig.ts",
+    );
   }
 
   const denylistRange = findPropertyValueRange(

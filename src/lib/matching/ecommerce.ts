@@ -73,7 +73,10 @@ export const extractAmazonMarketplaceProperties = (
   hostname: string,
 ): MarketplaceProperties | undefined => {
   if (!isAmazonEcommerceHost(hostname)) return undefined;
-  const extracted = extractAmazonMarketplacePropertiesByConvention(doc, hostname);
+  const extracted = extractAmazonMarketplacePropertiesByConvention(
+    doc,
+    hostname,
+  );
   return normalizeCustomMarketplaceProperties(extracted);
 };
 
@@ -112,7 +115,10 @@ const getExtractorFamilyFromModulePath = (path: string): string | null => {
   return filename.slice(0, -3).toLowerCase();
 };
 
-const getConventionCustomExtractorMap = (): Map<string, MarketplaceExtractor> => {
+const getConventionCustomExtractorMap = (): Map<
+  string,
+  MarketplaceExtractor
+> => {
   const extractors = new Map<string, MarketplaceExtractor>();
   extractors.set("amazon", extractAmazonMarketplacePropertiesByConvention);
 

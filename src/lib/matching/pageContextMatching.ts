@@ -18,7 +18,9 @@ const normalizeText = (value: string): string => {
 
 const getMarketplaceBrandDenylist = (): Set<string> => {
   return new Set(
-    matchingConfig.marketplaceBrandDenylist.map((brand) => normalizeText(brand)),
+    matchingConfig.marketplaceBrandDenylist.map((brand) =>
+      normalizeText(brand),
+    ),
   );
 };
 

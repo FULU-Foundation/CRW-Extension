@@ -39,11 +39,9 @@ test("applyEcommerceConfigUpdate is idempotent when rerun", () => {
   const once = applyEcommerceConfigUpdate(fixtureConfig(), "arukereso", [
     "arukereso.hu",
   ]);
-  const twice = applyEcommerceConfigUpdate(
-    once.updatedSource,
-    "arukereso",
-    ["arukereso.hu"],
-  );
+  const twice = applyEcommerceConfigUpdate(once.updatedSource, "arukereso", [
+    "arukereso.hu",
+  ]);
 
   assert.equal(once.changed, true);
   assert.equal(twice.changed, false);

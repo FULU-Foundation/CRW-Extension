@@ -34,7 +34,7 @@ Use this script to register a new ecommerce family/domain mapping in `matchingCo
 npm run ecommerce:add -- --family=arukereso --domains=arukereso.hu
 ```
 
-Custom metadata extractors are also supported when default page metadata and schema.org Product JSON-LD are insufficient. See [Custom Extractors](custom_extractor.md) for the extractor contract and convention-based wiring.
+Custom metadata extractors are also supported when default page metadata and schema.org Product JSON-LD are insufficient. See [Custom Extractors](CUSTOM_EXTRACTOR.md) for the extractor contract and convention-based wiring.
 
 ### Optional flags
 

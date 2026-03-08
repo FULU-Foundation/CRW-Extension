@@ -6,7 +6,7 @@ const printUsage = () => {
   console.log(
     [
       "Usage:",
-      '  npm run ecommerce:add -- --family=<slug> --domains=<csv> [--dry-run] [--config-path=<file>]',
+      "  npm run ecommerce:add -- --family=<slug> --domains=<csv> [--dry-run] [--config-path=<file>]",
       "",
       "Example:",
       "  npm run ecommerce:add -- --family=arukereso --domains=arukereso.hu",
@@ -58,7 +58,9 @@ const run = async () => {
       return;
     }
 
-    const modeLabel = args.dryRun ? "Dry run completed" : "Updated matching config";
+    const modeLabel = args.dryRun
+      ? "Dry run completed"
+      : "Updated matching config";
     console.log(`${modeLabel} for family "${result.family}".`);
     if (result.addedDomains.length > 0) {
       console.log(`Added domains: ${result.addedDomains.join(", ")}`);
