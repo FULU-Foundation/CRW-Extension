@@ -5,7 +5,6 @@ First off, thanks for taking the time to contribute! ❤️
 All types of contributions are encouraged and valued. See the [Table of Contents](#table-of-contents) for different ways to help and details about how this project handles them. Please make sure to read the relevant section before making your contribution.
 
 > And if you like the project, but just don't have time to contribute, that's fine. There are other easy ways to support the project and show your appreciation, which we would also be very happy about:
->
 > - Star the project
 > - Mention the project at local meetups and tell your friends/colleagues
 
@@ -37,7 +36,6 @@ We’ll address the issue as soon as possible. For quicker help, join our [Disco
 ## I Want To Contribute
 
 > ### Legal Notice <!-- omit in toc -->
->
 > When contributing to this project, you must agree that you have authored 100% of the content, that you have the necessary rights to the content and that the content you contribute may be provided under the project licence.
 
 ### Reporting Bugs
@@ -63,9 +61,9 @@ A good bug report shouldn't leave others needing to chase you up for more inform
 
 We use GitHub issues to track bugs and errors. If you run into an issue with the project:
 
-- Open an [Issue](https://github.com/FULU-Foundation/CRW-Extension/issues/new).
+- Open an [Issue](https://github.com/FULU-Foundation/CRW-Extension/issues/new). 
 - Explain the behavior you would expect and the actual behavior.
-- Please provide as much context as possible and describe the _reproduction steps_ that someone else can follow to recreate the issue on their own. This usually includes your code. For good bug reports you should isolate the problem and create a reduced test case.
+- Please provide as much context as possible and describe the *reproduction steps* that someone else can follow to recreate the issue on their own. This usually includes your code. For good bug reports you should isolate the problem and create a reduced test case.
 - Provide the information you collected in the previous section.
 
 Once it's filed:
@@ -104,5 +102,5 @@ TBA
 TBA
 
 ## Join The Project Team
-
 Join our extension development community on Discord: [Here](https://discord.com/ZkBNngZUnk) Once you’re in, request the extension-dev tag.
+

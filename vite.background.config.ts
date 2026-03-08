@@ -17,7 +17,7 @@ export default defineConfig({
       input: resolve(__dirname, "src/background/index.ts"),
       output: {
         format: "es",
-        entryFileNames: "background.js",
+        entryFileNames: "background.js"
       },
     },
   },

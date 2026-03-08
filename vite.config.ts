@@ -10,8 +10,10 @@ export default defineConfig({
   plugins: [
     react(),
     viteStaticCopy({
-      targets: [{ src: getManifestSrc(), dest: ".", rename: "manifest.json" }],
-    }),
+      targets: [
+        { src: getManifestSrc(), dest: ".", rename: "manifest.json" }
+      ]
+    })
   ],
   publicDir: "public",
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
@@ -24,7 +26,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         popup: "popup.html",
-        options: "options.html",
+        options: "options.html"
       },
       output: {
         entryFileNames: (chunk) => {
@@ -32,6 +34,6 @@ export default defineConfig({
         },
         assetFileNames: "assets/[name][extname]",
       },
-    },
-  },
+    }
+  }
 });

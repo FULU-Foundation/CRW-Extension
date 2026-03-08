@@ -2,8 +2,8 @@ name: Daily CRW Cargo tables export
 
 on:
   schedule:
-    - cron: "0 0 * * *" # Every day at 00:00 UTC
-  workflow_dispatch: # allows manual trigger from GitHub UI
+    - cron: '0 0 * * *'  # Every day at 00:00 UTC
+  workflow_dispatch:     # allows manual trigger from GitHub UI
 
 concurrency:
   group: export_cargo
@@ -23,10 +23,10 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install -r scripts/export_cargo/requirements.txt
+        run: pip install -r scripts/export_cargo/requirements.txt 
 
       - name: Run Python script
         env:

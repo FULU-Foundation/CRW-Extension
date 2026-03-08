@@ -5,11 +5,11 @@ import { getOutDir } from "./viteEnv";
 
 export default defineConfig({
   resolve: {
-    alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+    alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) }
   },
 
   optimizeDeps: {
-    include: ["webextension-polyfill"],
+    include: ["webextension-polyfill"]
   },
 
   build: {
@@ -20,12 +20,12 @@ export default defineConfig({
 
     rollupOptions: {
       input: {
-        content: resolve(__dirname, "src/content/index.tsx"),
+        content: resolve(__dirname, "src/content/index.tsx")
       },
       output: {
         format: "iife",
-        entryFileNames: "assets/[name].js",
-      },
-    },
-  },
+        entryFileNames: "assets/[name].js"
+      }
+    }
+  }
 });
