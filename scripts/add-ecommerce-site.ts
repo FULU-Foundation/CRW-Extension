@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import * as prettier from "prettier";
 import { runEcommerceAdd } from "./lib/ecommerce-add.ts";
 
 const printUsage = () => {
@@ -40,6 +41,19 @@ const parseArgs = (argv: string[]) => {
   };
 };
 
+const formatFileWithPrettier = async (filePath: string): Promise<void> => {
+  const source = await fs.readFile(filePath, "utf8");
+  const prettierConfig = (await prettier.resolveConfig(filePath)) ?? {};
+  const formatted = await prettier.format(source, {
+    ...prettierConfig,
+    filepath: filePath,
+  });
+
+  if (formatted !== source) {
+    await fs.writeFile(filePath, formatted);
+  }
+};
+
 const run = async () => {
   try {
     const args = parseArgs(process.argv.slice(2));
@@ -58,6 +72,10 @@ const run = async () => {
       return;
     }
 
+    if (!args.dryRun) {
+      await formatFileWithPrettier(resolvedConfigPath);
+    }
+
     const modeLabel = args.dryRun
       ? "Dry run completed"
       : "Updated matching config";
@@ -72,6 +90,8 @@ const run = async () => {
     }
     if (args.dryRun) {
       console.log("No files were written.");
+    } else {
+      console.log("Formatted matchingConfig.ts with Prettier.");
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
