@@ -1,4 +1,4 @@
-import matchingConfigData from "./matchingConfig.json";
+import matchingConfigData from "./matchingConfig.json" with { type: "json" };
 
 export type SearchResultsPageSuppressionRule = {
   hostSuffixes: string[];
