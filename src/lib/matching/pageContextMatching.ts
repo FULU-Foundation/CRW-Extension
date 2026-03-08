@@ -7,8 +7,6 @@ type TextMatch = {
   score: number;
 };
 
-const MARKETPLACE_BRANDS = new Set(["amazon", "ebay"]);
-
 const normalizeText = (value: string): string => {
   return value
     .toLowerCase()
@@ -16,6 +14,12 @@ const normalizeText = (value: string): string => {
     .replace(/[^a-z0-9]+/g, " ")
     .trim()
     .replace(/\s+/g, " ");
+};
+
+const getMarketplaceBrandDenylist = (): Set<string> => {
+  return new Set(
+    matchingConfig.marketplaceBrandDenylist.map((brand) => normalizeText(brand)),
+  );
 };
 
 const containsWholePhrase = (haystack: string, needle: string): boolean => {
@@ -201,6 +205,7 @@ export const matchEntriesByPageContext = (
   const canonicalText =
     `${title} ${metaTitle} ${description} ${ogTitle} ${ogDescription} ${amazonBrandPropertyText} ${amazonManufacturerPropertyText} ${schemaNamePropertyText} ${schemaBrandPropertyText} ${schemaManufacturerPropertyText}`.trim();
   if (!canonicalText) return [];
+  const marketplaceBrandDenylist = getMarketplaceBrandDenylist();
 
   const matches: TextMatch[] = [];
 
@@ -210,7 +215,7 @@ export const matchEntriesByPageContext = (
     const nameCandidates = getNameCandidates(entry);
     const pageName = nameCandidates[0] || "";
     if (pageName.length < 2) continue;
-    if (MARKETPLACE_BRANDS.has(pageName)) continue;
+    if (marketplaceBrandDenylist.has(pageName)) continue;
 
     let titleHit = 0;
     let metaTitleHit = 0;

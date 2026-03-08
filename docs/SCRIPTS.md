@@ -26,6 +26,21 @@ Example with limits:
 npm run match:preview -- "https://www.apple.com/airpods-max/" --limit=10 --relations-limit=25
 ```
 
+## Add Ecommerce Site
+
+Use this script to register a new ecommerce family/domain mapping in `matchingConfig`.
+
+```shell
+npm run ecommerce:add -- --family=arukereso --domains=arukereso.hu
+```
+
+Custom metadata extractors are also supported when default page metadata and schema.org Product JSON-LD are insufficient. See [Custom Extractors](custom_extractor.md) for the extractor contract and convention-based wiring.
+
+### Optional flags
+
+- `--dry-run`: preview changes without writing files
+- `--config-path=<file>`: override the default config file path (`src/lib/matching/matchingConfig.ts`)
+
 ## Verify Cargo URL Matching
 
 Use the matching verification script to download the current Cargo dataset and verify that each Cargo entry's `Website` URL(s) can match back to that same entry using the extension's URL matcher.

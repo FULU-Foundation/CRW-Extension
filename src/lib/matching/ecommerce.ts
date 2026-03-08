@@ -1,4 +1,9 @@
 import { matchingConfig } from "./matchingConfig.ts";
+import extractAmazonMarketplacePropertiesByConvention from "./customExtractors/amazon.ts";
+import type {
+  CustomExtractorProperties,
+  CustomMarketplaceExtractor,
+} from "./customExtractors/types.ts";
 
 const normalizeHost = (hostname: string): string => {
   return hostname.toLowerCase().replace(/^www\./, "");
@@ -46,12 +51,14 @@ export const isEbayEcommerceHost = (hostname: string): boolean => {
   return isHostInConfiguredDomainPrefixFamily(hostname, "ebay");
 };
 
-const normalizePropertyLabel = (value: string): string => {
-  return value
-    .replace(/\u00a0/g, " ")
-    .replace(/[:\s]+/g, " ")
-    .trim()
-    .toLowerCase();
+type MarketplaceProperties = Record<string, string>;
+type MarketplaceExtractor = CustomMarketplaceExtractor;
+
+type ImportMetaWithGlob = ImportMeta & {
+  glob?: (
+    pattern: string,
+    options?: { eager?: boolean },
+  ) => Record<string, unknown>;
 };
 
 const normalizePropertyValue = (value: string): string => {
@@ -64,48 +71,87 @@ const normalizePropertyValue = (value: string): string => {
 export const extractAmazonMarketplaceProperties = (
   doc: Document,
   hostname: string,
-): Record<string, string> | undefined => {
+): MarketplaceProperties | undefined => {
   if (!isAmazonEcommerceHost(hostname)) return undefined;
+  const extracted = extractAmazonMarketplacePropertiesByConvention(doc, hostname);
+  return normalizeCustomMarketplaceProperties(extracted);
+};
 
-  const properties = new Map<string, string>();
-  const targetLabels = new Set(["brand", "manufacturer"]);
-  const setProperty = (label: string, value: string) => {
-    if (!targetLabels.has(label)) return;
-    if (!value) return;
-    if (properties.has(label)) return;
-    properties.set(label, value);
+export const normalizeCustomMarketplaceProperties = (
+  properties: CustomExtractorProperties | undefined,
+): MarketplaceProperties | undefined => {
+  if (!properties) return undefined;
+
+  const normalized = {
+    productName: normalizePropertyValue(properties.productName || ""),
+    brandName: normalizePropertyValue(properties.brandName || ""),
+    manufacturerName: normalizePropertyValue(properties.manufacturerName || ""),
   };
 
-  for (const row of Array.from(doc.querySelectorAll("tr"))) {
-    const cells = row.querySelectorAll("th, td");
-    if (cells.length < 2) continue;
-    const label = normalizePropertyLabel(cells[0]?.textContent || "");
-    const value = normalizePropertyValue(cells[1]?.textContent || "");
-    setProperty(label, value);
-    if (properties.has("brand") && properties.has("manufacturer")) break;
+  const mapped = new Map<string, string>();
+  if (normalized.productName) {
+    mapped.set("schemaProductName", normalized.productName);
+  }
+  if (normalized.brandName) {
+    mapped.set("brand", normalized.brandName);
+    mapped.set("schemaProductBrand", normalized.brandName);
+  }
+  if (normalized.manufacturerName) {
+    mapped.set("manufacturer", normalized.manufacturerName);
+    mapped.set("schemaProductManufacturer", normalized.manufacturerName);
   }
 
-  if (!properties.has("brand") || !properties.has("manufacturer")) {
-    for (const listItem of Array.from(doc.querySelectorAll("li"))) {
-      const text = normalizePropertyValue(listItem.textContent || "");
-      if (!text.includes(":")) continue;
-      const [rawLabel, ...rest] = text.split(":");
-      if (!rawLabel || rest.length === 0) continue;
-      const label = normalizePropertyLabel(rawLabel);
-      const value = normalizePropertyValue(rest.join(":"));
-      setProperty(label, value);
-      if (properties.has("brand") && properties.has("manufacturer")) break;
-    }
+  if (mapped.size === 0) return undefined;
+  return Object.fromEntries(mapped.entries());
+};
+
+const getExtractorFamilyFromModulePath = (path: string): string | null => {
+  const filename = path.split("/").pop();
+  if (!filename) return null;
+  if (!filename.endsWith(".ts")) return null;
+  return filename.slice(0, -3).toLowerCase();
+};
+
+const getConventionCustomExtractorMap = (): Map<string, MarketplaceExtractor> => {
+  const extractors = new Map<string, MarketplaceExtractor>();
+  extractors.set("amazon", extractAmazonMarketplacePropertiesByConvention);
+
+  const glob = (import.meta as ImportMetaWithGlob).glob;
+  if (typeof glob !== "function") return extractors;
+
+  const modules = glob("./customExtractors/*.ts", { eager: true });
+  for (const [path, moduleValue] of Object.entries(modules)) {
+    const family = getExtractorFamilyFromModulePath(path);
+    if (!family) continue;
+    if (!moduleValue || typeof moduleValue !== "object") continue;
+
+    const candidate = (moduleValue as { default?: unknown }).default;
+    if (typeof candidate !== "function") continue;
+    extractors.set(family, candidate as MarketplaceExtractor);
   }
 
-  if (properties.size === 0) return undefined;
-  return Object.fromEntries(properties.entries());
+  return extractors;
+};
+
+const CUSTOM_MARKETPLACE_EXTRACTORS = getConventionCustomExtractorMap();
+
+export const extractCustomMarketplaceProperties = (
+  doc: Document,
+  hostname: string,
+): MarketplaceProperties | undefined => {
+  const family = getEcommerceFamily(hostname);
+  if (!family) return undefined;
+
+  const extractor = CUSTOM_MARKETPLACE_EXTRACTORS.get(family.toLowerCase());
+  if (!extractor) return undefined;
+  const extracted = extractor(doc, hostname);
+  return normalizeCustomMarketplaceProperties(extracted);
 };
 
 export const extractSchemaJsonLdProductProperties = (
   doc: Document,
   hostname: string,
-): Record<string, string> | undefined => {
+): MarketplaceProperties | undefined => {
   void hostname;
 
   const productNodes: Array<Record<string, unknown>> = [];

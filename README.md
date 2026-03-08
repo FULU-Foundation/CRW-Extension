@@ -14,6 +14,10 @@ Contributions are welcome!
 Please read the [CONTRIBUTING.md](CONTRIBUTING.md) guide for details on how to ask questions, report bugs, suggest enhancements, and submit Pull Requests.  
 You can also check the [project board](https://github.com/FULU-Foundation/CRW-Extension/projects) and look for issues labelled **good first issue** to get started.
 
+### Add an Ecommerce Site
+Adding custom ecommerce domains is supported via the `ecommerce:add` script.  
+See [docs/SCRIPTS.md](docs/SCRIPTS.md) for usage and options.
+
 ### Editorial and Wiki Contributions
 The extension matches sites and services against data sourced from the [Consumer Rights Wiki](https://consumerrights.wiki). You can contribute in two ways:
 

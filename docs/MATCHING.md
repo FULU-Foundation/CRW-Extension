@@ -51,5 +51,5 @@ The URL matcher behavior is controlled by the exported `matchingConfig` object i
 ### Current usage notes
 
 - URL matching currently uses `enableSubdomainMatching`, `enableMatchAcrossTLDs`, `enableEcommerceFamilyAliasMatching`, `specificPathDomainMatches`, and `ecommerceDomainFamilyMap`.
-- `matchByPageContext(...)` currently reads `enableSearchResultsPageSuppressions`, `searchResultsPageSuppressions`, `restrictMetaPageContextToEcommerceHosts`, `companyAliasSuffixStripping`, `amazonPropertyMatching`, and `schemaJsonLdProductMatching` (along with related page-context matching logic).
+- `matchByPageContext(...)` currently reads `enableSearchResultsPageSuppressions`, `searchResultsPageSuppressions`, `restrictMetaPageContextToEcommerceHosts`, `companyAliasSuffixStripping`, `marketplaceBrandDenylist`, `amazonPropertyMatching`, and `schemaJsonLdProductMatching` (along with related page-context matching logic).
 - The page-context and seed-limit params are defined in config now for matching/scoring workflows, but are not currently read by `src/lib/matching/urlMatching.ts`.
