@@ -167,14 +167,16 @@ export const matchEntriesByPageContext = (
   const hasAmazonPropertySignals =
     amazonBrandPropertyText.length > 0 ||
     amazonManufacturerPropertyText.length > 0;
-  const useSchemaJsonLdSignals = matchingConfig.schemaJsonLdProductMatching.enabled;
+  const useSchemaJsonLdSignals =
+    matchingConfig.schemaJsonLdProductMatching.enabled;
   const schemaNamePropertyText = normalizeText(
     useSchemaJsonLdSignals && matchingConfig.schemaJsonLdProductMatching.useName
       ? context.marketplaceProperties?.schemaProductName || ""
       : "",
   );
   const schemaBrandPropertyText = normalizeText(
-    useSchemaJsonLdSignals && matchingConfig.schemaJsonLdProductMatching.useBrand
+    useSchemaJsonLdSignals &&
+      matchingConfig.schemaJsonLdProductMatching.useBrand
       ? context.marketplaceProperties?.schemaProductBrand || ""
       : "",
   );

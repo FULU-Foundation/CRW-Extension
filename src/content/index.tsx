@@ -416,10 +416,8 @@ const runContentScript = async () => {
     document,
     location.hostname,
   );
-  const schemaJsonLdMarketplaceProperties = extractSchemaJsonLdProductProperties(
-    document,
-    location.hostname,
-  );
+  const schemaJsonLdMarketplaceProperties =
+    extractSchemaJsonLdProductProperties(document, location.hostname);
   const marketplaceProperties =
     amazonMarketplaceProperties || schemaJsonLdMarketplaceProperties
       ? {

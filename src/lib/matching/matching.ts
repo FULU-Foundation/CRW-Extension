@@ -155,7 +155,10 @@ export const matchByPageContext = (
     : [];
 
   if (urlMatches.length === 0) {
-    if ((!isEcommerceHost && !hasSchemaJsonLdSignals) || metaSeeds.length === 0) {
+    if (
+      (!isEcommerceHost && !hasSchemaJsonLdSignals) ||
+      metaSeeds.length === 0
+    ) {
       return [];
     }
     return expandRelatedEntries(entries, dedupeSeeds(metaSeeds));
