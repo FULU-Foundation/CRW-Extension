@@ -53,6 +53,7 @@
         "required": ["none"],
         "optional": []
       }
-    }
+    },
+    "gecko_android": {}
   }
 }
