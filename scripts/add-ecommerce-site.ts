@@ -26,7 +26,7 @@ const parseArgs = (argv: string[]) => {
   const family = readArgValue("family");
   const domains = readArgValue("domains");
   const configPath =
-    readArgValue("config-path") ?? "src/lib/matching/matchingConfig.ts";
+    readArgValue("config-path") ?? "src/lib/matching/matchingConfig.json";
   const dryRun = argv.includes("--dry-run");
 
   if (!family || !domains) {
@@ -85,13 +85,13 @@ const run = async () => {
     }
     if (result.addedToDenylist) {
       console.log(
-        `Added "${result.family}" to marketplaceBrandDenylist in matchingConfig.`,
+        `Added "${result.family}" to marketplaceBrandDenylist in matchingConfig.json.`,
       );
     }
     if (args.dryRun) {
       console.log("No files were written.");
     } else {
-      console.log("Formatted matchingConfig.ts with Prettier.");
+      console.log("Formatted matchingConfig.json with Prettier.");
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

@@ -1,7 +1,7 @@
-type ValueRange = {
-  start: number;
-  end: number;
-  indent: string;
+type EcommerceDataFile = {
+  [key: string]: unknown;
+  marketplaceBrandDenylist: string[];
+  ecommerceDomainFamilyMap: Record<string, string>;
 };
 
 export type EcommerceConfigUpdateResult = {
@@ -26,155 +26,50 @@ export type RunEcommerceAddResult = EcommerceConfigUpdateResult & {
 
 const DOMAIN_PATTERN = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/;
 
-const escapeRegExp = (value: string): string => {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-};
-
-const findMatchingBracket = (
-  source: string,
-  start: number,
-  openChar: "[" | "{",
-): number => {
-  const closeChar = openChar === "[" ? "]" : "}";
-  let depth = 0;
-  let activeQuote: "'" | '"' | "`" | null = null;
-  let escaping = false;
-
-  for (let index = start; index < source.length; index += 1) {
-    const char = source[index];
-    if (!char) continue;
-
-    if (activeQuote) {
-      if (escaping) {
-        escaping = false;
-        continue;
-      }
-      if (char === "\\") {
-        escaping = true;
-        continue;
-      }
-      if (char === activeQuote) {
-        activeQuote = null;
-      }
-      continue;
-    }
-
-    if (char === "'" || char === '"' || char === "`") {
-      activeQuote = char;
-      continue;
-    }
-
-    if (char === openChar) {
-      depth += 1;
-      continue;
-    }
-
-    if (char === closeChar) {
-      depth -= 1;
-      if (depth === 0) return index;
-    }
+const parseEcommerceData = (source: string): EcommerceDataFile => {
+  const parsed = JSON.parse(source) as unknown;
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("Invalid ecommerce data JSON: expected an object");
   }
 
-  throw new Error(`Unmatched ${openChar} while parsing matchingConfig.ts`);
-};
+  const value = parsed as Record<string, unknown>;
+  const denylist = value.marketplaceBrandDenylist;
+  const domainMap = value.ecommerceDomainFamilyMap;
 
-const findPropertyValueRange = (
-  source: string,
-  propertyName: string,
-  fromIndex = 0,
-): ValueRange => {
-  const sourceWindow = source.slice(fromIndex);
-  const pattern = new RegExp(
-    `(^[ \\t]*)${escapeRegExp(propertyName)}\\s*:\\s*`,
-    "m",
-  );
-  const match = pattern.exec(sourceWindow);
-  if (!match || typeof match.index !== "number") {
-    throw new Error(`Could not find "${propertyName}" in matchingConfig.ts`);
-  }
-
-  const startIndex = fromIndex + match.index;
-  let valueStart = startIndex + match[0].length;
-  while (/\s/.test(source[valueStart] || "")) valueStart += 1;
-
-  const openChar = source[valueStart];
-  if (openChar !== "[" && openChar !== "{") {
+  if (!Array.isArray(denylist)) {
     throw new Error(
-      `"${propertyName}" must be an array or object literal in matchingConfig.ts`,
+      "Invalid ecommerce data JSON: marketplaceBrandDenylist must be an array",
+    );
+  }
+  if (!domainMap || typeof domainMap !== "object" || Array.isArray(domainMap)) {
+    throw new Error(
+      "Invalid ecommerce data JSON: ecommerceDomainFamilyMap must be an object",
     );
   }
 
-  const end = findMatchingBracket(source, valueStart, openChar);
+  const normalizedDenylist = denylist
+    .filter((entry): entry is string => typeof entry === "string")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+
+  const normalizedDomainMap: Record<string, string> = {};
+  for (const [domain, family] of Object.entries(domainMap)) {
+    if (typeof domain !== "string" || typeof family !== "string") continue;
+    const domainKey = domain.trim();
+    const familyValue = family.trim();
+    if (!domainKey || !familyValue) continue;
+    normalizedDomainMap[domainKey] = familyValue;
+  }
+
   return {
-    start: valueStart,
-    end: end + 1,
-    indent: match[1] || "",
+    ...value,
+    marketplaceBrandDenylist: normalizedDenylist,
+    ecommerceDomainFamilyMap: normalizedDomainMap,
   };
 };
 
-const parseStringArrayLiteral = (literal: string): string[] => {
-  const values: string[] = [];
-  const pattern = /"((?:\\.|[^"\\])*)"/g;
-  let match = pattern.exec(literal);
-  while (match) {
-    values.push(JSON.parse(`"${match[1] || ""}"`) as string);
-    match = pattern.exec(literal);
-  }
-  return values;
-};
-
-const parseStringMapLiteral = (literal: string): Array<[string, string]> => {
-  const values: Array<[string, string]> = [];
-  const pattern = /"((?:\\.|[^"\\])*)"\s*:\s*"((?:\\.|[^"\\])*)"/g;
-  let match = pattern.exec(literal);
-  while (match) {
-    const key = JSON.parse(`"${match[1] || ""}"`) as string;
-    const value = JSON.parse(`"${match[2] || ""}"`) as string;
-    values.push([key, value]);
-    match = pattern.exec(literal);
-  }
-  return values;
-};
-
-const formatStringArrayLiteral = (values: string[], indent: string): string => {
-  if (values.length === 0) return "[]";
-  const innerIndent = `${indent}  `;
-  return [
-    "[",
-    ...values.map((value) => `${innerIndent}${JSON.stringify(value)},`),
-    `${indent}]`,
-  ].join("\n");
-};
-
-const formatStringMapLiteral = (
-  entries: Array<[string, string]>,
-  indent: string,
-): string => {
-  if (entries.length === 0) return "{}";
-  const innerIndent = `${indent}  `;
-  return [
-    "{",
-    ...entries.map(
-      ([key, value]) =>
-        `${innerIndent}${JSON.stringify(key)}: ${JSON.stringify(value)},`,
-    ),
-    `${indent}}`,
-  ].join("\n");
-};
-
-const applyReplacements = (
-  source: string,
-  replacements: Array<{ start: number; end: number; value: string }>,
-): string => {
-  return [...replacements]
-    .sort((left, right) => right.start - left.start)
-    .reduce((nextSource, replacement) => {
-      return (
-        nextSource.slice(0, replacement.start) +
-        replacement.value +
-        nextSource.slice(replacement.end)
-      );
-    }, source);
+const stringifyEcommerceData = (value: EcommerceDataFile): string => {
+  return `${JSON.stringify(value, null, 2)}\n`;
 };
 
 export const normalizeFamily = (familyRaw: string): string => {
@@ -239,31 +134,10 @@ export const applyEcommerceConfigUpdate = (
   family: string,
   domains: string[],
 ): EcommerceConfigUpdateResult => {
-  const defaultConfigIndex = source.indexOf("const DEFAULT_MATCHING_CONFIG");
-  if (defaultConfigIndex < 0) {
-    throw new Error(
-      "Could not find DEFAULT_MATCHING_CONFIG in matchingConfig.ts",
-    );
-  }
-
-  const denylistRange = findPropertyValueRange(
-    source,
-    "marketplaceBrandDenylist",
-    defaultConfigIndex,
+  const data = parseEcommerceData(source);
+  const existingByDomain = new Map(
+    Object.entries(data.ecommerceDomainFamilyMap),
   );
-  const mapRange = findPropertyValueRange(
-    source,
-    "ecommerceDomainFamilyMap",
-    defaultConfigIndex,
-  );
-
-  const existingDenylist = parseStringArrayLiteral(
-    source.slice(denylistRange.start, denylistRange.end),
-  );
-  const existingEntries = parseStringMapLiteral(
-    source.slice(mapRange.start, mapRange.end),
-  );
-  const existingByDomain = new Map(existingEntries);
 
   const addedDomains: string[] = [];
   for (const domain of domains) {
@@ -274,15 +148,14 @@ export const applyEcommerceConfigUpdate = (
       );
     }
     if (!existingFamily) {
-      existingEntries.push([domain, family]);
-      existingByDomain.set(domain, family);
+      data.ecommerceDomainFamilyMap[domain] = family;
       addedDomains.push(domain);
     }
   }
 
   let addedToDenylist = false;
-  if (!existingDenylist.includes(family)) {
-    existingDenylist.push(family);
+  if (!data.marketplaceBrandDenylist.includes(family)) {
+    data.marketplaceBrandDenylist.push(family);
     addedToDenylist = true;
   }
 
@@ -295,21 +168,14 @@ export const applyEcommerceConfigUpdate = (
     };
   }
 
-  const updatedSource = applyReplacements(source, [
-    {
-      start: denylistRange.start,
-      end: denylistRange.end,
-      value: formatStringArrayLiteral(existingDenylist, denylistRange.indent),
-    },
-    {
-      start: mapRange.start,
-      end: mapRange.end,
-      value: formatStringMapLiteral(existingEntries, mapRange.indent),
-    },
-  ]);
+  data.ecommerceDomainFamilyMap = Object.fromEntries(
+    Object.entries(data.ecommerceDomainFamilyMap).sort(([left], [right]) =>
+      left.localeCompare(right),
+    ),
+  );
 
   return {
-    updatedSource,
+    updatedSource: stringifyEcommerceData(data),
     changed: true,
     addedDomains,
     addedToDenylist,

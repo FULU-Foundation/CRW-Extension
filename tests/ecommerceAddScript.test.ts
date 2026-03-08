@@ -7,18 +7,19 @@ import {
 } from "../scripts/lib/ecommerce-add.ts";
 
 const fixtureConfig = (): string => {
-  return `
-const DEFAULT_MATCHING_CONFIG = {
-  marketplaceBrandDenylist: [
-    "amazon",
-    "ebay",
-  ],
-  ecommerceDomainFamilyMap: {
-    "amazon.com": "amazon",
-    "ebay.com": "ebay",
-  },
-};
-`;
+  return JSON.stringify(
+    {
+      enableSubdomainMatching: true,
+      enableMatchAcrossTLDs: true,
+      marketplaceBrandDenylist: ["amazon", "ebay"],
+      ecommerceDomainFamilyMap: {
+        "amazon.com": "amazon",
+        "ebay.com": "ebay",
+      },
+    },
+    null,
+    2,
+  );
 };
 
 test("applyEcommerceConfigUpdate adds family domains and denylist entry", () => {
@@ -76,19 +77,12 @@ test("applyEcommerceConfigUpdate rejects domain family conflicts", () => {
   );
 });
 
-test("applyEcommerceConfigUpdate updates DEFAULT_MATCHING_CONFIG, not type fields", () => {
-  const sourceWithTypeBlock = `
-type MatchingConfig = {
-  marketplaceBrandDenylist: string[];
-  ecommerceDomainFamilyMap: Record<string, string>;
-};
-${fixtureConfig()}
-`;
-
-  const result = applyEcommerceConfigUpdate(sourceWithTypeBlock, "arukereso", [
+test("applyEcommerceConfigUpdate emits valid JSON data output", () => {
+  const result = applyEcommerceConfigUpdate(fixtureConfig(), "arukereso", [
     "arukereso.hu",
   ]);
 
   assert.equal(result.changed, true);
   assert.match(result.updatedSource, /"arukereso\.hu": "arukereso",/);
+  assert.match(result.updatedSource, /"enableSubdomainMatching": true/);
 });
