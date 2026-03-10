@@ -392,14 +392,8 @@ const renderInlinePopup = async (
 };
 
 const runContentScript = async () => {
-  if (!(await isWarningsEnabled())) {
+  if (!(await isWarningsEnabled()) || (await isCurrentSiteSuppressed())) {
     removeInlinePopup();
-    return;
-  }
-
-  if (await isCurrentSiteSuppressed()) {
-    removeInlinePopup();
-    return;
   }
 
   const getMetaContent = (selector: string): string => {
