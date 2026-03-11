@@ -4,6 +4,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { MatchPopupCard } from "../src/shared/ui/MatchPopupCard.tsx";
+import { getIncidentTooltipText } from "../src/shared/ui/MatchPopupPrimitives.tsx";
 import { entry } from "./helpers.ts";
 
 const noop = () => {};
@@ -145,4 +146,32 @@ test("MatchPopupCard prefers product-linked company over marketplace company", (
   assert.ok(appleIncidentIndex >= 0);
   assert.ok(amazonIncidentIndex >= 0);
   assert.ok(appleIncidentIndex < amazonIncidentIndex);
+});
+
+test("getIncidentTooltipText returns trimmed description when present", () => {
+  assert.equal(
+    getIncidentTooltipText(
+      entry({
+        _type: "Incident",
+        PageID: "incident-with-description",
+        PageName: "Incident With Description",
+        Description: "  Tooltip text  ",
+      }),
+    ),
+    "Tooltip text",
+  );
+});
+
+test("getIncidentTooltipText returns fallback when description is empty", () => {
+  assert.equal(
+    getIncidentTooltipText(
+      entry({
+        _type: "Incident",
+        PageID: "incident-without-description",
+        PageName: "Incident Without Description",
+        Description: "   ",
+      }),
+    ),
+    "No description available.",
+  );
 });

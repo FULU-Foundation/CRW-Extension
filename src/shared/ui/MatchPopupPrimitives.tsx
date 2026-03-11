@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 import { CargoEntry } from "@/shared/types";
 import { POPUP_CSS } from "@/shared/ui/matchPopupStyles";
@@ -13,6 +13,13 @@ export const getIncidentPrimaryStatus = (entry: CargoEntry): string => {
     .map((value) => value.trim())
     .filter(Boolean);
   return primaryStatus || "";
+};
+
+export const getIncidentTooltipText = (entry: CargoEntry): string => {
+  if (typeof entry.Description === "string" && entry.Description.trim()) {
+    return entry.Description.trim();
+  }
+  return "No description available.";
 };
 
 const entryHref = (entry: CargoEntry): string => {
@@ -45,6 +52,10 @@ export const EntryLink = (props: {
   titleStyle: React.CSSProperties;
   iconSize?: number;
   statusLozenge?: string;
+  onMouseEnter?: React.MouseEventHandler<HTMLAnchorElement>;
+  onMouseLeave?: React.MouseEventHandler<HTMLAnchorElement>;
+  onFocus?: React.FocusEventHandler<HTMLAnchorElement>;
+  onBlur?: React.FocusEventHandler<HTMLAnchorElement>;
 }) => {
   const {
     entry,
@@ -53,6 +64,10 @@ export const EntryLink = (props: {
     titleStyle,
     iconSize = 12,
     statusLozenge,
+    onMouseEnter,
+    onMouseLeave,
+    onFocus,
+    onBlur,
   } = props;
   return (
     <a
@@ -60,7 +75,22 @@ export const EntryLink = (props: {
       target="_blank"
       rel="noopener noreferrer"
       style={linkStyle}
-      {...linkHoverHandlers}
+      onMouseEnter={(event) => {
+        linkHoverHandlers.onMouseEnter(event);
+        onMouseEnter?.(event);
+      }}
+      onMouseLeave={(event) => {
+        linkHoverHandlers.onMouseLeave(event);
+        onMouseLeave?.(event);
+      }}
+      onFocus={(event) => {
+        linkHoverHandlers.onFocus(event);
+        onFocus?.(event);
+      }}
+      onBlur={(event) => {
+        linkHoverHandlers.onBlur(event);
+        onBlur?.(event);
+      }}
     >
       <span style={titleStyle}>{entry.PageName}</span>
       {statusLozenge && (
@@ -136,32 +166,102 @@ export const RelatedGroup = (props: {
         {title}
       </div>
       {entries.map((item) => (
-        <EntryLink
+        <IncidentEntry
           key={getEntryKey(item)}
-          entry={item}
+          item={item}
           externalIconUrl={externalIconUrl}
-          linkStyle={{
-            fontSize: "12px",
-            color: POPUP_CSS.text,
-            textDecoration: "none",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-          }}
-          titleStyle={{
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            minWidth: 0,
-          }}
-          iconSize={11}
-          statusLozenge={
-            showIncidentStatus
-              ? getIncidentPrimaryStatus(item) || undefined
-              : undefined
-          }
+          showIncidentStatus={showIncidentStatus}
         />
       ))}
+    </div>
+  );
+};
+
+const IncidentEntry = (props: {
+  item: CargoEntry;
+  externalIconUrl: string;
+  showIncidentStatus: boolean;
+}) => {
+  const { item, externalIconUrl, showIncidentStatus } = props;
+  const [showTooltip, setShowTooltip] = useState(false);
+  const tooltipText = getIncidentTooltipText(item);
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        zIndex: showTooltip ? 20 : "auto",
+      }}
+    >
+      {showIncidentStatus && showTooltip && (
+        <div
+          role="tooltip"
+          style={{
+            position: "absolute",
+            left: 0,
+            bottom: "calc(100% + 8px)",
+            zIndex: 21,
+            maxWidth: "280px",
+            padding: "10px 12px",
+            borderRadius: "10px",
+            background:
+              "linear-gradient(180deg, rgba(7,18,41,0.98), rgba(6,15,35,0.94))",
+            border: "1px solid rgba(216,241,255,0.22)",
+            boxShadow: "0 12px 28px rgba(0,0,0,0.28)",
+            color: POPUP_CSS.text,
+            fontSize: "12px",
+            lineHeight: 1.45,
+            pointerEvents: "none",
+          }}
+        >
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              bottom: "-7px",
+              left: "20px",
+              width: "12px",
+              height: "12px",
+              background: "rgba(6,15,35,0.96)",
+              borderRight: "1px solid rgba(216,241,255,0.22)",
+              borderBottom: "1px solid rgba(216,241,255,0.22)",
+              transform: "rotate(45deg)",
+            }}
+          />
+          {tooltipText}
+        </div>
+      )}
+
+      <EntryLink
+        entry={item}
+        externalIconUrl={externalIconUrl}
+        linkStyle={{
+          fontSize: "12px",
+          color: POPUP_CSS.text,
+          textDecoration: "none",
+          display: "flex",
+          alignItems: "center",
+          gap: "4px",
+        }}
+        titleStyle={{
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          minWidth: 0,
+        }}
+        iconSize={11}
+        statusLozenge={
+          showIncidentStatus
+            ? getIncidentPrimaryStatus(item) || undefined
+            : undefined
+        }
+        onMouseEnter={showIncidentStatus ? () => setShowTooltip(true) : undefined}
+        onMouseLeave={showIncidentStatus ? () => setShowTooltip(false) : undefined}
+        onFocus={showIncidentStatus ? () => setShowTooltip(true) : undefined}
+        onBlur={showIncidentStatus ? () => setShowTooltip(false) : undefined}
+      />
     </div>
   );
 };
