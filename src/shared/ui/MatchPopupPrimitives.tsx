@@ -257,8 +257,12 @@ const IncidentEntry = (props: {
             ? getIncidentPrimaryStatus(item) || undefined
             : undefined
         }
-        onMouseEnter={showIncidentStatus ? () => setShowTooltip(true) : undefined}
-        onMouseLeave={showIncidentStatus ? () => setShowTooltip(false) : undefined}
+        onMouseEnter={
+          showIncidentStatus ? () => setShowTooltip(true) : undefined
+        }
+        onMouseLeave={
+          showIncidentStatus ? () => setShowTooltip(false) : undefined
+        }
         onFocus={showIncidentStatus ? () => setShowTooltip(true) : undefined}
         onBlur={showIncidentStatus ? () => setShowTooltip(false) : undefined}
       />
