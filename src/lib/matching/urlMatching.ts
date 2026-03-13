@@ -57,7 +57,7 @@ const isCountryCodeSuffix = (suffix: string | undefined): boolean => {
   const parts = suffix.split(".").filter(Boolean);
   if (parts.length !== 1) return false;
 
-  const lastPart = parts.at(-1)?.toLowerCase();
+  const lastPart = parts[parts.length - 1]?.toLowerCase();
   if (!lastPart) return false;
 
   return matchingConfig.crossTldCountryCodeSuffixes.includes(lastPart);
@@ -74,7 +74,7 @@ const hasConfiguredCompoundCountrySuffix = (
     .filter(Boolean);
   if (parts.length < 2) return false;
 
-  const lastPart = parts.at(-1);
+  const lastPart = parts[parts.length - 1];
   if (
     !lastPart ||
     !matchingConfig.crossTldCountryCodeSuffixes.includes(lastPart)
