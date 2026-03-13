@@ -84,7 +84,9 @@ const hasConfiguredCompoundCountrySuffix = (
 
   return parts
     .slice(0, -1)
-    .every((part) => matchingConfig.crossTldCompoundSuffixPrefixes.includes(part));
+    .every((part) =>
+      matchingConfig.crossTldCompoundSuffixPrefixes.includes(part),
+    );
 };
 
 const normalizeMatchHostname = (hostname: string): string => {
