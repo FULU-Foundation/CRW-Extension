@@ -125,11 +125,24 @@ export const classifyUrlMatch = (
       Boolean(visitedSuffix?.includes(".")) ||
       Boolean(candidateSuffix?.includes("."));
 
+    // Check if either suffix has a restricted/industry first part (e.g., bank.in, edu.au)
+    // These should not participate in cross-TLD matching as they represent
+    // restricted registrations, not generic country-code compound TLDs
+    const restrictedSuffixPatterns = new Set(["bank", "edu", "mil", "gov"]);
+    const visitedSuffixFirstPart = visitedSuffix?.split(".")[0];
+    const candidateSuffixFirstPart = candidateSuffix?.split(".")[0];
+    const hasRestrictedSuffix =
+      (visitedSuffixFirstPart &&
+        restrictedSuffixPatterns.has(visitedSuffixFirstPart)) ||
+      (candidateSuffixFirstPart &&
+        restrictedSuffixPatterns.has(candidateSuffixFirstPart));
+
     if (
       visitedLabel &&
       candidateLabel &&
       visitedLabel === candidateLabel &&
       hasCompoundSuffix &&
+      !hasRestrictedSuffix &&
       visitedRoot !== candidateRoot
     ) {
       return {

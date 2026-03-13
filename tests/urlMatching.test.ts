@@ -231,6 +231,23 @@ test("does not cross-match yubo.live to live.com in reverse direction", () => {
   assert.equal(result, null);
 });
 
+test("does not cross-match bank.in domain to unrelated .com domain", () => {
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
+  // Regression test for: https://github.com/FULU-Foundation/CRW-Extension/issues/77
+  // axis.bank.in should NOT match axis.com as they are different companies
+  // .bank.in is a restricted SLD for banks, not a generic compound TLD
+  const visited = safeParseUrl("https://www.axis.bank.in/");
+  const candidate = safeParseUrl("https://axis.com/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
 test("does not classify unrelated .com.au domains as subdomain matches", () => {
   setMatchingConfig({ enableSubdomainMatching: true });
   const visited = safeParseUrl("https://optus.com.au/");
