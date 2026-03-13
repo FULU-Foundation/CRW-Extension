@@ -214,6 +214,9 @@ const removeInlinePopup = () => {
   popupHost = null;
 };
 
+const isInlinePopupOpen = (): boolean =>
+  Boolean(popupHost?.isConnected && popupShadowMount?.isConnected && popupRoot);
+
 const renderInlinePopup = async (
   matches: CargoEntry[],
   ignorePreferences = false,
@@ -447,6 +450,16 @@ const runContentScript = async () => {
 const handleInlinePopupInstruction = async (
   instruction: InlinePopupInstruction,
 ) => {
+  if (instruction.toggle) {
+    if (isInlinePopupOpen()) {
+      removeInlinePopup();
+      return;
+    }
+
+    void renderInlinePopup(instruction.matches, true);
+    return;
+  }
+
   if (!instruction.ignorePreferences) {
     if (forcePopupVisible && !(await isWarningsEnabled())) return;
     void renderInlinePopup(instruction.matches, false);
