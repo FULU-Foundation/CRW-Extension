@@ -270,6 +270,125 @@ const IncidentEntry = (props: {
   );
 };
 
+type IncidentSummaryProps = {
+  totalIncidents: number;
+  activeIncidents: number;
+};
+
+export const IncidentSummary = (props: IncidentSummaryProps) => {
+  const { totalIncidents, activeIncidents } = props;
+
+  // Determine severity level
+  const getSeverityLevel = (): "high" | "medium" | "low" => {
+    if (activeIncidents > 0) return "high";
+    if (totalIncidents > 0) return "medium";
+    return "low";
+  };
+
+  const severity = getSeverityLevel();
+  const severityColor = {
+    high: POPUP_CSS.severityHigh,
+    medium: POPUP_CSS.severityMedium,
+    low: POPUP_CSS.severityLow,
+  }[severity];
+
+  const severityLabel = {
+    high: "High Risk",
+    medium: "Medium Risk",
+    low: "No Issues",
+  }[severity];
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px",
+        background: POPUP_CSS.subtleBg,
+        borderRadius: "10px",
+        padding: "12px",
+        borderLeft: `4px solid ${severityColor}`,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "8px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <div
+            style={{
+              width: "10px",
+              height: "10px",
+              borderRadius: "50%",
+              background: severityColor,
+              boxShadow: `0 0 8px ${severityColor}`,
+            }}
+          />
+          <span
+            style={{
+              fontSize: "16px",
+              fontWeight: 700,
+              color: severityColor,
+            }}
+          >
+            {severityLabel}
+          </span>
+        </div>
+        <span
+          style={{
+            fontSize: "13px",
+            fontWeight: 600,
+            color: POPUP_CSS.text,
+          }}
+        >
+          {totalIncidents} incident{totalIncidents !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      {activeIncidents > 0 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "6px 10px",
+            background: `${POPUP_CSS.severityHigh}15`,
+            borderRadius: "6px",
+          }}
+        >
+          <span
+            style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              background: POPUP_CSS.severityHigh,
+            }}
+          />
+          <span
+            style={{
+              fontSize: "12px",
+              fontWeight: 600,
+              color: POPUP_CSS.text,
+            }}
+          >
+            {activeIncidents} active
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const TopMatchBlock = (props: {
   entry: CargoEntry;
   companyFallback?: CargoEntry;
@@ -286,24 +405,24 @@ export const TopMatchBlock = (props: {
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "6px",
+        gap: "4px",
         background: POPUP_CSS.subtleBg,
-        borderRadius: "10px",
-        padding: "10px",
+        borderRadius: "8px",
+        padding: "8px",
       }}
     >
       <EntryLink
         entry={entry}
         externalIconUrl={externalIconUrl}
         linkStyle={{
-          fontSize: "29px",
-          fontWeight: 700,
-          lineHeight: 1.2,
+          fontSize: "18px",
+          fontWeight: 600,
+          lineHeight: 1.3,
           color: POPUP_CSS.text,
           textDecoration: "none",
           display: "flex",
           alignItems: "center",
-          gap: "8px",
+          gap: "6px",
         }}
         titleStyle={{
           display: "-webkit-box",
@@ -312,7 +431,7 @@ export const TopMatchBlock = (props: {
           overflow: "hidden",
           minWidth: 0,
         }}
-        iconSize={16}
+        iconSize={14}
       />
 
       {entry._type === "Company" && entry.Industry && (

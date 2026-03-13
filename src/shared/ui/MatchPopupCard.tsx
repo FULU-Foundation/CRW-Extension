@@ -271,6 +271,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
         externalIconUrl={externalIconUrl}
         visibleIncidents={visibleIncidents}
         expandedIncidents={expandedIncidents}
+        allIncidents={derived.groupedRelated.Incident}
         relatedProducts={derived.groupedRelated.Product}
         relatedProductLines={derived.groupedRelated.ProductLine}
         showsRelatedPagesToggle={showsRelatedPagesToggle}

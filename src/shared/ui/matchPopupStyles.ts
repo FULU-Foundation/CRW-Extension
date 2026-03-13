@@ -11,6 +11,10 @@ export const POPUP_CSS = {
   subtleBg: "rgba(255,255,255,0.08)",
   buttonSecondaryText: "#FFFFFF",
   buttonSecondaryBorder: "rgba(255,255,255,0.38)",
+  // Severity levels for incident summary
+  severityHigh: "#EF4444", // Red - active incidents
+  severityMedium: "#F59E0B", // Amber/Yellow - only resolved incidents
+  severityLow: "#22C55E", // Green - no incidents
 };
 
 export const POPUP_LAYOUT = {

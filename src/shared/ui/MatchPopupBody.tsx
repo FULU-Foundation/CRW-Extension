@@ -1,7 +1,12 @@
 import React from "react";
 
 import { CargoEntry } from "@/shared/types";
-import { RelatedGroup, TopMatchBlock } from "@/shared/ui/MatchPopupPrimitives";
+import {
+  IncidentSummary,
+  RelatedGroup,
+  TopMatchBlock,
+  getIncidentPrimaryStatus,
+} from "@/shared/ui/MatchPopupPrimitives";
 import {
   POPUP_CSS,
   POPUP_LAYOUT,
@@ -14,6 +19,7 @@ type MatchPopupBodyProps = {
   externalIconUrl: string;
   visibleIncidents: CargoEntry[];
   expandedIncidents: CargoEntry[];
+  allIncidents: CargoEntry[];
   relatedProducts: CargoEntry[];
   relatedProductLines: CargoEntry[];
   showsRelatedPagesToggle: boolean;
@@ -29,6 +35,7 @@ export const MatchPopupBody = (props: MatchPopupBodyProps) => {
     externalIconUrl,
     visibleIncidents,
     expandedIncidents,
+    allIncidents,
     relatedProducts,
     relatedProductLines,
     showsRelatedPagesToggle,
@@ -36,6 +43,12 @@ export const MatchPopupBody = (props: MatchPopupBodyProps) => {
     showRelatedPages,
     onToggleRelatedPages,
   } = props;
+
+  // Calculate incident statistics
+  const totalIncidentCount = allIncidents.length;
+  const activeIncidentCount = allIncidents.filter(
+    (incident) => getIncidentPrimaryStatus(incident).toLowerCase() === "active",
+  ).length;
 
   const hasExpandableRelatedGroups =
     expandedIncidents.length > 0 ||
@@ -55,6 +68,13 @@ export const MatchPopupBody = (props: MatchPopupBodyProps) => {
 
   return (
     <div style={bodyPanelStyle}>
+      {/* Incident Summary - Most Prominent Element */}
+      <IncidentSummary
+        totalIncidents={totalIncidentCount}
+        activeIncidents={activeIncidentCount}
+      />
+
+      {/* Company/Product Info - Reduced Prominence */}
       <TopMatchBlock
         entry={topMatch}
         companyFallback={companyMatch}
