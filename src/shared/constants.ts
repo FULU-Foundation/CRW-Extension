@@ -27,5 +27,7 @@ export const STORAGE = {
   DATA_REFRESH_ERROR: "crw_data_refresh_error",
   SUPPRESSED_DOMAINS: "crw_suppressed_domains",
   SUPPRESSED_PAGE_NAMES: "crw_suppressed_page_names",
+  SUPPRESSED_DOMAINS_V2: "crw_suppressed_domains_v2",
+  SUPPRESSED_PAGE_NAMES_V2: "crw_suppressed_page_names_v2",
   WARNINGS_ENABLED: "crw_warnings_enabled",
 };

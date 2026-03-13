@@ -1,4 +1,5 @@
 import React from "react";
+import { SuppressedDomain, SuppressedPageName } from "@/shared/types";
 
 const PAGE_CSS = {
   bg: "#004080",
@@ -20,8 +21,8 @@ const REFRESH_INTERVAL_OPTIONS = [
 
 export type OptionsViewProps = {
   warningsEnabled: boolean;
-  suppressedDomains: string[];
-  suppressedPageNames: string[];
+  suppressedDomains: SuppressedDomain[];
+  suppressedPageNames: SuppressedPageName[];
   refreshIntervalMs: number;
   lastRefreshedAt: number | null;
   refreshingNow: boolean;
@@ -242,9 +243,9 @@ export const OptionsView = (props: OptionsViewProps) => {
             <div
               style={{ display: "flex", flexDirection: "column", gap: "8px" }}
             >
-              {suppressedPageNames.map((pageName) => (
+              {suppressedPageNames.map((entry) => (
                 <div
-                  key={pageName}
+                  key={entry.name}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -265,12 +266,12 @@ export const OptionsView = (props: OptionsViewProps) => {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {pageName}
+                    {entry.name}
                   </span>
                   <button
                     type="button"
                     onClick={() => {
-                      onRemoveSuppressedPageName(pageName);
+                      onRemoveSuppressedPageName(entry.name);
                     }}
                     style={{
                       border: `1px solid ${PAGE_CSS.buttonBorder}`,
@@ -339,9 +340,9 @@ export const OptionsView = (props: OptionsViewProps) => {
             <div
               style={{ display: "flex", flexDirection: "column", gap: "8px" }}
             >
-              {suppressedDomains.map((domain) => (
+              {suppressedDomains.map((entry) => (
                 <div
-                  key={domain}
+                  key={entry.name}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -362,12 +363,12 @@ export const OptionsView = (props: OptionsViewProps) => {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {domain}
+                    {entry.name}
                   </span>
                   <button
                     type="button"
                     onClick={() => {
-                      onRemoveSuppressedDomain(domain);
+                      onRemoveSuppressedDomain(entry.name);
                     }}
                     style={{
                       border: `1px solid ${PAGE_CSS.buttonBorder}`,

@@ -2,9 +2,15 @@ import React, { useEffect, useState } from "react";
 import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
+import {
+  SuppressedDomain,
+  SuppressedPageName,
+  CargoEntry,
+} from "@/shared/types";
 import { OptionsView } from "@/options/OptionsView";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
+import { migrateSuppressedEntries } from "@/lib/storage/migration";
 
 const readWarningsEnabled = async (): Promise<boolean> => {
   const stored = await browser.storage.local.get(
@@ -22,43 +28,71 @@ const normalizeHostname = (hostname: string): string => {
     .replace(/^www\./, "");
 };
 
-const readSuppressedDomains = async (): Promise<string[]> => {
+const readSuppressedDomains = async (): Promise<SuppressedDomain[]> => {
+  // Ensure migration has run
+  await migrateSuppressedEntries();
+
   const stored = await browser.storage.local.get(
-    Constants.STORAGE.SUPPRESSED_DOMAINS,
+    Constants.STORAGE.SUPPRESSED_DOMAINS_V2,
   );
-  const value = stored[Constants.STORAGE.SUPPRESSED_DOMAINS];
+  const value = stored[Constants.STORAGE.SUPPRESSED_DOMAINS_V2];
   if (!Array.isArray(value)) return [];
   return value
-    .filter((entry): entry is string => typeof entry === "string")
-    .map((entry) => normalizeHostname(entry))
-    .filter((entry) => entry.length > 0);
+    .filter(
+      (entry): entry is SuppressedDomain =>
+        typeof entry === "object" &&
+        entry !== null &&
+        typeof entry.name === "string" &&
+        typeof entry.dismissedAt === "number",
+    )
+    .map((entry) => ({
+      ...entry,
+      name: normalizeHostname(entry.name),
+    }))
+    .filter((entry) => entry.name.length > 0);
 };
 
 const normalizePageName = (pageName: string): string => {
   return pageName.trim().toLowerCase();
 };
 
-const readSuppressedPageNames = async (): Promise<string[]> => {
+const readSuppressedPageNames = async (): Promise<SuppressedPageName[]> => {
+  // Ensure migration has run
+  await migrateSuppressedEntries();
+
   const stored = await browser.storage.local.get(
-    Constants.STORAGE.SUPPRESSED_PAGE_NAMES,
+    Constants.STORAGE.SUPPRESSED_PAGE_NAMES_V2,
   );
-  const value = stored[Constants.STORAGE.SUPPRESSED_PAGE_NAMES];
+  const value = stored[Constants.STORAGE.SUPPRESSED_PAGE_NAMES_V2];
   if (!Array.isArray(value)) return [];
   return value
-    .filter((entry): entry is string => typeof entry === "string")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
+    .filter(
+      (entry): entry is SuppressedPageName =>
+        typeof entry === "object" &&
+        entry !== null &&
+        typeof entry.name === "string" &&
+        typeof entry.dismissedAt === "number",
+    )
+    .map((entry) => ({
+      ...entry,
+      name: entry.name.trim(),
+    }))
+    .filter((entry) => entry.name.length > 0);
 };
 
-const writeSuppressedDomains = async (domains: string[]): Promise<void> => {
+const writeSuppressedDomains = async (
+  domains: SuppressedDomain[],
+): Promise<void> => {
   await browser.storage.local.set({
-    [Constants.STORAGE.SUPPRESSED_DOMAINS]: domains,
+    [Constants.STORAGE.SUPPRESSED_DOMAINS_V2]: domains,
   });
 };
 
-const writeSuppressedPageNames = async (pageNames: string[]): Promise<void> => {
+const writeSuppressedPageNames = async (
+  pageNames: SuppressedPageName[],
+): Promise<void> => {
   await browser.storage.local.set({
-    [Constants.STORAGE.SUPPRESSED_PAGE_NAMES]: pageNames,
+    [Constants.STORAGE.SUPPRESSED_PAGE_NAMES_V2]: pageNames,
   });
 };
 
@@ -102,8 +136,12 @@ const readLastRefreshError = async (): Promise<string | null> => {
 
 const Options = () => {
   const [warningsEnabled, setWarningsEnabled] = useState<boolean>(true);
-  const [suppressedDomains, setSuppressedDomains] = useState<string[]>([]);
-  const [suppressedPageNames, setSuppressedPageNames] = useState<string[]>([]);
+  const [suppressedDomains, setSuppressedDomains] = useState<
+    SuppressedDomain[]
+  >([]);
+  const [suppressedPageNames, setSuppressedPageNames] = useState<
+    SuppressedPageName[]
+  >([]);
   const [refreshIntervalMs, setRefreshIntervalMs] = useState<number>(
     Constants.DEFAULT_DATA_REFRESH_INTERVAL_MS,
   );
@@ -198,7 +236,7 @@ const Options = () => {
 
   const onRemoveSuppressedDomain = async (domain: string) => {
     const normalized = normalizeHostname(domain);
-    const next = suppressedDomains.filter((value) => value !== normalized);
+    const next = suppressedDomains.filter((entry) => entry.name !== normalized);
     setSuppressedDomains(next);
     await writeSuppressedDomains(next);
   };
@@ -206,7 +244,7 @@ const Options = () => {
   const onRemoveSuppressedPageName = async (pageName: string) => {
     const normalized = normalizePageName(pageName);
     const next = suppressedPageNames.filter(
-      (value) => normalizePageName(value) !== normalized,
+      (entry) => normalizePageName(entry.name) !== normalized,
     );
     setSuppressedPageNames(next);
     await writeSuppressedPageNames(next);

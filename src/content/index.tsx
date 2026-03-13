@@ -3,7 +3,12 @@ import { createRoot, type Root } from "react-dom/client";
 import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
-import { CargoEntry, PageContext } from "@/shared/types";
+import {
+  CargoEntry,
+  PageContext,
+  SuppressedDomain,
+  SuppressedPageName,
+} from "@/shared/types";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
 import { InlinePopup } from "@/content/InlinePopup";
@@ -16,6 +21,7 @@ import {
   extractAmazonMarketplaceProperties,
   extractEbayJsonLdProductProperties,
 } from "@/lib/matching/ecommerce";
+import { migrateSuppressedEntries } from "@/lib/storage/migration";
 
 console.log(
   `${Constants.LOG_PREFIX} Content script loaded on:`,
@@ -42,20 +48,43 @@ const normalizeHostname = (hostname: string): string => {
     .replace(/^www\./, "");
 };
 
-const getSuppressedDomains = async (): Promise<string[]> => {
+const getSuppressedDomains = async (): Promise<SuppressedDomain[]> => {
   const stored = await browser.storage.local.get(
-    Constants.STORAGE.SUPPRESSED_DOMAINS,
+    Constants.STORAGE.SUPPRESSED_DOMAINS_V2,
   );
-  const value = stored[Constants.STORAGE.SUPPRESSED_DOMAINS];
+  const value = stored[Constants.STORAGE.SUPPRESSED_DOMAINS_V2];
   if (!Array.isArray(value)) return [];
   return value
-    .filter((entry): entry is string => typeof entry === "string")
-    .map((entry) => normalizeHostname(entry))
-    .filter((entry) => entry.length > 0);
+    .filter(
+      (entry): entry is SuppressedDomain =>
+        typeof entry === "object" &&
+        entry !== null &&
+        typeof entry.name === "string" &&
+        typeof entry.dismissedAt === "number",
+    )
+    .map((entry) => ({
+      ...entry,
+      name: normalizeHostname(entry.name),
+    }))
+    .filter((entry) => entry.name.length > 0);
+};
+
+const getSuppressedDomainNames = async (): Promise<string[]> => {
+  const domains = await getSuppressedDomains();
+  return domains.map((d) => d.name);
+};
+
+const getSuppressedDomainDismissedAt = async (
+  hostname: string,
+): Promise<number | null> => {
+  const domains = await getSuppressedDomains();
+  const normalized = normalizeHostname(hostname);
+  const entry = domains.find((d) => d.name === normalized);
+  return entry?.dismissedAt ?? null;
 };
 
 const isCurrentSiteSuppressed = async (): Promise<boolean> => {
-  const domains = await getSuppressedDomains();
+  const domains = await getSuppressedDomainNames();
   const current = normalizeHostname(location.hostname || "");
   return current.length > 0 && domains.includes(current);
 };
@@ -64,36 +93,54 @@ const normalizePageName = (pageName: string): string => {
   return pageName.trim().toLowerCase();
 };
 
-const getSuppressedPageNames = async (): Promise<string[]> => {
+const getSuppressedPageNames = async (): Promise<SuppressedPageName[]> => {
   const stored = await browser.storage.local.get(
-    Constants.STORAGE.SUPPRESSED_PAGE_NAMES,
+    Constants.STORAGE.SUPPRESSED_PAGE_NAMES_V2,
   );
-  const value = stored[Constants.STORAGE.SUPPRESSED_PAGE_NAMES];
+  const value = stored[Constants.STORAGE.SUPPRESSED_PAGE_NAMES_V2];
   if (!Array.isArray(value)) return [];
   return value
-    .filter((entry): entry is string => typeof entry === "string")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
+    .filter(
+      (entry): entry is SuppressedPageName =>
+        typeof entry === "object" &&
+        entry !== null &&
+        typeof entry.name === "string" &&
+        typeof entry.dismissedAt === "number",
+    )
+    .map((entry) => ({
+      ...entry,
+      name: entry.name.trim(),
+    }))
+    .filter((entry) => entry.name.length > 0);
+};
+
+const getSuppressedPageNameStrings = async (): Promise<string[]> => {
+  const entries = await getSuppressedPageNames();
+  return entries.map((e) => e.name);
 };
 
 const suppressPageName = async (pageName: string): Promise<void> => {
   const trimmed = pageName.trim();
   const normalized = normalizePageName(pageName);
   if (!normalized) return;
-  const names = await getSuppressedPageNames();
-  if (names.some((name) => normalizePageName(name) === normalized)) return;
+  const entries = await getSuppressedPageNames();
+  if (entries.some((e) => normalizePageName(e.name) === normalized)) return;
+  const newEntry: SuppressedPageName = {
+    name: trimmed,
+    dismissedAt: Date.now(),
+  };
   await browser.storage.local.set({
-    [Constants.STORAGE.SUPPRESSED_PAGE_NAMES]: [...names, trimmed],
+    [Constants.STORAGE.SUPPRESSED_PAGE_NAMES_V2]: [...entries, newEntry],
   });
 };
 
 const unsuppressPageName = async (pageName: string): Promise<void> => {
   const normalized = normalizePageName(pageName);
   if (!normalized) return;
-  const names = await getSuppressedPageNames();
-  const next = names.filter((name) => normalizePageName(name) !== normalized);
+  const entries = await getSuppressedPageNames();
+  const next = entries.filter((e) => normalizePageName(e.name) !== normalized);
   await browser.storage.local.set({
-    [Constants.STORAGE.SUPPRESSED_PAGE_NAMES]: next,
+    [Constants.STORAGE.SUPPRESSED_PAGE_NAMES_V2]: next,
   });
 };
 
@@ -150,9 +197,13 @@ const suppressCurrentSite = async (): Promise<void> => {
   const current = normalizeHostname(location.hostname || "");
   if (!current) return;
   const domains = await getSuppressedDomains();
-  if (domains.includes(current)) return;
+  if (domains.some((d) => d.name === current)) return;
+  const newEntry: SuppressedDomain = {
+    name: current,
+    dismissedAt: Date.now(),
+  };
   await browser.storage.local.set({
-    [Constants.STORAGE.SUPPRESSED_DOMAINS]: [...domains, current],
+    [Constants.STORAGE.SUPPRESSED_DOMAINS_V2]: [...domains, newEntry],
   });
 };
 
@@ -160,9 +211,9 @@ const unsuppressCurrentSite = async (): Promise<void> => {
   const current = normalizeHostname(location.hostname || "");
   if (!current) return;
   const domains = await getSuppressedDomains();
-  const next = domains.filter((domain) => domain !== current);
+  const next = domains.filter((d) => d.name !== current);
   await browser.storage.local.set({
-    [Constants.STORAGE.SUPPRESSED_DOMAINS]: next,
+    [Constants.STORAGE.SUPPRESSED_DOMAINS_V2]: next,
   });
 };
 
@@ -201,6 +252,17 @@ const ensurePopupRoot = (): Root => {
   return popupRoot;
 };
 
+const hasNewIncidentsSince = (
+  matches: CargoEntry[],
+  dismissedAt: number,
+): boolean => {
+  return matches.some((entry) => {
+    if (entry._type !== "Incident") return false;
+    const startDate = Date.parse(entry.StartDate || "");
+    return !Number.isNaN(startDate) && startDate > dismissedAt;
+  });
+};
+
 const removeInlinePopup = () => {
   forcePopupVisible = false;
   if (popupRoot) {
@@ -220,7 +282,7 @@ const renderInlinePopup = async (
 ) => {
   const suppressedPageNames = await getSuppressedPageNames();
   const suppressedPageNameSet = new Set(
-    suppressedPageNames.map((name) => normalizePageName(name)),
+    suppressedPageNames.map((entry) => normalizePageName(entry.name)),
   );
   const filteredMatches =
     suppressedPageNameSet.size === 0
@@ -266,8 +328,16 @@ const renderInlinePopup = async (
 
   const currentlySuppressed = await isCurrentSiteSuppressed();
   if (!ignorePreferences && currentlySuppressed) {
-    removeInlinePopup();
-    return;
+    // Check if there are new incidents since dismissal
+    const dismissedAt = await getSuppressedDomainDismissedAt(location.hostname);
+    const hasNewIncidents =
+      dismissedAt !== null && hasNewIncidentsSince(visibleMatches, dismissedAt);
+
+    if (!hasNewIncidents) {
+      removeInlinePopup();
+      return;
+    }
+    // Has new incidents - show popup with updated dismissal timestamp
   }
   forcePopupVisible = ignorePreferences;
   const root = ensurePopupRoot();
@@ -392,6 +462,9 @@ const renderInlinePopup = async (
 };
 
 const runContentScript = async () => {
+  // Run migration to upgrade old suppression data format
+  await migrateSuppressedEntries();
+
   if (!(await isWarningsEnabled()) || (await isCurrentSiteSuppressed())) {
     removeInlinePopup();
   }
@@ -474,12 +547,12 @@ browser.storage.onChanged.addListener((changes, areaName) => {
       return;
     }
     if (
-      changes[Constants.STORAGE.SUPPRESSED_DOMAINS] &&
+      changes[Constants.STORAGE.SUPPRESSED_DOMAINS_V2] &&
       (await isCurrentSiteSuppressed())
     ) {
       removeInlinePopup();
     }
-    if (changes[Constants.STORAGE.SUPPRESSED_PAGE_NAMES]) {
+    if (changes[Constants.STORAGE.SUPPRESSED_PAGE_NAMES_V2]) {
       void runContentScript();
     }
   };

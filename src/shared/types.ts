@@ -29,3 +29,16 @@ export interface PageContext {
   textContent?: string;
   marketplaceProperties?: Record<string, string>;
 }
+
+/**
+ * Suppression tracking types
+ */
+
+export interface SuppressedEntry {
+  name: string;
+  dismissedAt: number; // timestamp
+}
+
+export interface SuppressedDomain extends SuppressedEntry {}
+
+export interface SuppressedPageName extends SuppressedEntry {}
