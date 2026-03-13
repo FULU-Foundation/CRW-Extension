@@ -161,6 +161,22 @@ test("classifies dyson.co.uk and dyson.com as cross-TLD aliases when enabled", (
   assert.equal(result.crossTldAlias, true);
 });
 
+test("classifies cross-match custom TLD host to brand .com with country code evidence", () => {
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
+  const visited = safeParseUrl("https://www.ford.ca/");
+  const candidate = safeParseUrl("https://www.ford.com/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "subdomain");
+  assert.equal(result.crossTldAlias, true);
+});
+
 test("does not cross-match unrelated brand TLD hosts sharing generic label", () => {
   setMatchingConfig({
     enableMatchAcrossTLDs: true,
@@ -175,7 +191,7 @@ test("does not cross-match unrelated brand TLD hosts sharing generic label", () 
   assert.equal(result, null);
 });
 
-test("does not bridge brand/generic TLD pairs without compound suffix evidence", () => {
+test("does not bridge brand/generic TLD pairs without compound suffix or country code evidence", () => {
   setMatchingConfig({
     enableMatchAcrossTLDs: true,
     enableSubdomainMatching: true,
@@ -189,7 +205,7 @@ test("does not bridge brand/generic TLD pairs without compound suffix evidence",
   assert.equal(result, null);
 });
 
-test("does not cross-match custom TLD host to brand .com without compound suffix evidence", () => {
+test("does not cross-match custom TLD host to brand .com without compound suffix or country code evidence", () => {
   setMatchingConfig({
     enableMatchAcrossTLDs: true,
     enableSubdomainMatching: true,

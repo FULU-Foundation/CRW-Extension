@@ -122,14 +122,17 @@ export const classifyUrlMatch = (
     const [candidateLabel, candidateSuffix] =
       candidateAliasKey?.split("|") ?? [];
     const hasCompoundSuffix =
-      Boolean(visitedSuffix?.includes(".")) ||
-      Boolean(candidateSuffix?.includes("."));
+      visitedSuffix?.includes(".") || candidateSuffix?.includes(".");
+    const hasCcTLD =
+      !hasCompoundSuffix &&
+      (matchingConfig.ccTLDs.has(visitedSuffix) ||
+        matchingConfig.ccTLDs.has(candidateSuffix));
 
     if (
       visitedLabel &&
       candidateLabel &&
       visitedLabel === candidateLabel &&
-      hasCompoundSuffix &&
+      (hasCompoundSuffix || hasCcTLD) &&
       visitedRoot !== candidateRoot
     ) {
       return {
