@@ -125,24 +125,31 @@ export const classifyUrlMatch = (
       Boolean(visitedSuffix?.includes(".")) ||
       Boolean(candidateSuffix?.includes("."));
 
-    // Check if either suffix has a restricted/industry first part (e.g., bank.in, edu.au)
-    // These should not participate in cross-TLD matching as they represent
-    // restricted registrations, not generic country-code compound TLDs
+    // Check if BOTH suffixes have restricted/industry first parts (e.g., bank.in, edu.au)
+    // When both domains use restricted compound TLDs with different roots,
+    // they should not match (e.g., hdfc.bank.in should not match axis.bank.in)
+    // But axis.bank.in should still match axis.com (same label, different suffixes)
     const restrictedSuffixPatterns = new Set(["bank", "edu", "mil", "gov"]);
     const visitedSuffixFirstPart = visitedSuffix?.split(".")[0];
     const candidateSuffixFirstPart = candidateSuffix?.split(".")[0];
-    const hasRestrictedSuffix =
-      (visitedSuffixFirstPart &&
-        restrictedSuffixPatterns.has(visitedSuffixFirstPart)) ||
-      (candidateSuffixFirstPart &&
-        restrictedSuffixPatterns.has(candidateSuffixFirstPart));
+    const visitedHasRestricted =
+      visitedSuffixFirstPart &&
+      restrictedSuffixPatterns.has(visitedSuffixFirstPart);
+    const candidateHasRestricted =
+      candidateSuffixFirstPart &&
+      restrictedSuffixPatterns.has(candidateSuffixFirstPart);
+    // Only block if BOTH have restricted suffixes AND they have different roots
+    // This prevents matching hdfc.bank.in with axis.bank.in
+    // But allows axis.bank.in to match axis.com
+    const bothHaveRestrictedSuffix =
+      visitedHasRestricted && candidateHasRestricted;
 
     if (
       visitedLabel &&
       candidateLabel &&
       visitedLabel === candidateLabel &&
       hasCompoundSuffix &&
-      !hasRestrictedSuffix &&
+      !bothHaveRestrictedSuffix &&
       visitedRoot !== candidateRoot
     ) {
       return {
