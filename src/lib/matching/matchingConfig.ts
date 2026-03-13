@@ -1,5 +1,5 @@
-import { GENERATED_COUNTRY_CODE_SUFFIXES } from "./generatedCountryCodeSuffixes.ts";
-import { GENERATED_COMPOUND_SUFFIX_PREFIXES } from "./generatedCompoundSuffixPrefixes.ts";
+import { GENERATED_COUNTRY_CODE_SUFFIXES } from "@/generated/matching/generatedCountryCodeSuffixes.ts";
+import { GENERATED_COMPOUND_SUFFIX_PREFIXES } from "@/generated/matching/generatedCompoundSuffixPrefixes.ts";
 
 export type SearchResultsPageSuppressionRule = {
   hostSuffixes: string[];

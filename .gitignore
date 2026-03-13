@@ -3,5 +3,4 @@ node_modules
 *.log
 .idea/
 *.iml
-src/lib/matching/generatedCountryCodeSuffixes.ts
-src/lib/matching/generatedCompoundSuffixPrefixes.ts
+src/generated/

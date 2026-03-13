@@ -4,11 +4,11 @@ import countries from "i18n-iso-countries";
 
 const COUNTRY_CODES_OUTPUT_PATH = path.resolve(
   import.meta.dirname,
-  "../src/lib/matching/generatedCountryCodeSuffixes.ts",
+  "../src/generated/matching/generatedCountryCodeSuffixes.ts",
 );
 const COMPOUND_PREFIXES_OUTPUT_PATH = path.resolve(
   import.meta.dirname,
-  "../src/lib/matching/generatedCompoundSuffixPrefixes.ts",
+  "../src/generated/matching/generatedCompoundSuffixPrefixes.ts",
 );
 const COMPOUND_PREFIX_POLICY_PATH = path.resolve(
   import.meta.dirname,
@@ -44,6 +44,21 @@ const buildCompoundPrefixFile = (prefixes: string[]): string => {
     null,
     2,
   )} as const;\n`;
+};
+
+const writeFileIfChanged = async (
+  outputPath: string,
+  nextContents: string,
+): Promise<boolean> => {
+  const currentContents = await fs
+    .readFile(outputPath, "utf8")
+    .catch(() => null as string | null);
+
+  if (currentContents === nextContents) return false;
+
+  await fs.mkdir(path.dirname(outputPath), { recursive: true });
+  await fs.writeFile(outputPath, nextContents, "utf8");
+  return true;
 };
 
 const normalizePslRule = (rule: string): string => {
@@ -106,22 +121,22 @@ const buildCompoundSuffixPrefixes = async (
 const main = async (): Promise<void> => {
   const suffixes = buildCountryCodeSuffixes();
   const compoundPrefixes = await buildCompoundSuffixPrefixes(suffixes);
+  const countryCodeFile = buildCountryCodeFile(suffixes);
+  const compoundPrefixFile = buildCompoundPrefixFile(compoundPrefixes);
 
-  await fs.writeFile(
+  const countryCodeChanged = await writeFileIfChanged(
     COUNTRY_CODES_OUTPUT_PATH,
-    buildCountryCodeFile(suffixes),
-    "utf8",
+    countryCodeFile,
   );
-  await fs.writeFile(
+  const compoundPrefixesChanged = await writeFileIfChanged(
     COMPOUND_PREFIXES_OUTPUT_PATH,
-    buildCompoundPrefixFile(compoundPrefixes),
-    "utf8",
+    compoundPrefixFile,
   );
   console.log(
-    `Wrote ${suffixes.length} country-code suffixes to ${path.relative(process.cwd(), COUNTRY_CODES_OUTPUT_PATH)}`,
+    `${countryCodeChanged ? "Wrote" : "Kept"} ${suffixes.length} country-code suffixes in ${path.relative(process.cwd(), COUNTRY_CODES_OUTPUT_PATH)}`,
   );
   console.log(
-    `Wrote ${compoundPrefixes.length} compound suffix prefixes to ${path.relative(process.cwd(), COMPOUND_PREFIXES_OUTPUT_PATH)}`,
+    `${compoundPrefixesChanged ? "Wrote" : "Kept"} ${compoundPrefixes.length} compound suffix prefixes in ${path.relative(process.cwd(), COMPOUND_PREFIXES_OUTPUT_PATH)}`,
   );
 };
 
