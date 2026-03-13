@@ -6,6 +6,7 @@ import {
   isAmazonEcommerceHost,
   isEbayEcommerceHost,
   isKnownEcommerceHost,
+  normalizeCustomMarketplaceProperties,
 } from "../src/lib/matching/ecommerce.ts";
 
 test("includes core international Amazon and eBay domains", () => {
@@ -35,4 +36,29 @@ test("classifies Amazon/eBay hosts using ecommerceDomainFamilyMap domains", () =
   assert.equal(isEbayEcommerceHost("www.ebay.com.au"), true);
   assert.equal(isEbayEcommerceHost("checkout.ebay.de"), true);
   assert.equal(isEbayEcommerceHost("www.amazon.com.au"), false);
+});
+
+test("normalizes custom extractor fields to marketplace properties", () => {
+  const properties = normalizeCustomMarketplaceProperties({
+    productName: "  AirPods 4  ",
+    brandName: " Apple ",
+    manufacturerName: " Apple ",
+  });
+
+  assert.deepEqual(properties, {
+    brand: "Apple",
+    manufacturer: "Apple",
+    schemaProductName: "AirPods 4",
+    schemaProductBrand: "Apple",
+    schemaProductManufacturer: "Apple",
+  });
+});
+
+test("returns undefined for empty custom extractor fields", () => {
+  const properties = normalizeCustomMarketplaceProperties({
+    productName: " ",
+    brandName: "",
+    manufacturerName: "   ",
+  });
+  assert.equal(properties, undefined);
 });

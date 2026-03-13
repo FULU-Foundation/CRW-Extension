@@ -46,6 +46,29 @@ const hasWebsite = (entry: CargoEntry): boolean => {
   return typeof entry.Website === "string" && entry.Website.trim().length > 0;
 };
 
+const hasSchemaJsonLdUnlockSignals = (context: PageContext): boolean => {
+  const config = matchingConfig.schemaJsonLdProductMatching;
+  if (!config.enabled) return false;
+
+  const properties = context.marketplaceProperties;
+  if (!properties) return false;
+
+  const hasName =
+    config.useName &&
+    typeof properties.schemaProductName === "string" &&
+    properties.schemaProductName.trim().length > 0;
+  const hasBrand =
+    config.useBrand &&
+    typeof properties.schemaProductBrand === "string" &&
+    properties.schemaProductBrand.trim().length > 0;
+  const hasManufacturer =
+    config.useManufacturer &&
+    typeof properties.schemaProductManufacturer === "string" &&
+    properties.schemaProductManufacturer.trim().length > 0;
+
+  return hasName || hasBrand || hasManufacturer;
+};
+
 const hostnameMatchesSuffix = (hostname: string, suffix: string): boolean => {
   const normalizedHost = hostname.toLowerCase();
   const normalizedSuffix = suffix.toLowerCase();
@@ -122,14 +145,22 @@ export const matchByPageContext = (
 
   const urlMatches = matchEntriesByUrl(entries, context.url, 3);
   const isEcommerceHost = isKnownEcommerceHost(context.hostname || "");
+  const hasSchemaJsonLdSignals = hasSchemaJsonLdUnlockSignals(context);
   const shouldUseMetaSeeds =
-    isEcommerceHost || !matchingConfig.restrictMetaPageContextToEcommerceHosts;
+    isEcommerceHost ||
+    hasSchemaJsonLdSignals ||
+    !matchingConfig.restrictMetaPageContextToEcommerceHosts;
   const metaSeeds = shouldUseMetaSeeds
     ? matchEntriesByPageContext(entries, context, 5)
     : [];
 
   if (urlMatches.length === 0) {
-    if (!isEcommerceHost || metaSeeds.length === 0) return [];
+    if (
+      (!isEcommerceHost && !hasSchemaJsonLdSignals) ||
+      metaSeeds.length === 0
+    ) {
+      return [];
+    }
     return expandRelatedEntries(entries, dedupeSeeds(metaSeeds));
   }
 
