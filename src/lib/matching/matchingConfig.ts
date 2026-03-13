@@ -58,7 +58,7 @@ export type MatchingConfig = {
   enableSearchResultsPageSuppressions: boolean;
   searchResultsPageSuppressions: SearchResultsPageSuppressionRule[];
   ecommerceDomainFamilyMap: Record<string, string>;
-  ccTLDs: Set<string>;
+  interchangeableTLDs: Set<string>;
   specificPathDomainMatches: string[];
 };
 
@@ -204,7 +204,7 @@ const DEFAULT_MATCHING_CONFIG: MatchingConfig = {
     "ebay.my": "ebay",
     "ebay.sg": "ebay",
   },
-  ccTLDs: new Set([
+  interchangeableTLDs: new Set([
     "ac",
     "ad",
     "ae",
@@ -256,6 +256,7 @@ const DEFAULT_MATCHING_CONFIG: MatchingConfig = {
     "cm",
     "cn",
     "co",
+    "com",
     "cr",
     "cu",
     "cv",
@@ -313,6 +314,7 @@ const DEFAULT_MATCHING_CONFIG: MatchingConfig = {
     "il",
     "im",
     "in",
+    "int",
     "io",
     "iq",
     "ir",

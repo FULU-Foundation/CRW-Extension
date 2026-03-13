@@ -161,7 +161,7 @@ test("classifies dyson.co.uk and dyson.com as cross-TLD aliases when enabled", (
   assert.equal(result.crossTldAlias, true);
 });
 
-test("classifies cross-match custom TLD host to brand .com with country code evidence", () => {
+test("classifies cross-match ccTLD to .com host", () => {
   setMatchingConfig({
     enableMatchAcrossTLDs: true,
     enableSubdomainMatching: true,
@@ -175,6 +175,37 @@ test("classifies cross-match custom TLD host to brand .com with country code evi
   assert.ok(result);
   assert.equal(result.matchType, "subdomain");
   assert.equal(result.crossTldAlias, true);
+});
+
+test("classifies cross-match ccTLD to other ccTLD", () => {
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
+  const visited = safeParseUrl("https://www.ford.ca/");
+  const candidate = safeParseUrl("https://www.ford.fr/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "subdomain");
+  assert.equal(result.crossTldAlias, true);
+});
+
+
+test("does not cross-match generic TLD sites to ccTLDs", () => {
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
+  const visited = safeParseUrl("https://ford.anythingatall/");
+  const candidate = safeParseUrl("https://ford.com");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
 });
 
 test("does not cross-match unrelated brand TLD hosts sharing generic label", () => {

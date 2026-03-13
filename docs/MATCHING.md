@@ -17,7 +17,7 @@ The URL matcher behavior is controlled by the exported `matchingConfig` object i
 - `enableSearchResultsPageSuppressions` (`boolean`, default: `true`): globally enables/disables suppression of matches on configured search-result pages (for example Google/Bing/Yahoo/DuckDuckGo search pages).
 - `specificPathDomainMatches` (`string[]`, default: `["github.com"]`): hostnames for which the matcher keeps only the most specific exact/partial path match per host (for example deeper GitHub repo/org paths win over broader `github.com/` matches).
 - `ecommerceDomainFamilyMap` (`Record<string, string>`): maps known ecommerce domains to a family alias used by `enableEcommerceFamilyAliasMatching` (for example many `amazon.*` domains map to `"amazon"`, many `ebay.*` domains map to `"ebay"`).
-- `ccTLDs` (`Set<string>`): Contains known country code top-level domains (ccTLDs), both latin and internationalized. Used by `enableMatchAcrossTLDs` to match sites across countries where they don't contain a compound suffix (for example `ford.ca` vs `ford.com` is not otherwise matched).
+- `interchangeableTLDs` (`Set<string>`): Contains known country code top-level domains (ccTLDs), both latin and internationalized, and `"com"` and `"int"`. Used by `enableMatchAcrossTLDs` to match sites across countries where they don't contain a compound suffix (for example matching `ford.ca` vs `ford.fr`, without adding `"com"` and `"int"` matches like `ford.ca` vs `ford.com` would not be matched).
 
 ### Nested params
 
@@ -49,6 +49,6 @@ The URL matcher behavior is controlled by the exported `matchingConfig` object i
 
 ### Current usage notes
 
-- URL matching currently uses `enableSubdomainMatching`, `enableMatchAcrossTLDs`, `enableEcommerceFamilyAliasMatching`, `specificPathDomainMatches`, `ecommerceDomainFamilyMap`, and `ccTLDs`.
+- URL matching currently uses `enableSubdomainMatching`, `enableMatchAcrossTLDs`, `enableEcommerceFamilyAliasMatching`, `specificPathDomainMatches`, `ecommerceDomainFamilyMap`, `interchangeableTLDs`.
 - `matchByPageContext(...)` currently reads `enableSearchResultsPageSuppressions`, `searchResultsPageSuppressions`, `restrictMetaPageContextToEcommerceHosts`, `companyAliasSuffixStripping`, `amazonPropertyMatching`, and `ebayJsonLdProductMatching` (along with related page-context matching logic).
 - The page-context and seed-limit params are defined in config now for matching/scoring workflows, but are not currently read by `src/lib/matching/urlMatching.ts`.

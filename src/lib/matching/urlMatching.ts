@@ -123,16 +123,17 @@ export const classifyUrlMatch = (
       candidateAliasKey?.split("|") ?? [];
     const hasCompoundSuffix =
       visitedSuffix?.includes(".") || candidateSuffix?.includes(".");
-    const hasCcTLD =
+    let hasMatchOnTLD =
       !hasCompoundSuffix &&
-      (matchingConfig.ccTLDs.has(visitedSuffix) ||
-        matchingConfig.ccTLDs.has(candidateSuffix));
+      visitedSuffix != candidateSuffix &&
+      matchingConfig.interchangeableTLDs.has(visitedSuffix) &&
+      matchingConfig.interchangeableTLDs.has(candidateSuffix);
 
     if (
       visitedLabel &&
       candidateLabel &&
       visitedLabel === candidateLabel &&
-      (hasCompoundSuffix || hasCcTLD) &&
+      (hasCompoundSuffix || hasMatchOnTLD) &&
       visitedRoot !== candidateRoot
     ) {
       return {
