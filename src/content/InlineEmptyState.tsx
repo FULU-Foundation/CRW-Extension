@@ -15,7 +15,7 @@ export const InlineEmptyState = (props: InlineEmptyStateProps) => {
       style={{
         position: "fixed",
         right: "16px",
-        bottom: "16px",
+        top: "16px",
         width: "460px",
         maxWidth: "calc(100vw - 32px)",
         zIndex: 2147483647,
