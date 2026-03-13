@@ -55,6 +55,22 @@ const hostnameMatchesSuffix = (hostname: string, suffix: string): boolean => {
   );
 };
 
+// Sites that should not use text-based matching due to high false positive rates
+const WIKI_HOST_SUFFIXES = [
+  "fandom.com",
+  "wikia.com",
+  "wikipedia.org",
+  "wiki.",
+  ".wiki.",
+];
+
+const isWikiHost = (hostname: string): boolean => {
+  const normalized = hostname.toLowerCase();
+  return WIKI_HOST_SUFFIXES.some(
+    (suffix) => normalized.endsWith(suffix) || normalized.includes(suffix),
+  );
+};
+
 const isSuppressedSearchResultsPage = (context: PageContext): boolean => {
   if (!matchingConfig.enableSearchResultsPageSuppressions) return false;
 
@@ -122,8 +138,13 @@ export const matchByPageContext = (
 
   const urlMatches = matchEntriesByUrl(entries, context.url, 3);
   const isEcommerceHost = isKnownEcommerceHost(context.hostname || "");
+  const isWiki = isWikiHost(context.hostname || "");
+  // Disable text-based matching on wiki sites to prevent false positives
+  // from company names mentioned in article content
   const shouldUseMetaSeeds =
-    isEcommerceHost || !matchingConfig.restrictMetaPageContextToEcommerceHosts;
+    !isWiki &&
+    (isEcommerceHost ||
+      !matchingConfig.restrictMetaPageContextToEcommerceHosts);
   const metaSeeds = shouldUseMetaSeeds
     ? matchEntriesByPageContext(entries, context, 5)
     : [];
