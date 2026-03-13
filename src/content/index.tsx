@@ -14,7 +14,7 @@ import {
 } from "@/content/messageRouting";
 import {
   extractAmazonMarketplaceProperties,
-  extractEbayJsonLdProductProperties,
+  extractSchemaJsonLdProductProperties,
 } from "@/lib/matching/ecommerce";
 
 console.log(
@@ -410,15 +410,13 @@ const runContentScript = async () => {
     document,
     location.hostname,
   );
-  const ebayJsonLdMarketplaceProperties = extractEbayJsonLdProductProperties(
-    document,
-    location.hostname,
-  );
+  const schemaJsonLdMarketplaceProperties =
+    extractSchemaJsonLdProductProperties(document, location.hostname);
   const marketplaceProperties =
-    amazonMarketplaceProperties || ebayJsonLdMarketplaceProperties
+    amazonMarketplaceProperties || schemaJsonLdMarketplaceProperties
       ? {
           ...(amazonMarketplaceProperties || {}),
-          ...(ebayJsonLdMarketplaceProperties || {}),
+          ...(schemaJsonLdMarketplaceProperties || {}),
         }
       : undefined;
 

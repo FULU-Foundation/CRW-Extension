@@ -102,11 +102,11 @@ export const extractAmazonMarketplaceProperties = (
   return Object.fromEntries(properties.entries());
 };
 
-export const extractEbayJsonLdProductProperties = (
+export const extractSchemaJsonLdProductProperties = (
   doc: Document,
   hostname: string,
 ): Record<string, string> | undefined => {
-  if (!isEbayEcommerceHost(hostname)) return undefined;
+  void hostname;
 
   const productNodes: Array<Record<string, unknown>> = [];
   const hasProductType = (value: unknown): boolean => {
@@ -169,8 +169,12 @@ export const extractEbayJsonLdProductProperties = (
 
   const properties = new Map<string, string>();
   for (const node of productNodes) {
+    const name = readLinkedName(node.name);
     const brand = readLinkedName(node.brand);
     const manufacturer = readLinkedName(node.manufacturer);
+    if (name && !properties.has("schemaProductName")) {
+      properties.set("schemaProductName", name);
+    }
     if (brand && !properties.has("schemaProductBrand")) {
       properties.set("schemaProductBrand", brand);
     }
@@ -178,6 +182,7 @@ export const extractEbayJsonLdProductProperties = (
       properties.set("schemaProductManufacturer", manufacturer);
     }
     if (
+      properties.has("schemaProductName") &&
       properties.has("schemaProductBrand") &&
       properties.has("schemaProductManufacturer")
     ) {

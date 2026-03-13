@@ -1,6 +1,6 @@
 import type { CargoEntry, PageContext } from "@/shared/types";
 import { matchingConfig } from "./matchingConfig.ts";
-import { isAmazonEcommerceHost, isEbayEcommerceHost } from "./ecommerce.ts";
+import { isAmazonEcommerceHost } from "./ecommerce.ts";
 
 type TextMatch = {
   entry: CargoEntry;
@@ -151,7 +151,6 @@ export const matchEntriesByPageContext = (
   limit = 5,
 ): CargoEntry[] => {
   const isAmazonHost = isAmazonEcommerceHost(context.hostname || "");
-  const isEbayHost = isEbayEcommerceHost(context.hostname || "");
   const useAmazonPropertySignals =
     isAmazonHost && matchingConfig.amazonPropertyMatching.enabled;
   const amazonBrandPropertyText = normalizeText(
@@ -168,31 +167,39 @@ export const matchEntriesByPageContext = (
   const hasAmazonPropertySignals =
     amazonBrandPropertyText.length > 0 ||
     amazonManufacturerPropertyText.length > 0;
-  const useEbayJsonLdSignals =
-    isEbayHost && matchingConfig.ebayJsonLdProductMatching.enabled;
-  const ebayBrandPropertyText = normalizeText(
-    useEbayJsonLdSignals && matchingConfig.ebayJsonLdProductMatching.useBrand
+  const useSchemaJsonLdSignals =
+    matchingConfig.schemaJsonLdProductMatching.enabled;
+  const schemaNamePropertyText = normalizeText(
+    useSchemaJsonLdSignals && matchingConfig.schemaJsonLdProductMatching.useName
+      ? context.marketplaceProperties?.schemaProductName || ""
+      : "",
+  );
+  const schemaBrandPropertyText = normalizeText(
+    useSchemaJsonLdSignals &&
+      matchingConfig.schemaJsonLdProductMatching.useBrand
       ? context.marketplaceProperties?.schemaProductBrand || ""
       : "",
   );
-  const ebayManufacturerPropertyText = normalizeText(
-    useEbayJsonLdSignals &&
-      matchingConfig.ebayJsonLdProductMatching.useManufacturer
+  const schemaManufacturerPropertyText = normalizeText(
+    useSchemaJsonLdSignals &&
+      matchingConfig.schemaJsonLdProductMatching.useManufacturer
       ? context.marketplaceProperties?.schemaProductManufacturer || ""
       : "",
   );
-  const hasEbayPropertySignals =
-    ebayBrandPropertyText.length > 0 || ebayManufacturerPropertyText.length > 0;
+  const hasSchemaPropertySignals =
+    schemaNamePropertyText.length > 0 ||
+    schemaBrandPropertyText.length > 0 ||
+    schemaManufacturerPropertyText.length > 0;
   const hasScopedMarketplacePropertySignals =
     (useAmazonPropertySignals && hasAmazonPropertySignals) ||
-    (useEbayJsonLdSignals && hasEbayPropertySignals);
+    (useSchemaJsonLdSignals && hasSchemaPropertySignals);
   const title = normalizeText(context.title || "");
   const metaTitle = normalizeText(context.meta?.title || "");
   const description = normalizeText(context.meta?.description || "");
   const ogTitle = normalizeText(context.meta?.["og:title"] || "");
   const ogDescription = normalizeText(context.meta?.["og:description"] || "");
   const canonicalText =
-    `${title} ${metaTitle} ${description} ${ogTitle} ${ogDescription} ${amazonBrandPropertyText} ${amazonManufacturerPropertyText} ${ebayBrandPropertyText} ${ebayManufacturerPropertyText}`.trim();
+    `${title} ${metaTitle} ${description} ${ogTitle} ${ogDescription} ${amazonBrandPropertyText} ${amazonManufacturerPropertyText} ${schemaNamePropertyText} ${schemaBrandPropertyText} ${schemaManufacturerPropertyText}`.trim();
   if (!canonicalText) return [];
 
   const matches: TextMatch[] = [];
@@ -212,8 +219,9 @@ export const matchEntriesByPageContext = (
     let ogDescriptionHit = 0;
     let amazonBrandPropertyHit = 0;
     let amazonManufacturerPropertyHit = 0;
-    let ebayBrandPropertyHit = 0;
-    let ebayManufacturerPropertyHit = 0;
+    let schemaNamePropertyHit = 0;
+    let schemaBrandPropertyHit = 0;
+    let schemaManufacturerPropertyHit = 0;
 
     for (const candidate of nameCandidates) {
       if (candidate.length < 2) continue;
@@ -236,13 +244,17 @@ export const matchEntriesByPageContext = (
         amazonManufacturerPropertyHit,
         phraseScore(amazonManufacturerPropertyText, candidate),
       );
-      ebayBrandPropertyHit = Math.max(
-        ebayBrandPropertyHit,
-        phraseScore(ebayBrandPropertyText, candidate),
+      schemaNamePropertyHit = Math.max(
+        schemaNamePropertyHit,
+        phraseScore(schemaNamePropertyText, candidate),
       );
-      ebayManufacturerPropertyHit = Math.max(
-        ebayManufacturerPropertyHit,
-        phraseScore(ebayManufacturerPropertyText, candidate),
+      schemaBrandPropertyHit = Math.max(
+        schemaBrandPropertyHit,
+        phraseScore(schemaBrandPropertyText, candidate),
+      );
+      schemaManufacturerPropertyHit = Math.max(
+        schemaManufacturerPropertyHit,
+        phraseScore(schemaManufacturerPropertyText, candidate),
       );
     }
     if (
@@ -253,8 +265,9 @@ export const matchEntriesByPageContext = (
       ogDescriptionHit === 0 &&
       amazonBrandPropertyHit === 0 &&
       amazonManufacturerPropertyHit === 0 &&
-      ebayBrandPropertyHit === 0 &&
-      ebayManufacturerPropertyHit === 0
+      schemaNamePropertyHit === 0 &&
+      schemaBrandPropertyHit === 0 &&
+      schemaManufacturerPropertyHit === 0
     ) {
       continue;
     }
@@ -262,8 +275,9 @@ export const matchEntriesByPageContext = (
     const marketplacePropertyHitTotal =
       amazonBrandPropertyHit +
       amazonManufacturerPropertyHit +
-      ebayBrandPropertyHit +
-      ebayManufacturerPropertyHit;
+      schemaNamePropertyHit +
+      schemaBrandPropertyHit +
+      schemaManufacturerPropertyHit;
 
     // When marketplace-specific structured signals are present, avoid
     // promoting company matches that come only from generic title/meta text.
@@ -285,10 +299,12 @@ export const matchEntriesByPageContext = (
         matchingConfig.amazonPropertyMatching.brandWeight +
       amazonManufacturerPropertyHit *
         matchingConfig.amazonPropertyMatching.manufacturerWeight +
-      ebayBrandPropertyHit *
-        matchingConfig.ebayJsonLdProductMatching.brandWeight +
-      ebayManufacturerPropertyHit *
-        matchingConfig.ebayJsonLdProductMatching.manufacturerWeight +
+      schemaNamePropertyHit *
+        matchingConfig.schemaJsonLdProductMatching.nameWeight +
+      schemaBrandPropertyHit *
+        matchingConfig.schemaJsonLdProductMatching.brandWeight +
+      schemaManufacturerPropertyHit *
+        matchingConfig.schemaJsonLdProductMatching.manufacturerWeight +
       typeBoost(entry) +
       pageName.length;
 

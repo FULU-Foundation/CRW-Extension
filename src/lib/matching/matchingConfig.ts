@@ -18,10 +18,12 @@ export type AmazonPropertyMatchingConfig = {
   manufacturerWeight: number;
 };
 
-export type EbayJsonLdProductMatchingConfig = {
+export type SchemaJsonLdProductMatchingConfig = {
   enabled: boolean;
+  useName: boolean;
   useBrand: boolean;
   useManufacturer: boolean;
+  nameWeight: number;
   brandWeight: number;
   manufacturerWeight: number;
 };
@@ -53,7 +55,7 @@ export type MatchingConfig = {
   pageContextMinEntityNameLength: number;
   marketplaceBrandDenylist: string[];
   amazonPropertyMatching: AmazonPropertyMatchingConfig;
-  ebayJsonLdProductMatching: EbayJsonLdProductMatchingConfig;
+  schemaJsonLdProductMatching: SchemaJsonLdProductMatchingConfig;
   companyAliasSuffixStripping: CompanyAliasSuffixStrippingConfig;
   enableSearchResultsPageSuppressions: boolean;
   searchResultsPageSuppressions: SearchResultsPageSuppressionRule[];
@@ -94,11 +96,13 @@ const DEFAULT_MATCHING_CONFIG: MatchingConfig = {
     brandWeight: 16,
     manufacturerWeight: 12,
   },
-  ebayJsonLdProductMatching: {
+  schemaJsonLdProductMatching: {
     enabled: true,
+    useName: true,
     useBrand: true,
     useManufacturer: true,
-    brandWeight: 14,
+    nameWeight: 20,
+    brandWeight: 12,
     manufacturerWeight: 10,
   },
   companyAliasSuffixStripping: {
