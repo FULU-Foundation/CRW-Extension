@@ -61,9 +61,7 @@ const isLikelyMarketCountryCodeSuffix = (suffix: string): boolean => {
       value.toLowerCase(),
     ),
   );
-  return (
-    countryCode.length === 2 && marketLabels.has(secondLevel)
-  );
+  return countryCode.length === 2 && marketLabels.has(secondLevel);
 };
 
 const isEligibleCrossTldAliasPair = (
