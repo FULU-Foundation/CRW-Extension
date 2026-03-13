@@ -66,9 +66,7 @@ const WIKI_HOST_SUFFIXES = [
 
 const isWikiHost = (hostname: string): boolean => {
   const normalized = hostname.toLowerCase();
-  return WIKI_HOST_SUFFIXES.some(
-    (suffix) => normalized.endsWith(suffix) || normalized.includes(suffix),
-  );
+  return WIKI_HOST_SUFFIXES.some((suffix) => normalized.includes(suffix));
 };
 
 const isSuppressedSearchResultsPage = (context: PageContext): boolean => {
