@@ -180,7 +180,7 @@ const ensurePopupRoot = (): Root => {
   popupHost.style.position = "static";
   popupHost.style.display = "block";
 
-  const shadowRoot = popupHost.attachShadow({ mode: "open" });
+  const shadowRoot = popupHost.attachShadow({ mode: "closed" });
   const resetStyle = document.createElement("style");
   resetStyle.textContent = `
     :host {
