@@ -43,4 +43,6 @@ The compiled extension will be output in the `dist` folder. Alternatively run ``
 npm run format
 ```
 ## Disclaimer
+The source code for the CRW Extension is licensed under the MIT License.
+
 All references found by this software are not part of CRW Extension and are provided to the end-user under **CC BY-SA 4.0** licensing by the originating site [consumerrights.wiki](https://consumerrights.wiki).
