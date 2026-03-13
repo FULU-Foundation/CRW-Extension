@@ -5,7 +5,9 @@ The URL matcher behavior is controlled by the exported `matchingConfig` object i
 ### Top-level params
 
 - `enableSubdomainMatching` (`boolean`, default: `true`): allows matches when the visited URL and candidate URL share the same root domain but use different subdomains (for example `support.example.com` vs `example.com`). Produces a `subdomain` match.
-- `enableMatchAcrossTLDs` (`boolean`, default: `true`): allows cross-TLD alias matches for the same domain label when the suffix is compound and the registrable domains differ (for example `dyson.co.uk` vs `dyson.com.au`). Produces a `subdomain` match with a `cross_tld_alias` reason.
+- `enableMatchAcrossTLDs` (`boolean`, default: `true`): allows cross-TLD alias matches for the same domain label when the suffix shape is allowed by the configured cross-TLD alias rules and the registrable domains differ (for example `dyson.co.uk` vs `dyson.com.au`). Produces a `subdomain` match with a `cross_tld_alias` reason.
+- `crossTldAliasGlobalSuffixes` (`string[]`, default: `["com", "net", "org"]`): global suffixes that may pair with configured market-style ccTLD suffixes for cross-TLD alias matching.
+- `crossTldAliasMarketSecondLevelLabels` (`string[]`, default: `["ac", "co", "com", "edu", "net", "org"]`): second-level labels that are treated as market-style public suffix prefixes when followed by a two-letter country code (for example `co.uk`, `com.au`).
 - `enableEcommerceFamilyAliasMatching` (`boolean`, default: `true`): allows known ecommerce domains in the same configured family (Amazon, eBay, etc.) to match each other across country domains. Produces a `subdomain` match with an `ecommerce_family_alias` reason.
 - `restrictMetaPageContextToEcommerceHosts` (`boolean`, default: `true`): when enabled, title/meta/OG page-context seeds are only used on known ecommerce hosts. Set to `false` to allow those signals on non-ecommerce hosts when URL seeds exist.
 - `urlSeedLimit` (`number`, default: `3`): default limit intended for URL-seed matching workflows.
@@ -48,6 +50,6 @@ The URL matcher behavior is controlled by the exported `matchingConfig` object i
 
 ### Current usage notes
 
-- URL matching currently uses `enableSubdomainMatching`, `enableMatchAcrossTLDs`, `enableEcommerceFamilyAliasMatching`, `specificPathDomainMatches`, and `ecommerceDomainFamilyMap`.
+- URL matching currently uses `enableSubdomainMatching`, `enableMatchAcrossTLDs`, `crossTldAliasGlobalSuffixes`, `crossTldAliasMarketSecondLevelLabels`, `enableEcommerceFamilyAliasMatching`, `specificPathDomainMatches`, and `ecommerceDomainFamilyMap`.
 - `matchByPageContext(...)` currently reads `enableSearchResultsPageSuppressions`, `searchResultsPageSuppressions`, `restrictMetaPageContextToEcommerceHosts`, `companyAliasSuffixStripping`, `amazonPropertyMatching`, and `ebayJsonLdProductMatching` (along with related page-context matching logic).
 - The page-context and seed-limit params are defined in config now for matching/scoring workflows, but are not currently read by `src/lib/matching/urlMatching.ts`.

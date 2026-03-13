@@ -51,6 +51,45 @@ const getCrossTldAliasKey = (hostname: string): string | null => {
   return `${parsed.domainWithoutSuffix}|${parsed.publicSuffix}`;
 };
 
+const isLikelyMarketCountryCodeSuffix = (suffix: string): boolean => {
+  const parts = suffix.toLowerCase().split(".").filter(Boolean);
+  if (parts.length !== 2) return false;
+
+  const [secondLevel, countryCode] = parts;
+  const marketLabels = new Set(
+    matchingConfig.crossTldAliasMarketSecondLevelLabels.map((value) =>
+      value.toLowerCase(),
+    ),
+  );
+  return (
+    countryCode.length === 2 && marketLabels.has(secondLevel)
+  );
+};
+
+const isEligibleCrossTldAliasPair = (
+  visitedSuffix: string,
+  candidateSuffix: string,
+): boolean => {
+  const globalSuffixes = new Set(
+    matchingConfig.crossTldAliasGlobalSuffixes.map((value) =>
+      value.toLowerCase(),
+    ),
+  );
+  if (
+    isLikelyMarketCountryCodeSuffix(visitedSuffix) &&
+    isLikelyMarketCountryCodeSuffix(candidateSuffix)
+  ) {
+    return true;
+  }
+
+  return (
+    (isLikelyMarketCountryCodeSuffix(visitedSuffix) &&
+      globalSuffixes.has(candidateSuffix)) ||
+    (isLikelyMarketCountryCodeSuffix(candidateSuffix) &&
+      globalSuffixes.has(visitedSuffix))
+  );
+};
+
 const normalizeMatchHostname = (hostname: string): string => {
   return hostname.toLowerCase().replace(/^www\./, "");
 };
@@ -121,15 +160,13 @@ export const classifyUrlMatch = (
     const [visitedLabel, visitedSuffix] = visitedAliasKey?.split("|") ?? [];
     const [candidateLabel, candidateSuffix] =
       candidateAliasKey?.split("|") ?? [];
-    const hasCompoundSuffix =
-      Boolean(visitedSuffix?.includes(".")) ||
-      Boolean(candidateSuffix?.includes("."));
-
     if (
       visitedLabel &&
       candidateLabel &&
+      visitedSuffix &&
+      candidateSuffix &&
       visitedLabel === candidateLabel &&
-      hasCompoundSuffix &&
+      isEligibleCrossTldAliasPair(visitedSuffix, candidateSuffix) &&
       visitedRoot !== candidateRoot
     ) {
       return {

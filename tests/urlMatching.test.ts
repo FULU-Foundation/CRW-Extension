@@ -242,6 +242,52 @@ test("does not classify unrelated .com.au domains as subdomain matches", () => {
   assert.equal(result, null);
 });
 
+test("does not treat compound brand domains like axis.bank.in as axis.com aliases", () => {
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
+  const visited = safeParseUrl("https://www.axis.bank.in/");
+  const candidate = safeParseUrl("https://axis.com/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
+test("does not treat gov.uk domains as consumer-market aliases of .com", () => {
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
+  const visited = safeParseUrl("https://www.acme.gov.uk/");
+  const candidate = safeParseUrl("https://acme.com/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
+test("cross-TLD alias market suffixes are configurable", () => {
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+    crossTldAliasMarketSecondLevelLabels: ["gov"],
+    crossTldAliasGlobalSuffixes: ["com"],
+  });
+  const visited = safeParseUrl("https://www.acme.gov.uk/");
+  const candidate = safeParseUrl("https://acme.com/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "subdomain");
+  assert.equal(result.crossTldAlias, true);
+});
+
 test("classifies .co.uk subdomains using registrable domain", () => {
   setMatchingConfig({ enableSubdomainMatching: true });
   const visited = safeParseUrl("https://support.bbc.co.uk/help");

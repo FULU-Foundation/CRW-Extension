@@ -29,6 +29,8 @@ export type EbayJsonLdProductMatchingConfig = {
 export type MatchingConfig = {
   enableSubdomainMatching: boolean;
   enableMatchAcrossTLDs: boolean;
+  crossTldAliasGlobalSuffixes: string[];
+  crossTldAliasMarketSecondLevelLabels: string[];
   enableEcommerceFamilyAliasMatching: boolean;
   restrictMetaPageContextToEcommerceHosts: boolean;
   urlSeedLimit: number;
@@ -64,6 +66,15 @@ export type MatchingConfig = {
 const DEFAULT_MATCHING_CONFIG: MatchingConfig = {
   enableSubdomainMatching: true,
   enableMatchAcrossTLDs: true,
+  crossTldAliasGlobalSuffixes: ["com", "net", "org"],
+  crossTldAliasMarketSecondLevelLabels: [
+    "ac",
+    "co",
+    "com",
+    "edu",
+    "net",
+    "org",
+  ],
   enableEcommerceFamilyAliasMatching: true,
   restrictMetaPageContextToEcommerceHosts: true,
   urlSeedLimit: 3,
