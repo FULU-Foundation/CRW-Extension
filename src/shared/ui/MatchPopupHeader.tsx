@@ -14,6 +14,7 @@ type MatchPopupHeaderProps = {
   closeIconUrl?: string;
   showCloseButton?: boolean;
   onClose?: () => void;
+  onToggleMinimize?: () => void;
 };
 
 export const MatchPopupHeader = (props: MatchPopupHeaderProps) => {
@@ -25,11 +26,14 @@ export const MatchPopupHeader = (props: MatchPopupHeaderProps) => {
     closeIconUrl,
     showCloseButton = false,
     onClose,
+    onToggleMinimize,
   } = props;
 
   const canShowSettingsButton = !!onOpenSettings && !!settingsIconUrl;
   const canShowCloseButton = showCloseButton && !!onClose && !!closeIconUrl;
-  const showHeaderActions = canShowSettingsButton || canShowCloseButton;
+  const canShowMinimizeButton = !!onToggleMinimize;
+  const showHeaderActions =
+    canShowSettingsButton || canShowCloseButton || canShowMinimizeButton;
   const headerRowStyle: React.CSSProperties = {
     ...POPUP_LAYOUT.headerRow,
     justifyContent: showHeaderActions ? "space-between" : "flex-start",
@@ -115,11 +119,39 @@ export const MatchPopupHeader = (props: MatchPopupHeaderProps) => {
               />
             </button>
           )}
+          {canShowMinimizeButton && (
+            <button
+              type="button"
+              onClick={onToggleMinimize}
+              {...ghostButtonHoverHandlers}
+              aria-label="Minimize popup"
+              title="Minimize"
+              style={headerIconButtonStyle}
+            >
+              <span
+                style={{
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  color: POPUP_CSS.muted,
+                  lineHeight: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "18px",
+                  height: "18px",
+                }}
+              >
+                −
+              </span>
+            </button>
+          )}
           {canShowCloseButton && (
             <button
               type="button"
               onClick={onClose}
               {...ghostButtonHoverHandlers}
+              aria-label="Close popup"
+              title="Close"
               style={{
                 ...headerIconButtonStyle,
               }}

@@ -28,6 +28,8 @@ type MatchPopupCardProps = {
   onOpenSettings?: () => void;
   settingsIconUrl?: string;
   closeIconUrl?: string;
+  isMinimized?: boolean;
+  onToggleMinimize?: () => void;
 };
 
 const VISIBLE_INCIDENT_LIMIT = 4;
@@ -181,6 +183,67 @@ const resolveCompanyMatch = (
   return companyEntries[0];
 };
 
+const MinimizedView = ({
+  logoUrl,
+  incidentCount,
+  hasActiveIncidents,
+  onExpand,
+}: {
+  logoUrl: string;
+  incidentCount: number;
+  hasActiveIncidents: boolean;
+  onExpand: () => void;
+}) => {
+  const badgeStyle: React.CSSProperties = {
+    background: hasActiveIncidents ? "#E74C3C" : "#6B7280",
+    color: "#FFFFFF",
+    borderRadius: "10px",
+    padding: "2px 8px",
+    fontSize: "12px",
+    fontWeight: 600,
+    lineHeight: 1,
+    whiteSpace: "nowrap",
+  };
+
+  return (
+    <div
+      onClick={onExpand}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        cursor: "pointer",
+        padding: "6px 10px",
+        userSelect: "none",
+      }}
+    >
+      <img
+        src={logoUrl}
+        alt="Consumer Rights Wiki"
+        style={{
+          width: "32px",
+          height: "32px",
+          borderRadius: "6px",
+          flexShrink: 0,
+          objectFit: "cover",
+        }}
+      />
+      <div style={badgeStyle}>
+        {incidentCount} {incidentCount === 1 ? "incident" : "incidents"}
+      </div>
+      <span
+        style={{
+          color: POPUP_CSS.muted,
+          fontSize: "12px",
+          marginLeft: "2px",
+        }}
+      >
+        ▼
+      </span>
+    </div>
+  );
+};
+
 export const MatchPopupCard = (props: MatchPopupCardProps) => {
   const {
     matches,
@@ -200,6 +263,8 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     onOpenSettings,
     settingsIconUrl,
     closeIconUrl,
+    isMinimized = false,
+    onToggleMinimize,
   } = props;
 
   const [showRelatedPages, setShowRelatedPages] = useState(false);
@@ -225,15 +290,41 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
       Math.max(groupedRelated.Incident.length - VISIBLE_INCIDENT_LIMIT, 0) +
       groupedRelated.Product.length +
       groupedRelated.ProductLine.length;
+    const incidentCount = groupedRelated.Incident.length;
+    const hasActiveIncidents = groupedRelated.Incident.some(isActiveIncident);
     return {
       topMatch,
       groupedRelated,
       hiddenRelatedPagesCount,
       companyMatch,
+      incidentCount,
+      hasActiveIncidents,
     };
   }, [matches]);
 
   if (!derived.topMatch) return null;
+
+  // Render minimized view
+  if (isMinimized) {
+    return (
+      <div
+        style={{
+          ...POPUP_LAYOUT.root,
+          ...containerStyle,
+          width: "auto",
+          minWidth: "120px",
+          maxWidth: "200px",
+        }}
+      >
+        <MinimizedView
+          logoUrl={logoUrl}
+          incidentCount={derived.incidentCount}
+          hasActiveIncidents={derived.hasActiveIncidents}
+          onExpand={onToggleMinimize || (() => {})}
+        />
+      </div>
+    );
+  }
 
   const visibleIncidents = derived.groupedRelated.Incident.slice(
     0,
@@ -263,6 +354,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
         closeIconUrl={closeIconUrl}
         showCloseButton={showCloseButton}
         onClose={onClose}
+        onToggleMinimize={onToggleMinimize}
       />
 
       <MatchPopupBody

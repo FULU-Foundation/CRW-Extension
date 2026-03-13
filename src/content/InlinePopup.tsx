@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 import { CargoEntry } from "@/shared/types";
 import { MatchPopupCard } from "@/shared/ui/MatchPopupCard";
@@ -36,6 +36,12 @@ export const InlinePopup = (props: InlinePopupProps) => {
     disableWarningsLabel,
   } = props;
 
+  const [isMinimized, setIsMinimized] = useState(false);
+
+  const handleToggleMinimize = () => {
+    setIsMinimized((prev) => !prev);
+  };
+
   return (
     <MatchPopupCard
       matches={matches}
@@ -53,6 +59,8 @@ export const InlinePopup = (props: InlinePopupProps) => {
       disableWarningsLabel={disableWarningsLabel}
       showCloseButton
       hideRelatedButtonWhenEmpty
+      isMinimized={isMinimized}
+      onToggleMinimize={handleToggleMinimize}
       containerStyle={{
         position: "fixed",
         right: "16px",
