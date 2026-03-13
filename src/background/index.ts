@@ -137,11 +137,7 @@ browser.action.onClicked.addListener(async (tab) => {
   const stored = await browser.storage.local.get(storageKey);
   const matches = (stored[storageKey] as CargoEntry[]) || [];
 
-  void sendMatchUpdateToTab(
-    tabId,
-    matches,
-    MessageType.FORCE_SHOW_INLINE_POPUP,
-  );
+  void sendMatchUpdateToTab(tabId, matches, MessageType.TOGGLE_INLINE_POPUP);
 });
 
 Messaging.createBackgroundMessageHandler({
