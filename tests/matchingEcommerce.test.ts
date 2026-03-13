@@ -121,7 +121,7 @@ const extractMarketplacePropertiesFromTable = (
   return properties;
 };
 
-const extractMarketplacePropertiesFromEbayJsonLdScript = (
+const extractMarketplacePropertiesFromSchemaJsonLdScript = (
   scriptHtml: string,
 ): Record<string, string> => {
   const properties: Record<string, string> = {};
@@ -175,15 +175,23 @@ const extractMarketplacePropertiesFromEbayJsonLdScript = (
   }
 
   for (const node of productNodes) {
+    const name = readLinkedName(node.name);
     const brand = readLinkedName(node.brand);
     const manufacturer = readLinkedName(node.manufacturer);
+    if (name && !properties.schemaProductName) {
+      properties.schemaProductName = name;
+    }
     if (brand && !properties.schemaProductBrand) {
       properties.schemaProductBrand = brand;
     }
     if (manufacturer && !properties.schemaProductManufacturer) {
       properties.schemaProductManufacturer = manufacturer;
     }
-    if (properties.schemaProductBrand && properties.schemaProductManufacturer) {
+    if (
+      properties.schemaProductName &&
+      properties.schemaProductBrand &&
+      properties.schemaProductManufacturer
+    ) {
       break;
     }
   }
@@ -258,7 +266,7 @@ test("matchByPageContext allows meta-only matching on ecommerce hosts without UR
   assert.ok(ids.includes("company-apple"));
 });
 
-test("matchByPageContext uses eBay Product JSON-LD brand when available", () => {
+test("matchByPageContext uses schema Product JSON-LD brand/name when available", () => {
   const dataset: CargoEntry[] = [
     entry({
       _type: "Company",
@@ -274,7 +282,7 @@ test("matchByPageContext uses eBay Product JSON-LD brand when available", () => 
     }),
   ];
   const marketplaceProperties =
-    extractMarketplacePropertiesFromEbayJsonLdScript(
+    extractMarketplacePropertiesFromSchemaJsonLdScript(
       EBAY_AIRPODS_JSONLD_SCRIPT,
     );
   const results = matchByPageContext(dataset, {
@@ -289,12 +297,16 @@ test("matchByPageContext uses eBay Product JSON-LD brand when available", () => 
   });
   const ids = results.map((item) => item.PageID);
 
+  assert.equal(
+    marketplaceProperties.schemaProductName,
+    "For Apple AirPods 4 wireless earphones with USB-C Charging Case 4th + Free Cable",
+  );
   assert.equal(marketplaceProperties.schemaProductBrand, "Apple");
   assert.equal(results[0]?.PageID, "company-apple");
   assert.ok(ids.includes("company-ebay"));
 });
 
-test("matchByPageContext eBay Product JSON-LD matching can be disabled via matchingConfig", () => {
+test("matchByPageContext schema Product JSON-LD matching can be disabled via matchingConfig", () => {
   const dataset: CargoEntry[] = [
     entry({
       _type: "Company",
@@ -310,7 +322,7 @@ test("matchByPageContext eBay Product JSON-LD matching can be disabled via match
     }),
   ];
   const marketplaceProperties =
-    extractMarketplacePropertiesFromEbayJsonLdScript(
+    extractMarketplacePropertiesFromSchemaJsonLdScript(
       EBAY_AIRPODS_JSONLD_SCRIPT,
     );
 
@@ -327,8 +339,8 @@ test("matchByPageContext eBay Product JSON-LD matching can be disabled via match
   assert.equal(enabledResults[0]?.PageID, "company-apple");
 
   setMatchingConfig({
-    ebayJsonLdProductMatching: {
-      ...matchingConfig.ebayJsonLdProductMatching,
+    schemaJsonLdProductMatching: {
+      ...matchingConfig.schemaJsonLdProductMatching,
       enabled: false,
     },
   });
@@ -347,6 +359,232 @@ test("matchByPageContext eBay Product JSON-LD matching can be disabled via match
 
   assert.equal(disabledResults[0]?.PageID, "company-ebay");
   assert.equal(disabledIds.includes("company-apple"), false);
+});
+
+test("matchByPageContext prioritizes Product.name over brand/manufacturer company hits", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-apple",
+      PageName: "Apple",
+      Website: "https://apple.com/",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-airpods",
+      PageName: "AirPods",
+      Company: "Apple",
+    }),
+  ];
+
+  const results = matchByPageContext(dataset, {
+    url: "https://store.example/products/airpods-case",
+    hostname: "store.example",
+    title: "Wireless Earbuds",
+    meta: {
+      title: "Wireless Earbuds",
+      description: "Charging case bundle",
+    },
+    marketplaceProperties: {
+      schemaProductName: "AirPods",
+      schemaProductBrand: "Apple",
+      schemaProductManufacturer: "Apple",
+    },
+  });
+
+  const ids = results.map((item) => item.PageID);
+  assert.equal(results[0]?.PageID, "pl-airpods");
+  assert.ok(ids.includes("company-apple"));
+});
+
+test("matchByPageContext schema Product.name can unlock matching on non-ecommerce hosts", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-airpods",
+      PageName: "AirPods",
+      Company: "Apple",
+    }),
+  ];
+
+  const results = matchByPageContext(dataset, {
+    url: "https://shop.example/products/1",
+    hostname: "shop.example",
+    title: "Wireless Earbuds",
+    meta: {
+      description: "Charging case bundle",
+    },
+    marketplaceProperties: {
+      schemaProductName: "AirPods",
+    },
+  });
+
+  assert.equal(results[0]?.PageID, "pl-airpods");
+});
+
+test("matchByPageContext schema Product.brand can unlock matching on non-ecommerce hosts", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-apple",
+      PageName: "Apple",
+      Website: "https://apple.com/",
+    }),
+  ];
+
+  const results = matchByPageContext(dataset, {
+    url: "https://shop.example/products/2",
+    hostname: "shop.example",
+    title: "Wireless Earbuds",
+    meta: {
+      description: "Charging case bundle",
+    },
+    marketplaceProperties: {
+      schemaProductBrand: "Apple",
+    },
+  });
+
+  assert.equal(results[0]?.PageID, "company-apple");
+});
+
+test("matchByPageContext schema Product.manufacturer can unlock matching on non-ecommerce hosts", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-apple",
+      PageName: "Apple",
+      Website: "https://apple.com/",
+    }),
+  ];
+
+  const results = matchByPageContext(dataset, {
+    url: "https://shop.example/products/3",
+    hostname: "shop.example",
+    title: "Wireless Earbuds",
+    meta: {
+      description: "Charging case bundle",
+    },
+    marketplaceProperties: {
+      schemaProductManufacturer: "Apple",
+    },
+  });
+
+  assert.equal(results[0]?.PageID, "company-apple");
+});
+
+test("matchByPageContext can disable schema Product.name scoring/unlock via matchingConfig", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-airpods",
+      PageName: "AirPods",
+      Company: "Apple",
+    }),
+  ];
+  const context = {
+    url: "https://shop.example/products/4",
+    hostname: "shop.example",
+    title: "Wireless Earbuds",
+    meta: {
+      description: "Charging case bundle",
+    },
+    marketplaceProperties: {
+      schemaProductName: "AirPods",
+    },
+  };
+
+  const enabledResults = matchByPageContext(dataset, context);
+  assert.equal(enabledResults[0]?.PageID, "pl-airpods");
+
+  setMatchingConfig({
+    schemaJsonLdProductMatching: {
+      ...matchingConfig.schemaJsonLdProductMatching,
+      useName: false,
+    },
+  });
+
+  const disabledResults = matchByPageContext(dataset, context);
+  assert.equal(disabledResults.length, 0);
+});
+
+test("matchByPageContext can disable schema Product.brand scoring/unlock via matchingConfig", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-apple",
+      PageName: "Apple",
+      Website: "https://apple.com/",
+    }),
+  ];
+  const context = {
+    url: "https://shop.example/products/5",
+    hostname: "shop.example",
+    title: "Wireless Earbuds",
+    meta: {
+      description: "Charging case bundle",
+    },
+    marketplaceProperties: {
+      schemaProductBrand: "Apple",
+    },
+  };
+
+  const enabledResults = matchByPageContext(dataset, context);
+  assert.equal(enabledResults[0]?.PageID, "company-apple");
+
+  setMatchingConfig({
+    schemaJsonLdProductMatching: {
+      ...matchingConfig.schemaJsonLdProductMatching,
+      useBrand: false,
+    },
+  });
+
+  const disabledResults = matchByPageContext(dataset, context);
+  assert.equal(disabledResults.length, 0);
+});
+
+test("matchByPageContext can disable schema Product.manufacturer scoring/unlock via matchingConfig", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-apple",
+      PageName: "Apple",
+      Website: "https://apple.com/",
+    }),
+  ];
+  const context = {
+    url: "https://shop.example/products/6",
+    hostname: "shop.example",
+    title: "Wireless Earbuds",
+    meta: {
+      description: "Charging case bundle",
+    },
+    marketplaceProperties: {
+      schemaProductManufacturer: "Apple",
+    },
+  };
+
+  const enabledResults = matchByPageContext(dataset, context);
+  assert.equal(enabledResults[0]?.PageID, "company-apple");
+
+  setMatchingConfig({
+    schemaJsonLdProductMatching: {
+      ...matchingConfig.schemaJsonLdProductMatching,
+      useManufacturer: false,
+    },
+  });
+
+  const disabledResults = matchByPageContext(dataset, context);
+  assert.equal(disabledResults.length, 0);
+});
+
+test("extractMarketplacePropertiesFromSchemaJsonLdScript ignores malformed JSON-LD blocks", () => {
+  const properties = extractMarketplacePropertiesFromSchemaJsonLdScript(`
+    <script type="application/ld+json">{"@type":"Product","name":"AirPods"</script>
+    <script type="application/ld+json">{"@type":"Product","brand":{"name":"Apple"}}</script>
+  `);
+
+  assert.equal(properties.schemaProductBrand, "Apple");
+  assert.equal(properties.schemaProductManufacturer, undefined);
 });
 
 test("matchByPageContext uses Amazon Brand/Manufacturer properties from the provided table snippet", () => {

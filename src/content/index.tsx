@@ -13,8 +13,8 @@ import {
   type InlinePopupInstruction,
 } from "@/content/messageRouting";
 import {
-  extractAmazonMarketplaceProperties,
-  extractEbayJsonLdProductProperties,
+  extractCustomMarketplaceProperties,
+  extractSchemaJsonLdProductProperties,
 } from "@/lib/matching/ecommerce";
 
 console.log(
@@ -406,19 +406,17 @@ const runContentScript = async () => {
   const metaTitle = getMetaContent('meta[name="title"]');
   const ogTitle = getMetaContent('meta[property="og:title"]');
   const ogDescription = getMetaContent('meta[property="og:description"]');
-  const amazonMarketplaceProperties = extractAmazonMarketplaceProperties(
+  const customMarketplaceProperties = extractCustomMarketplaceProperties(
     document,
     location.hostname,
   );
-  const ebayJsonLdMarketplaceProperties = extractEbayJsonLdProductProperties(
-    document,
-    location.hostname,
-  );
+  const schemaJsonLdMarketplaceProperties =
+    extractSchemaJsonLdProductProperties(document, location.hostname);
   const marketplaceProperties =
-    amazonMarketplaceProperties || ebayJsonLdMarketplaceProperties
+    customMarketplaceProperties || schemaJsonLdMarketplaceProperties
       ? {
-          ...(amazonMarketplaceProperties || {}),
-          ...(ebayJsonLdMarketplaceProperties || {}),
+          ...(customMarketplaceProperties || {}),
+          ...(schemaJsonLdMarketplaceProperties || {}),
         }
       : undefined;
 

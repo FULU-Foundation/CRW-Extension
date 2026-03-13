@@ -89,6 +89,43 @@ test("matchByPageContext promotes meta match when URL seed is company on ecommer
   assert.equal(results[0]?.PageID, "pl-airpods");
 });
 
+test("matchByPageContext uses metadata and schema JSON-LD on non-Amazon ecommerce hosts without custom extractors", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-apple",
+      PageName: "Apple",
+      Website: "https://apple.com/",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-airpods",
+      PageName: "AirPods",
+      Company: "Apple",
+    }),
+  ];
+
+  const results = matchByPageContext(dataset, {
+    url: "https://www.ebay.com.au/itm/236467312490",
+    hostname: "www.ebay.com.au",
+    title: "Wireless earphones with charging case",
+    meta: {
+      title: "Wireless earphones listing",
+      description: "Compatible wireless earphones with charging case",
+      "og:title": "Wireless earphones listing",
+      "og:description": "Wireless earphones available now",
+    },
+    marketplaceProperties: {
+      schemaProductName: "AirPods 4th Generation",
+      schemaProductBrand: "Apple",
+    },
+  });
+
+  const ids = results.map((item) => item.PageID);
+  assert.ok(ids.includes("company-apple"));
+  assert.ok(ids.includes("pl-airpods"));
+});
+
 test("matchByPageContext ignores meta-title seeds on non-ecommerce hosts", () => {
   const dataset: CargoEntry[] = [
     entry({

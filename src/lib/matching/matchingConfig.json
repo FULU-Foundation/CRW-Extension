@@ -1,0 +1,146 @@
+{
+  "enableSubdomainMatching": true,
+  "enableMatchAcrossTLDs": true,
+  "enableEcommerceFamilyAliasMatching": true,
+  "restrictMetaPageContextToEcommerceHosts": true,
+  "urlSeedLimit": 3,
+  "metaSeedLimit": 5,
+  "urlMatchPriority": {
+    "exact": 3,
+    "partial": 2,
+    "subdomain": 1
+  },
+  "pageContextWeights": {
+    "title": 10,
+    "metaTitle": 9,
+    "description": 6,
+    "ogTitle": 9,
+    "ogDescription": 6
+  },
+  "pageContextTypeBoosts": {
+    "company": 3,
+    "productLine": 4,
+    "product": 4
+  },
+  "pageContextMinEntityNameLength": 3,
+  "marketplaceBrandDenylist": ["amazon", "ebay", "arukereso"],
+  "amazonPropertyMatching": {
+    "enabled": true,
+    "useBrand": true,
+    "useManufacturer": true,
+    "brandWeight": 16,
+    "manufacturerWeight": 12
+  },
+  "schemaJsonLdProductMatching": {
+    "enabled": true,
+    "useName": true,
+    "useBrand": true,
+    "useManufacturer": true,
+    "nameWeight": 20,
+    "brandWeight": 12,
+    "manufacturerWeight": 10
+  },
+  "companyAliasSuffixStripping": {
+    "enabled": true,
+    "legalSuffixTokens": [
+      "inc",
+      "incorporated",
+      "corp",
+      "corporation",
+      "co",
+      "company",
+      "ltd",
+      "limited",
+      "llc",
+      "plc",
+      "lp",
+      "llp",
+      "gmbh",
+      "ag",
+      "sa",
+      "nv",
+      "bv",
+      "oy",
+      "oyj",
+      "pte",
+      "pty"
+    ],
+    "genericTrailingTokens": [
+      "group",
+      "holdings",
+      "industries",
+      "industry",
+      "systems",
+      "technology",
+      "technologies"
+    ]
+  },
+  "enableSearchResultsPageSuppressions": true,
+  "searchResultsPageSuppressions": [
+    {
+      "hostSuffixes": ["google.com"],
+      "paths": ["/search"],
+      "requiredQueryParams": ["q"]
+    },
+    {
+      "hostSuffixes": ["bing.com"],
+      "paths": ["/search"],
+      "requiredQueryParams": ["q"]
+    },
+    {
+      "hostSuffixes": ["search.yahoo.com"],
+      "paths": ["/search"],
+      "requiredQueryParams": ["p"]
+    },
+    {
+      "hostSuffixes": ["duckduckgo.com"],
+      "paths": ["/"],
+      "requiredQueryParams": ["q"]
+    }
+  ],
+  "specificPathDomainMatches": ["github.com"],
+  "ecommerceDomainFamilyMap": {
+    "amazon.ae": "amazon",
+    "amazon.ca": "amazon",
+    "amazon.co.jp": "amazon",
+    "amazon.co.uk": "amazon",
+    "amazon.com": "amazon",
+    "amazon.com.au": "amazon",
+    "amazon.com.be": "amazon",
+    "amazon.com.br": "amazon",
+    "amazon.com.mx": "amazon",
+    "amazon.com.tr": "amazon",
+    "amazon.de": "amazon",
+    "amazon.eg": "amazon",
+    "amazon.es": "amazon",
+    "amazon.fr": "amazon",
+    "amazon.in": "amazon",
+    "amazon.it": "amazon",
+    "amazon.nl": "amazon",
+    "amazon.pl": "amazon",
+    "amazon.sa": "amazon",
+    "amazon.se": "amazon",
+    "amazon.sg": "amazon",
+    "arukereso.hu": "arukereso",
+    "ebay.at": "ebay",
+    "ebay.be": "ebay",
+    "ebay.ca": "ebay",
+    "ebay.ch": "ebay",
+    "ebay.co.uk": "ebay",
+    "ebay.com": "ebay",
+    "ebay.com.au": "ebay",
+    "ebay.com.br": "ebay",
+    "ebay.com.hk": "ebay",
+    "ebay.com.mx": "ebay",
+    "ebay.de": "ebay",
+    "ebay.es": "ebay",
+    "ebay.fr": "ebay",
+    "ebay.ie": "ebay",
+    "ebay.it": "ebay",
+    "ebay.my": "ebay",
+    "ebay.nl": "ebay",
+    "ebay.ph": "ebay",
+    "ebay.pl": "ebay",
+    "ebay.sg": "ebay"
+  }
+}
