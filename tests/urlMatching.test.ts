@@ -161,6 +161,65 @@ test("classifies dyson.co.uk and dyson.com as cross-TLD aliases when enabled", (
   assert.equal(result.crossTldAlias, true);
 });
 
+test("classifies .com and ccTLD brand domains as cross-TLD aliases when enabled", () => {
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
+  const visited = safeParseUrl("https://www.ford.ca/");
+  const candidate = safeParseUrl("https://www.ford.com/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "subdomain");
+  assert.equal(result.crossTldAlias, true);
+});
+
+test("does not classify .com and ccTLD aliases when ccTLD suffix data is removed", () => {
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+    crossTldCountryCodeSuffixes: [],
+  });
+  const visited = safeParseUrl("https://www.ford.ca/");
+  const candidate = safeParseUrl("https://www.ford.com/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
+test("does not cross-match same-label generic TLD hosts without ccTLD or compound suffix evidence", () => {
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
+  const visited = safeParseUrl("https://www.mozilla.org/");
+  const candidate = safeParseUrl("https://www.mozilla.com/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
+test("does not cross-match branded compound country suffix domains to .com", () => {
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
+  const visited = safeParseUrl("https://www.axis.bank.in/");
+  const candidate = safeParseUrl("https://axis.com/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
 test("does not cross-match unrelated brand TLD hosts sharing generic label", () => {
   setMatchingConfig({
     enableMatchAcrossTLDs: true,
