@@ -1,3 +1,6 @@
+import { GENERATED_COUNTRY_CODE_SUFFIXES } from "@/generated/matching/generatedCountryCodeSuffixes.ts";
+import { GENERATED_COMPOUND_SUFFIX_PREFIXES } from "@/generated/matching/generatedCompoundSuffixPrefixes.ts";
+
 export type SearchResultsPageSuppressionRule = {
   hostSuffixes: string[];
   paths: string[];
@@ -30,6 +33,8 @@ export type MatchingConfig = {
   enableSubdomainMatching: boolean;
   enableMatchAcrossTLDs: boolean;
   enableEcommerceFamilyAliasMatching: boolean;
+  crossTldCountryCodeSuffixes: string[];
+  crossTldCompoundSuffixPrefixes: string[];
   restrictMetaPageContextToEcommerceHosts: boolean;
   urlSeedLimit: number;
   metaSeedLimit: number;
@@ -65,6 +70,8 @@ const DEFAULT_MATCHING_CONFIG: MatchingConfig = {
   enableSubdomainMatching: true,
   enableMatchAcrossTLDs: true,
   enableEcommerceFamilyAliasMatching: true,
+  crossTldCountryCodeSuffixes: [...GENERATED_COUNTRY_CODE_SUFFIXES],
+  crossTldCompoundSuffixPrefixes: [...GENERATED_COMPOUND_SUFFIX_PREFIXES],
   restrictMetaPageContextToEcommerceHosts: true,
   urlSeedLimit: 3,
   metaSeedLimit: 5,
