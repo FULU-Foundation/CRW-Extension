@@ -5,7 +5,7 @@ The URL matcher behavior is controlled by the exported `matchingConfig` object i
 ### Top-level params
 
 - `enableSubdomainMatching` (`boolean`, default: `true`): allows matches when the visited URL and candidate URL share the same root domain but use different subdomains (for example `support.example.com` vs `example.com`). Produces a `subdomain` match.
-- `enableMatchAcrossTLDs` (`boolean`, default: `true`): allows cross-TLD alias matches for the same domain label when the registrable domains differ and the suffix is either compound or a country code (for example `dyson.co.uk` vs `dyson.com.au`). Produces a `subdomain` match with a `cross_tld_alias` reason.
+- `enableMatchAcrossTLDs` (`boolean`, default: `true`): allows cross-TLD alias matches for the same domain label when the registrable domains differ and either a suffix is  compound or both suffixes are in `interchangeableTLDs` (for example `dyson.co.uk` vs `dyson.com.au`). Produces a `subdomain` match with a `cross_tld_alias` reason.
 - `enableEcommerceFamilyAliasMatching` (`boolean`, default: `true`): allows known ecommerce domains in the same configured family (Amazon, eBay, etc.) to match each other across country domains. Produces a `subdomain` match with an `ecommerce_family_alias` reason.
 - `restrictMetaPageContextToEcommerceHosts` (`boolean`, default: `true`): when enabled, title/meta/OG page-context seeds are only used on known ecommerce hosts. Set to `false` to allow those signals on non-ecommerce hosts when URL seeds exist.
 - `urlSeedLimit` (`number`, default: `3`): default limit intended for URL-seed matching workflows.
@@ -49,6 +49,6 @@ The URL matcher behavior is controlled by the exported `matchingConfig` object i
 
 ### Current usage notes
 
-- URL matching currently uses `enableSubdomainMatching`, `enableMatchAcrossTLDs`, `enableEcommerceFamilyAliasMatching`, `specificPathDomainMatches`, `ecommerceDomainFamilyMap`, `interchangeableTLDs`.
+- URL matching currently uses `enableSubdomainMatching`, `enableMatchAcrossTLDs`, `enableEcommerceFamilyAliasMatching`, `specificPathDomainMatches`, `ecommerceDomainFamilyMap`, and `interchangeableTLDs`.
 - `matchByPageContext(...)` currently reads `enableSearchResultsPageSuppressions`, `searchResultsPageSuppressions`, `restrictMetaPageContextToEcommerceHosts`, `companyAliasSuffixStripping`, `amazonPropertyMatching`, and `ebayJsonLdProductMatching` (along with related page-context matching logic).
 - The page-context and seed-limit params are defined in config now for matching/scoring workflows, but are not currently read by `src/lib/matching/urlMatching.ts`.

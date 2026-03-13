@@ -222,7 +222,7 @@ test("does not cross-match unrelated brand TLD hosts sharing generic label", () 
   assert.equal(result, null);
 });
 
-test("does not bridge brand/generic TLD pairs without compound suffix or country code evidence", () => {
+test("does not bridge brand/generic TLD pairs without compound suffix or interchangeable TLDs", () => {
   setMatchingConfig({
     enableMatchAcrossTLDs: true,
     enableSubdomainMatching: true,
@@ -236,7 +236,7 @@ test("does not bridge brand/generic TLD pairs without compound suffix or country
   assert.equal(result, null);
 });
 
-test("does not cross-match custom TLD host to brand .com without compound suffix or country code evidence", () => {
+test("does not cross-match custom TLD host to brand .com without compound suffix or interchangeable TLDs", () => {
   setMatchingConfig({
     enableMatchAcrossTLDs: true,
     enableSubdomainMatching: true,
