@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "Consumer Rights Wiki",
+  "version": "1.0.0",
+  "author": "jake@fulu.org",
+  "description": "Shows a popup and notifications when the current site may have an article on the Consumer Rights Wiki.",
+  "action": {
+    "default_title": "CRW Extension",
+    "default_icon": {
+      "16": "crw_logo.png",
+      "32": "crw_logo.png",
+      "48": "crw_logo.png",
+      "128": "crw_logo.png"
+    }
+  },
+  "options_page": "options.html",
+  "icons": {
+    "16": "crw_logo.png",
+    "32": "crw_logo.png",
+    "48": "crw_logo.png",
+    "128": "crw_logo.png"
+  },
+  "permissions": ["tabs", "storage"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["assets/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/data.json",
+        "crw_logo.png",
+        "open-in-new.svg",
+        "settings.svg",
+        "close.svg"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

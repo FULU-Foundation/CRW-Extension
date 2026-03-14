@@ -36,3 +36,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Verify build outputs
+        run: |
+          test -d dist/chrome
+          test -d dist/firefox
+          test -d dist/safari

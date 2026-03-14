@@ -245,6 +245,12 @@ const Options = () => {
     }
   };
 
+  const onOpenSafariSetupGuide = async () => {
+    await browser.tabs.create({
+      url: browser.runtime.getURL("post-install-safari.html"),
+    });
+  };
+
   return (
     <OptionsView
       warningsEnabled={warningsEnabled}
@@ -270,6 +276,9 @@ const Options = () => {
       }}
       onRemoveSuppressedPageName={(pageName) => {
         void onRemoveSuppressedPageName(pageName);
+      }}
+      onOpenSafariSetupGuide={() => {
+        void onOpenSafariSetupGuide();
       }}
     />
   );

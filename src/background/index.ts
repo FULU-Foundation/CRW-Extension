@@ -1,5 +1,6 @@
 // /src/background/index.ts
 import browser from "webextension-polyfill";
+import { isSafari } from "../../viteEnv";
 import * as Constants from "@/shared/constants";
 import * as Matching from "@/lib/matching/matching";
 import * as Dataset from "@/lib/dataset";
@@ -93,12 +94,18 @@ const loadDatasetCache = async (options?: {
   }
 };
 
-browser.runtime.onInstalled.addListener(async () => {
+browser.runtime.onInstalled.addListener(async (details) => {
   console.log(
     `${Constants.LOG_PREFIX} Extension installed/updated. Loading dataset...`,
   );
 
   await loadDatasetCache();
+
+  if (!isSafari || details.reason !== "install") return;
+
+  await browser.tabs.create({
+    url: browser.runtime.getURL("post-install-safari.html"),
+  });
 });
 
 browser.runtime.onStartup.addListener(async () => {

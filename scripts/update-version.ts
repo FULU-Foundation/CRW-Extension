@@ -37,3 +37,4 @@ console.log(`Using release version: ${releaseVersion}`);
 updateJsonVersion("package.json");
 updateJsonVersion("manifest/chrome.json");
 updateJsonVersion("manifest/firefox.json");
+updateJsonVersion("manifest/safari.json");

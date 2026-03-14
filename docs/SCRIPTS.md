@@ -1,3 +1,30 @@
+## Safari Packaging
+
+Use the Safari packaging script after building the Safari WebExtension bundle when you need an Xcode project for Safari distribution.
+
+The bundle build itself is portable:
+
+```shell
+npm run build-safari
+```
+
+Packaging is macOS-only because it uses Apple's `safari-web-extension-converter` via Xcode:
+
+```shell
+npm run package-safari
+```
+
+This reads `dist/safari` by default and writes the generated Xcode project to `build/safari`.
+
+### Optional environment variables
+
+- `SAFARI_EXTENSION_DIR`: override the source extension bundle directory (default: `dist/safari`)
+- `SAFARI_PROJECT_LOCATION`: override the output directory for the generated Xcode project (default: `build/safari`)
+- `SAFARI_APP_NAME`: override the generated app name (default: `Consumer Rights Wiki`)
+- `SAFARI_BUNDLE_IDENTIFIER`: override the generated bundle identifier (default: `wiki.consumerrights.extension`)
+
+If Xcode reports that required plugins failed to load, run `sudo xcodebuild -runFirstLaunch` once and retry.
+
 ## URL Match Preview Script
 
 Use the URL match preview script to inspect URL seed matches and related-entry expansion against the local `all_cargo_combined.json` dataset.
