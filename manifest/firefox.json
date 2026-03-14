@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "author": "jake@fulu.org",
   "description": "Shows a popup and notifications when the current site may have an article on the Consumer Rights Wiki.",
+  "homepage_url": "https://github.com/FULU-Foundation/CRW-Extension",
   "action": {
     "default_title": "CRW Extension",
     "default_icon": {
