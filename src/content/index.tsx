@@ -180,7 +180,7 @@ const ensurePopupRoot = (): Root => {
   popupHost.style.position = "static";
   popupHost.style.display = "block";
 
-  const shadowRoot = popupHost.attachShadow({ mode: "open" });
+  const shadowRoot = popupHost.attachShadow({ mode: "closed" });
   const resetStyle = document.createElement("style");
   resetStyle.textContent = `
     :host {
@@ -213,6 +213,9 @@ const removeInlinePopup = () => {
   }
   popupHost = null;
 };
+
+const isInlinePopupOpen = (): boolean =>
+  Boolean(popupHost?.isConnected && popupShadowMount?.isConnected && popupRoot);
 
 const renderInlinePopup = async (
   matches: CargoEntry[],
@@ -392,14 +395,8 @@ const renderInlinePopup = async (
 };
 
 const runContentScript = async () => {
-  if (!(await isWarningsEnabled())) {
+  if (!(await isWarningsEnabled()) || (await isCurrentSiteSuppressed())) {
     removeInlinePopup();
-    return;
-  }
-
-  if (await isCurrentSiteSuppressed()) {
-    removeInlinePopup();
-    return;
   }
 
   const getMetaContent = (selector: string): string => {
@@ -453,6 +450,16 @@ const runContentScript = async () => {
 const handleInlinePopupInstruction = async (
   instruction: InlinePopupInstruction,
 ) => {
+  if (instruction.toggle) {
+    if (isInlinePopupOpen()) {
+      removeInlinePopup();
+      return;
+    }
+
+    void renderInlinePopup(instruction.matches, true);
+    return;
+  }
+
   if (!instruction.ignorePreferences) {
     if (forcePopupVisible && !(await isWarningsEnabled())) return;
     void renderInlinePopup(instruction.matches, false);
