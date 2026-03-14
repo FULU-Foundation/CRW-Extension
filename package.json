@@ -16,6 +16,7 @@
     "build-safari": "cross-env BROWSER=safari vite build --config vite.background.config.ts && cross-env BROWSER=safari vite build --config vite.content.config.ts && cross-env BROWSER=safari vite build --config vite.config.ts",
     "build:watch": "chokidar \"src/**/*\" -i \"src/generated/**\" -c \"npm run build\"",
     "package-safari": "node --experimental-strip-types scripts/package-safari.ts",
+    "sign-safari": "node --experimental-strip-types scripts/sign-safari.ts",
     "lint": "eslint \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/**/*.ts\"",
     "lint:fix": "eslint --fix \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/**/*.ts\"",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\"",
