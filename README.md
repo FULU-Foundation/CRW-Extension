@@ -6,6 +6,7 @@ Browser extension that shows a popup and notifications when the site, product, o
   https://chromewebstore.google.com/detail/consumer-rights-wiki/bppajinomefndbbmopljhbdfefnefdha
 - Install on Firefox
   https://addons.mozilla.org/firefox/addon/consumer-rights-wiki/
+- Safari support is available as a WebExtension bundle for temporary loading in Safari during development, and can also be packaged for distribution with Apple tooling.
 ## Contributing
 ### Technical Contributions
 Contributions are welcome!
@@ -20,7 +21,7 @@ The extension matches sites and services against data sourced from the [Consumer
 Have a question, idea, or just want to connect with other users? Head over to [Discussions](https://github.com/FULU-Foundation/CRW-Extension/discussions) to get involved.
 # Development
 ## Clone and build the extension:
-### Chrome & Firefox
+### Chrome, Firefox & Safari bundle
 ```shell
 git clone https://github.com/FULU-Foundation/CRW-Extension.git
 cd CRW-Extension
@@ -28,6 +29,15 @@ npm ci
 npm run build
 ```
 The compiled extension will be output in the `dist` folder. Alternatively run ```npm run build:watch``` and vite will watch for changes and update the extension automatically during development.
+Linux is sufficient for `dist/chrome`, `dist/firefox`, and `dist/safari`. Safari packaging for distribution still requires Apple tooling.
+
+### Safari packaging for distribution
+```shell
+npm run build-safari
+npm run package-safari
+```
+This generates an Xcode project under `build/safari` using `xcrun safari-web-extension-converter`. Override the defaults with `SAFARI_APP_NAME`, `SAFARI_BUNDLE_IDENTIFIER`, `SAFARI_PROJECT_LOCATION`, or `SAFARI_EXTENSION_DIR` if needed.
+If the converter reports that required plugins failed to load, run `sudo xcodebuild -runFirstLaunch` once and retry.
 ## Development Installation
 ### For Chrome:
 1. Open Extension settings: e.g. `chrome://extensions/` or `brave://extensions/` etc.
@@ -39,6 +49,13 @@ The compiled extension will be output in the `dist` folder. Alternatively run ``
 2. Expand 'Temporary Extensions'
 3. Click 'Load Temporary Add-on...'
 4. Navigate to the unzipped folder and open `manifest.json`
+### For Safari:
+1. Run `npm run build-safari`.
+2. In Safari on macOS, enable the Develop menu if it is not already visible.
+3. Use Safari's temporary web extension install flow and select the [`dist/safari`](/Users/jdumay/code/CRW-Extension/dist/safari) folder.
+4. Enable the extension in Safari settings if prompted.
+5. On first install, the extension opens a tab with Safari-specific setup instructions.
+6. Set the extension's website access to `All Websites` so it can inspect the current site automatically.
 ## Formatting
 ```shell
 npm run format

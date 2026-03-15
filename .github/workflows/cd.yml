@@ -1,4 +1,4 @@
-name: Build and release extension
+name: Build and publish extension
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  release-webextensions:
     runs-on: ubuntu-latest
 
     env:
@@ -53,6 +53,7 @@ jobs:
         run: |
           test -d dist/chrome
           test -d dist/firefox
+          test -d dist/safari
 
       - name: Zip Chrome
         working-directory: dist/chrome
@@ -62,32 +63,18 @@ jobs:
         working-directory: dist/firefox
         run: zip -r ../../firefox-extension.zip .
 
-      - name: Validate release tag
-        id: tag
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          TAG="v$VERSION"
-          git fetch --tags
+      - name: Zip Safari bundle
+        working-directory: dist/safari
+        run: zip -r ../../safari-webextension.zip .
 
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists. Bump package.json version and push again."
-            exit 1
-          fi
-
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          name: ${{ steps.tag.outputs.tag }}
-          target_commitish: ${{ github.sha }}
-          generate_release_notes: true
-          files: |
+          name: webextension-release-assets
+          path: |
             chrome-extension.zip
             firefox-extension.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            safari-webextension.zip
 
       - name: Publish to Chrome Web Store
         uses: mnao305/chrome-extension-upload@v5.0.0
@@ -116,3 +103,110 @@ jobs:
         env:
           AMO_API_KEY: ${{ secrets.AMO_API_KEY }}
           AMO_API_SECRET: ${{ secrets.AMO_API_SECRET }}
+
+  package-safari:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Stamp release version
+        run: npm run update-version
+        env:
+          RELEASE_VERSION: 1.0.${{ github.run_number }}
+          AMO_EXTENSION_ID: ${{ secrets.AMO_EXTENSION_ID }}
+
+      - name: Build Safari bundle
+        run: npm run build-safari
+
+      - name: Prepare Xcode
+        run: sudo xcodebuild -runFirstLaunch
+
+      - name: Package Safari Xcode project
+        run: npm run package-safari
+        env:
+          SAFARI_BUNDLE_IDENTIFIER: ${{ secrets.SAFARI_BUNDLE_IDENTIFIER || 'wiki.consumerrights.extension' }}
+          SAFARI_APP_NAME: Consumer Rights Wiki
+
+      - name: Zip Safari Xcode project
+        run: ditto -c -k --sequesterRsrc --keepParent build/safari safari-xcode-project.zip
+
+      - name: Upload Safari artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: safari-release-assets
+          path: safari-xcode-project.zip
+
+  github-release:
+    runs-on: ubuntu-latest
+    needs:
+      - release-webextensions
+      - package-safari
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Stamp release version
+        run: npm run update-version
+        env:
+          RELEASE_VERSION: 1.0.${{ github.run_number }}
+          AMO_EXTENSION_ID: ${{ secrets.AMO_EXTENSION_ID }}
+
+      - name: Download webextension artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: webextension-release-assets
+
+      - name: Download Safari artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: safari-release-assets
+
+      - name: Validate release tag
+        id: tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          git fetch --tags
+
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists. Bump package.json version and push again."
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          files: |
+            chrome-extension.zip
+            firefox-extension.zip
+            safari-webextension.zip
+            safari-xcode-project.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

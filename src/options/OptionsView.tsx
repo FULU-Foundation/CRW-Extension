@@ -1,4 +1,5 @@
 import React from "react";
+import { isSafari } from "../../viteEnv";
 
 const PAGE_CSS = {
   bg: "#004080",
@@ -33,6 +34,7 @@ export type OptionsViewProps = {
   onRefreshNow: () => void;
   onRemoveSuppressedDomain: (domain: string) => void;
   onRemoveSuppressedPageName: (pageName: string) => void;
+  onOpenSafariSetupGuide: () => void;
 };
 
 const formatLastRefreshed = (value: number | null): string => {
@@ -63,6 +65,7 @@ export const OptionsView = (props: OptionsViewProps) => {
     onRefreshNow,
     onRemoveSuppressedDomain,
     onRemoveSuppressedPageName,
+    onOpenSafariSetupGuide,
   } = props;
 
   return (
@@ -194,6 +197,55 @@ export const OptionsView = (props: OptionsViewProps) => {
               : "Disabled: popups will not auto-show on page load."}
           </p>
         </section>
+
+        {isSafari && (
+          <section
+            style={{
+              border: `1px solid ${PAGE_CSS.border}`,
+              borderRadius: "12px",
+              padding: "14px",
+              background: PAGE_CSS.subtleBg,
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "16px",
+                lineHeight: 1.2,
+                fontWeight: 700,
+                color: PAGE_CSS.text,
+              }}
+            >
+              Safari Website Access
+            </h2>
+            <p
+              style={{
+                margin: "6px 0 10px 0",
+                fontSize: "13px",
+                color: PAGE_CSS.muted,
+              }}
+            >
+              Open the Safari setup guide again if you need to switch the
+              extension to <strong>All Websites</strong>.
+            </p>
+            <button
+              type="button"
+              onClick={onOpenSafariSetupGuide}
+              style={{
+                border: `1px solid ${PAGE_CSS.buttonBorder}`,
+                background: PAGE_CSS.buttonBg,
+                color: PAGE_CSS.buttonText,
+                borderRadius: "10px",
+                padding: "8px 12px",
+                fontSize: "13px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Open Safari setup guide
+            </button>
+          </section>
+        )}
 
         <section
           style={{

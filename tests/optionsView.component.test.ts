@@ -24,6 +24,7 @@ test("OptionsView shows enabled state and empty ignored-sites list", () => {
       onRefreshNow: noop,
       onRemoveSuppressedDomain: noop,
       onRemoveSuppressedPageName: noop,
+      onOpenSafariSetupGuide: noop,
     }),
   );
 
@@ -57,6 +58,7 @@ test("OptionsView shows disabled state and removable ignored-site entries", () =
       onRefreshNow: noop,
       onRemoveSuppressedDomain: noop,
       onRemoveSuppressedPageName: noop,
+      onOpenSafariSetupGuide: noop,
     }),
   );
 

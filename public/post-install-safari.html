@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Safari website access setup</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #004080;
+        --text: #ffffff;
+        --muted: rgba(255, 255, 255, 0.82);
+        --subtle-bg: rgba(255, 255, 255, 0.08);
+        --border: rgba(255, 255, 255, 0.25);
+        --button-bg: #ffffff;
+        --button-text: #004080;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .hero,
+      .panel,
+      .tip {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--subtle-bg);
+      }
+
+      .hero {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+      }
+
+      .hero img {
+        width: 34px;
+        height: 34px;
+        border-radius: 6px;
+        flex-shrink: 0;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 20px;
+        line-height: 1.2;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 16px;
+        line-height: 1.2;
+      }
+
+      p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .panel {
+        padding: 14px;
+      }
+
+      ol {
+        margin: 10px 0 0;
+        padding-left: 20px;
+      }
+
+      li {
+        margin: 0 0 10px;
+        line-height: 1.6;
+        color: var(--text);
+        font-size: 14px;
+      }
+
+      .tip {
+        padding: 14px;
+      }
+
+      strong {
+        color: var(--text);
+      }
+
+      .subheading {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="stack">
+        <div class="hero">
+          <img src="/crw_logo.png" alt="Consumer Rights Wiki" />
+          <div>
+            <h1>Safari website access setup</h1>
+            <div class="subheading">Consumer Rights Wiki</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Safari website access setup</h2>
+          <p>
+            Consumer Rights Wiki checks the current page to find matching
+            articles. In Safari, that works best when the extension is allowed
+            to access <strong>All Websites</strong>.
+          </p>
+          <ol>
+            <li>Open Safari settings.</li>
+            <li>Select the <strong>Extensions</strong> tab.</li>
+            <li>Choose <strong>Consumer Rights Wiki</strong> in the sidebar.</li>
+            <li>
+              Find the website access setting and change it to
+              <strong>All Websites</strong>.
+            </li>
+          </ol>
+        </div>
+
+        <div class="tip">
+          <h2>Tip</h2>
+          <p>
+            If Safari asks for permission on a page first, approve it and then
+            switch the extension to <strong>All Websites</strong> from Safari
+            settings.
+          </p>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
