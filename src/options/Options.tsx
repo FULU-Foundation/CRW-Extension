@@ -5,6 +5,10 @@ import * as Constants from "@/shared/constants";
 import { OptionsView } from "@/options/OptionsView";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
+import {
+  type SnoozedSiteMap,
+  normalizeSnoozedSiteMap,
+} from "@/shared/snoozedSites";
 
 const readWarningsEnabled = async (): Promise<boolean> => {
   const stored = await browser.storage.local.get(
@@ -34,20 +38,24 @@ const readSuppressedDomains = async (): Promise<string[]> => {
     .filter((entry) => entry.length > 0);
 };
 
-const normalizePageName = (pageName: string): string => {
-  return pageName.trim().toLowerCase();
+const readHideWhenNoIncidents = async (): Promise<boolean> => {
+  const stored = await browser.storage.local.get(
+    Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS,
+  );
+  const value = stored[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS];
+  if (typeof value === "boolean") return value;
+  return true;
 };
 
-const readSuppressedPageNames = async (): Promise<string[]> => {
+const readSnoozedSiteMap = async (): Promise<SnoozedSiteMap> => {
   const stored = await browser.storage.local.get(
-    Constants.STORAGE.SUPPRESSED_PAGE_NAMES,
+    Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE,
   );
-  const value = stored[Constants.STORAGE.SUPPRESSED_PAGE_NAMES];
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((entry): entry is string => typeof entry === "string")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
+  return normalizeSnoozedSiteMap(
+    stored[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE] as
+      | SnoozedSiteMap
+      | undefined,
+  );
 };
 
 const writeSuppressedDomains = async (domains: string[]): Promise<void> => {
@@ -56,10 +64,18 @@ const writeSuppressedDomains = async (domains: string[]): Promise<void> => {
   });
 };
 
-const writeSuppressedPageNames = async (pageNames: string[]): Promise<void> => {
+const writeSnoozedSiteMap = async (value: SnoozedSiteMap): Promise<void> => {
   await browser.storage.local.set({
-    [Constants.STORAGE.SUPPRESSED_PAGE_NAMES]: pageNames,
+    [Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE]: value,
   });
+};
+
+const readSnoozedSites = async (): Promise<string[]> => {
+  const value = await readSnoozedSiteMap();
+  return Object.keys(value)
+    .map((domain) => normalizeHostname(domain))
+    .filter((domain) => domain.length > 0)
+    .sort((left, right) => left.localeCompare(right));
 };
 
 const readRefreshIntervalMs = async (): Promise<number> => {
@@ -102,8 +118,9 @@ const readLastRefreshError = async (): Promise<string | null> => {
 
 const Options = () => {
   const [warningsEnabled, setWarningsEnabled] = useState<boolean>(true);
+  const [hideWhenNoIncidents, setHideWhenNoIncidents] = useState<boolean>(true);
   const [suppressedDomains, setSuppressedDomains] = useState<string[]>([]);
-  const [suppressedPageNames, setSuppressedPageNames] = useState<string[]>([]);
+  const [snoozedSites, setSnoozedSites] = useState<string[]>([]);
   const [refreshIntervalMs, setRefreshIntervalMs] = useState<number>(
     Constants.DEFAULT_DATA_REFRESH_INTERVAL_MS,
   );
@@ -118,22 +135,25 @@ const Options = () => {
       try {
         const [
           enabled,
+          hideWithoutIncidents,
           domains,
-          pageNames,
+          snoozedSiteDomains,
           intervalMs,
           refreshedAt,
           fetchError,
         ] = await Promise.all([
           readWarningsEnabled(),
+          readHideWhenNoIncidents(),
           readSuppressedDomains(),
-          readSuppressedPageNames(),
+          readSnoozedSites(),
           readRefreshIntervalMs(),
           readLastRefreshedAt(),
           readLastRefreshError(),
         ]);
         setWarningsEnabled(enabled);
+        setHideWhenNoIncidents(hideWithoutIncidents);
         setSuppressedDomains(domains);
-        setSuppressedPageNames(pageNames);
+        setSnoozedSites(snoozedSiteDomains);
         setRefreshIntervalMs(intervalMs);
         setLastRefreshedAt(refreshedAt);
         setLastRefreshError(fetchError);
@@ -181,6 +201,27 @@ const Options = () => {
           typeof nextError?.message === "string" ? nextError.message : null,
         );
       }
+
+      if (changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS]) {
+        const nextValue =
+          changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS].newValue;
+        setHideWhenNoIncidents(
+          typeof nextValue === "boolean" ? nextValue : true,
+        );
+      }
+
+      if (changes[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE]) {
+        const nextValue = normalizeSnoozedSiteMap(
+          changes[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE]
+            .newValue as SnoozedSiteMap | undefined,
+        );
+        setSnoozedSites(
+          Object.keys(nextValue)
+            .map((domain) => normalizeHostname(domain))
+            .filter((domain) => domain.length > 0)
+            .sort((left, right) => left.localeCompare(right)),
+        );
+      }
     };
 
     browser.storage.onChanged.addListener(onStorageChanged);
@@ -203,13 +244,28 @@ const Options = () => {
     await writeSuppressedDomains(next);
   };
 
-  const onRemoveSuppressedPageName = async (pageName: string) => {
-    const normalized = normalizePageName(pageName);
-    const next = suppressedPageNames.filter(
-      (value) => normalizePageName(value) !== normalized,
+  const onToggleHideWhenNoIncidents = async (enabled: boolean) => {
+    setHideWhenNoIncidents(enabled);
+    await browser.storage.local.set({
+      [Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS]: enabled,
+    });
+  };
+
+  const onRemoveSnoozedSite = async (domain: string) => {
+    const normalized = normalizeHostname(domain);
+    if (!normalized) return;
+
+    const existing = await readSnoozedSiteMap();
+    if (!Object.prototype.hasOwnProperty.call(existing, normalized)) return;
+    const next = { ...existing };
+    delete next[normalized];
+    setSnoozedSites(
+      Object.keys(next)
+        .map((value) => normalizeHostname(value))
+        .filter((value) => value.length > 0)
+        .sort((left, right) => left.localeCompare(right)),
     );
-    setSuppressedPageNames(next);
-    await writeSuppressedPageNames(next);
+    await writeSnoozedSiteMap(next);
   };
 
   const onChangeRefreshInterval = async (nextRefreshIntervalMs: number) => {
@@ -248,8 +304,9 @@ const Options = () => {
   return (
     <OptionsView
       warningsEnabled={warningsEnabled}
+      hideWhenNoIncidents={hideWhenNoIncidents}
       suppressedDomains={suppressedDomains}
-      suppressedPageNames={suppressedPageNames}
+      snoozedSites={snoozedSites}
       refreshIntervalMs={refreshIntervalMs}
       lastRefreshedAt={lastRefreshedAt}
       refreshingNow={refreshingNow}
@@ -258,6 +315,9 @@ const Options = () => {
       loading={loading}
       onToggleWarnings={(enabled) => {
         void onToggleWarnings(enabled);
+      }}
+      onToggleHideWhenNoIncidents={(enabled) => {
+        void onToggleHideWhenNoIncidents(enabled);
       }}
       onChangeRefreshInterval={(nextRefreshIntervalMs) => {
         void onChangeRefreshInterval(nextRefreshIntervalMs);
@@ -268,8 +328,8 @@ const Options = () => {
       onRemoveSuppressedDomain={(domain) => {
         void onRemoveSuppressedDomain(domain);
       }}
-      onRemoveSuppressedPageName={(pageName) => {
-        void onRemoveSuppressedPageName(pageName);
+      onRemoveSnoozedSite={(domain) => {
+        void onRemoveSnoozedSite(domain);
       }}
     />
   );

@@ -26,6 +26,8 @@ export const STORAGE = {
   DATA_REFRESH_INTERVAL_MS: "crw_data_refresh_interval_ms",
   DATA_REFRESH_ERROR: "crw_data_refresh_error",
   SUPPRESSED_DOMAINS: "crw_suppressed_domains",
-  SUPPRESSED_PAGE_NAMES: "crw_suppressed_page_names",
+  SNOOZED_SITES_UNTIL_INCIDENT_CHANGE:
+    "crw_snoozed_sites_until_incident_change",
+  HIDE_WHEN_NO_INCIDENTS: "crw_hide_when_no_incidents",
   WARNINGS_ENABLED: "crw_warnings_enabled",
 };

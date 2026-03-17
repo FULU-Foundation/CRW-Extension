@@ -15,7 +15,7 @@ type MatchPopupCardProps = {
   logoUrl: string;
   externalIconUrl: string;
   onSuppressSite: () => void;
-  onSuppressPageName?: () => void;
+  onSnoozeUntilNewChanges?: () => void;
   onDisableWarnings?: () => void;
   onClose?: () => void;
   domainLabel?: string;
@@ -23,7 +23,9 @@ type MatchPopupCardProps = {
   hideRelatedButtonWhenEmpty?: boolean;
   containerStyle?: React.CSSProperties;
   suppressButtonLabel?: string;
-  suppressPageNameLabel?: string;
+  suppressButtonTooltip?: string;
+  snoozeUntilNewChangesLabel?: string;
+  snoozeUntilNewChangesTooltip?: string;
   disableWarningsLabel?: string;
   onOpenSettings?: () => void;
   settingsIconUrl?: string;
@@ -152,11 +154,6 @@ const sortIncidents = (
     .map((row) => row.entry);
 };
 
-const getSuppressScopeLabel = (entry: CargoEntry): string => {
-  if (entry._type === "ProductLine") return "product";
-  return entry._type.toLowerCase();
-};
-
 const getNormalizedPageName = (entry: CargoEntry): string => {
   return normalizeEntityToken(entry.PageName || "");
 };
@@ -187,15 +184,17 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     logoUrl,
     externalIconUrl,
     onSuppressSite,
-    onSuppressPageName,
+    onSnoozeUntilNewChanges,
     onDisableWarnings,
     onClose,
     domainLabel,
     showCloseButton = false,
     hideRelatedButtonWhenEmpty = false,
     containerStyle,
-    suppressButtonLabel = "Hide for this site",
-    suppressPageNameLabel,
+    suppressButtonLabel = "Always hide for this site",
+    suppressButtonTooltip = "Always hide alerts for this site until you choose to show them again.",
+    snoozeUntilNewChangesLabel = "Hide until new incidents",
+    snoozeUntilNewChangesTooltip = "Hide alerts until there are new incidents.",
     disableWarningsLabel = "Don't show me this again",
     onOpenSettings,
     settingsIconUrl,
@@ -244,9 +243,6 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
   );
   const showsRelatedPagesToggle =
     !hideRelatedButtonWhenEmpty || derived.hiddenRelatedPagesCount > 0;
-  const resolvedSuppressPageNameLabel =
-    suppressPageNameLabel ||
-    `Hide for this ${getSuppressScopeLabel(derived.topMatch)}`;
 
   return (
     <div
@@ -280,10 +276,12 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
       />
 
       <MatchPopupFooterActions
-        onSuppressPageName={onSuppressPageName}
-        suppressPageNameLabel={resolvedSuppressPageNameLabel}
+        onSnoozeUntilNewChanges={onSnoozeUntilNewChanges}
+        snoozeUntilNewChangesLabel={snoozeUntilNewChangesLabel}
+        snoozeUntilNewChangesTooltip={snoozeUntilNewChangesTooltip}
         onSuppressSite={onSuppressSite}
         suppressButtonLabel={suppressButtonLabel}
+        suppressButtonTooltip={suppressButtonTooltip}
       />
 
       {onDisableWarnings && (
