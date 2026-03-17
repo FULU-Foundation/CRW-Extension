@@ -7,8 +7,8 @@ import {
 } from "@/shared/ui/matchPopupStyles";
 
 type MatchPopupFooterActionsProps = {
-  onSuppressPageName?: () => void;
-  suppressPageNameLabel: string;
+  onSnoozeUntilNewChanges?: () => void;
+  snoozeUntilNewChangesLabel: string;
   onSuppressSite: () => void;
   suppressButtonLabel: string;
 };
@@ -17,8 +17,8 @@ export const MatchPopupFooterActions = (
   props: MatchPopupFooterActionsProps,
 ) => {
   const {
-    onSuppressPageName,
-    suppressPageNameLabel,
+    onSnoozeUntilNewChanges,
+    snoozeUntilNewChangesLabel,
     onSuppressSite,
     suppressButtonLabel,
   } = props;
@@ -47,14 +47,14 @@ export const MatchPopupFooterActions = (
 
   return (
     <div style={POPUP_LAYOUT.footerActions}>
-      {onSuppressPageName && (
+      {onSnoozeUntilNewChanges && (
         <button
           type="button"
-          onClick={onSuppressPageName}
+          onClick={onSnoozeUntilNewChanges}
           {...ghostButtonHoverHandlers}
           style={secondaryActionButtonStyle}
         >
-          {suppressPageNameLabel}
+          {snoozeUntilNewChangesLabel}
         </button>
       )}
 

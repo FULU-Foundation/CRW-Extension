@@ -15,7 +15,7 @@ type MatchPopupCardProps = {
   logoUrl: string;
   externalIconUrl: string;
   onSuppressSite: () => void;
-  onSuppressPageName?: () => void;
+  onSnoozeUntilNewChanges?: () => void;
   onDisableWarnings?: () => void;
   onClose?: () => void;
   domainLabel?: string;
@@ -23,7 +23,7 @@ type MatchPopupCardProps = {
   hideRelatedButtonWhenEmpty?: boolean;
   containerStyle?: React.CSSProperties;
   suppressButtonLabel?: string;
-  suppressPageNameLabel?: string;
+  snoozeUntilNewChangesLabel?: string;
   disableWarningsLabel?: string;
   onOpenSettings?: () => void;
   settingsIconUrl?: string;
@@ -152,11 +152,6 @@ const sortIncidents = (
     .map((row) => row.entry);
 };
 
-const getSuppressScopeLabel = (entry: CargoEntry): string => {
-  if (entry._type === "ProductLine") return "product";
-  return entry._type.toLowerCase();
-};
-
 const getNormalizedPageName = (entry: CargoEntry): string => {
   return normalizeEntityToken(entry.PageName || "");
 };
@@ -187,7 +182,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     logoUrl,
     externalIconUrl,
     onSuppressSite,
-    onSuppressPageName,
+    onSnoozeUntilNewChanges,
     onDisableWarnings,
     onClose,
     domainLabel,
@@ -195,7 +190,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     hideRelatedButtonWhenEmpty = false,
     containerStyle,
     suppressButtonLabel = "Hide for this site",
-    suppressPageNameLabel,
+    snoozeUntilNewChangesLabel = "Snooze until new changes",
     disableWarningsLabel = "Don't show me this again",
     onOpenSettings,
     settingsIconUrl,
@@ -244,9 +239,6 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
   );
   const showsRelatedPagesToggle =
     !hideRelatedButtonWhenEmpty || derived.hiddenRelatedPagesCount > 0;
-  const resolvedSuppressPageNameLabel =
-    suppressPageNameLabel ||
-    `Hide for this ${getSuppressScopeLabel(derived.topMatch)}`;
 
   return (
     <div
@@ -280,8 +272,8 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
       />
 
       <MatchPopupFooterActions
-        onSuppressPageName={onSuppressPageName}
-        suppressPageNameLabel={resolvedSuppressPageNameLabel}
+        onSnoozeUntilNewChanges={onSnoozeUntilNewChanges}
+        snoozeUntilNewChangesLabel={snoozeUntilNewChangesLabel}
         onSuppressSite={onSuppressSite}
         suppressButtonLabel={suppressButtonLabel}
       />

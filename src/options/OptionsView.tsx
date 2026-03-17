@@ -20,8 +20,9 @@ const REFRESH_INTERVAL_OPTIONS = [
 
 export type OptionsViewProps = {
   warningsEnabled: boolean;
+  hideWhenNoIncidents: boolean;
   suppressedDomains: string[];
-  suppressedPageNames: string[];
+  snoozedSites: string[];
   refreshIntervalMs: number;
   lastRefreshedAt: number | null;
   refreshingNow: boolean;
@@ -29,10 +30,11 @@ export type OptionsViewProps = {
   lastRefreshError: string | null;
   loading: boolean;
   onToggleWarnings: (enabled: boolean) => void;
+  onToggleHideWhenNoIncidents: (enabled: boolean) => void;
   onChangeRefreshInterval: (refreshIntervalMs: number) => void;
   onRefreshNow: () => void;
   onRemoveSuppressedDomain: (domain: string) => void;
-  onRemoveSuppressedPageName: (pageName: string) => void;
+  onRemoveSnoozedSite: (domain: string) => void;
 };
 
 const formatLastRefreshed = (value: number | null): string => {
@@ -50,8 +52,9 @@ const formatLastRefreshed = (value: number | null): string => {
 export const OptionsView = (props: OptionsViewProps) => {
   const {
     warningsEnabled,
+    hideWhenNoIncidents,
     suppressedDomains,
-    suppressedPageNames,
+    snoozedSites,
     refreshIntervalMs,
     lastRefreshedAt,
     refreshingNow,
@@ -59,10 +62,11 @@ export const OptionsView = (props: OptionsViewProps) => {
     lastRefreshError,
     loading,
     onToggleWarnings,
+    onToggleHideWhenNoIncidents,
     onChangeRefreshInterval,
     onRefreshNow,
     onRemoveSuppressedDomain,
-    onRemoveSuppressedPageName,
+    onRemoveSnoozedSite,
   } = props;
 
   return (
@@ -212,7 +216,7 @@ export const OptionsView = (props: OptionsViewProps) => {
               color: PAGE_CSS.text,
             }}
           >
-            Hidden Products and Companies
+            Automatic Popup Filters
           </h2>
           <p
             style={{
@@ -221,75 +225,44 @@ export const OptionsView = (props: OptionsViewProps) => {
               color: PAGE_CSS.muted,
             }}
           >
-            Remove an item from this list to show matches for it again.
+            Control when automatic in-page popups are shown.
           </p>
 
-          {suppressedPageNames.length === 0 && (
-            <div
-              style={{
-                border: `1px solid ${PAGE_CSS.border}`,
-                borderRadius: "10px",
-                padding: "10px 12px",
-                fontSize: "13px",
-                color: PAGE_CSS.muted,
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              border: `1px solid ${PAGE_CSS.border}`,
+              borderRadius: "10px",
+              padding: "10px 12px",
+              fontSize: "14px",
+              color: PAGE_CSS.text,
+            }}
+          >
+            <span>Don&apos;t show matches when there are no incidents</span>
+            <input
+              type="checkbox"
+              checked={hideWhenNoIncidents}
+              disabled={loading}
+              onChange={(event) => {
+                onToggleHideWhenNoIncidents(event.target.checked);
               }}
-            >
-              No hidden products or companies.
-            </div>
-          )}
+              style={{ width: "16px", height: "16px", accentColor: "#FFFFFF" }}
+            />
+          </label>
 
-          {suppressedPageNames.length > 0 && (
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
-            >
-              {suppressedPageNames.map((pageName) => (
-                <div
-                  key={pageName}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: "8px",
-                    border: `1px solid ${PAGE_CSS.border}`,
-                    borderRadius: "10px",
-                    padding: "8px 10px",
-                    fontSize: "13px",
-                    color: PAGE_CSS.text,
-                  }}
-                >
-                  <span
-                    style={{
-                      minWidth: 0,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {pageName}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onRemoveSuppressedPageName(pageName);
-                    }}
-                    style={{
-                      border: `1px solid ${PAGE_CSS.buttonBorder}`,
-                      background: PAGE_CSS.buttonBg,
-                      color: PAGE_CSS.buttonText,
-                      borderRadius: "8px",
-                      padding: "4px 10px",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      flexShrink: 0,
-                    }}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+          <p
+            style={{
+              margin: "8px 0 0 0",
+              fontSize: "12px",
+              color: PAGE_CSS.muted,
+            }}
+          >
+            {hideWhenNoIncidents
+              ? "Enabled: automatic popups are hidden unless incident matches are present."
+              : "Disabled: automatic popups can show even without incident matches."}
+          </p>
         </section>
 
         <section
@@ -368,6 +341,103 @@ export const OptionsView = (props: OptionsViewProps) => {
                     type="button"
                     onClick={() => {
                       onRemoveSuppressedDomain(domain);
+                    }}
+                    style={{
+                      border: `1px solid ${PAGE_CSS.buttonBorder}`,
+                      background: PAGE_CSS.buttonBg,
+                      color: PAGE_CSS.buttonText,
+                      borderRadius: "8px",
+                      padding: "4px 10px",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section
+          style={{
+            border: `1px solid ${PAGE_CSS.border}`,
+            borderRadius: "12px",
+            padding: "14px",
+            background: PAGE_CSS.subtleBg,
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "16px",
+              lineHeight: 1.2,
+              fontWeight: 700,
+              color: PAGE_CSS.text,
+            }}
+          >
+            Snoozed Sites
+          </h2>
+          <p
+            style={{
+              margin: "6px 0 10px 0",
+              fontSize: "13px",
+              color: PAGE_CSS.muted,
+            }}
+          >
+            These sites are snoozed until incident matches change.
+          </p>
+
+          {snoozedSites.length === 0 && (
+            <div
+              style={{
+                border: `1px solid ${PAGE_CSS.border}`,
+                borderRadius: "10px",
+                padding: "10px 12px",
+                fontSize: "13px",
+                color: PAGE_CSS.muted,
+              }}
+            >
+              No snoozed sites.
+            </div>
+          )}
+
+          {snoozedSites.length > 0 && (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            >
+              {snoozedSites.map((domain) => (
+                <div
+                  key={domain}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "8px",
+                    border: `1px solid ${PAGE_CSS.border}`,
+                    borderRadius: "10px",
+                    padding: "8px 10px",
+                    fontSize: "13px",
+                    color: PAGE_CSS.text,
+                  }}
+                >
+                  <span
+                    style={{
+                      minWidth: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {domain}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onRemoveSnoozedSite(domain);
                     }}
                     style={{
                       border: `1px solid ${PAGE_CSS.buttonBorder}`,
