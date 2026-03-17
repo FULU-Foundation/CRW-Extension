@@ -158,7 +158,8 @@ export const OptionsView = (props: OptionsViewProps) => {
               color: PAGE_CSS.muted,
             }}
           >
-            Controls the in-page popup. When disabled, the popup will not appear automatically but can still be opened via the extensions icon.
+            Controls the in-page popup. When disabled, the popup will not appear
+            automatically but can still be opened via the extensions icon.
           </p>
 
           <label
