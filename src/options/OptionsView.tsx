@@ -158,8 +158,7 @@ export const OptionsView = (props: OptionsViewProps) => {
               color: PAGE_CSS.muted,
             }}
           >
-            Controls the in-page popup. Turning this off is the same behavior as
-            using "Don&apos;t show me this again".
+            Controls the in-page popup. When disabled, the popup will not appear automatically but can still be opened via the extensions icon.
           </p>
 
           <label
