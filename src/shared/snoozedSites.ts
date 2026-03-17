@@ -20,9 +20,7 @@ const decodeSnoozedSiteState = (value: unknown): SnoozedSiteState | null => {
   };
 };
 
-export const normalizeSnoozedSiteMap = (
-  value: unknown,
-): SnoozedSiteMap => {
+export const normalizeSnoozedSiteMap = (value: unknown): SnoozedSiteMap => {
   if (!isObjectRecord(value)) return {};
 
   const next: SnoozedSiteMap = {};

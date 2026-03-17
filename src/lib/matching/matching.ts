@@ -49,7 +49,11 @@ const entryKey = (entry: CargoEntry): string => {
 };
 
 const hasWebsite = (entry: CargoEntry): boolean => {
-  if (isCompanyEntry(entry) || isProductEntry(entry) || isProductLineEntry(entry)) {
+  if (
+    isCompanyEntry(entry) ||
+    isProductEntry(entry) ||
+    isProductLineEntry(entry)
+  ) {
     return Boolean(entry.Website?.trim());
   }
   return false;

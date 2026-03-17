@@ -2,7 +2,10 @@ import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
 import { type CargoEntry, decodeCargoEntries } from "@/shared/types";
-import { type SnoozedSiteMap, normalizeSnoozedSiteMap } from "@/shared/snoozedSites";
+import {
+  type SnoozedSiteMap,
+  normalizeSnoozedSiteMap,
+} from "@/shared/snoozedSites";
 
 const readLocalValue = async (key: string): Promise<unknown> => {
   const stored = await browser.storage.local.get(key);
@@ -46,7 +49,8 @@ const decodeDatasetCacheRefreshInfo = (
   }
 
   const record = value as Record<string, unknown>;
-  const fetchedAt = typeof record.fetchedAt === "number" ? record.fetchedAt : null;
+  const fetchedAt =
+    typeof record.fetchedAt === "number" ? record.fetchedAt : null;
   const lastCheckedAt =
     typeof record.lastCheckedAt === "number" ? record.lastCheckedAt : null;
 
@@ -94,21 +98,27 @@ export const readSnoozedSiteMap = async (): Promise<SnoozedSiteMap> => {
 export const writeSnoozedSiteMap = async (
   value: SnoozedSiteMap,
 ): Promise<void> => {
-  await writeLocalValue(Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE, value);
+  await writeLocalValue(
+    Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE,
+    value,
+  );
 };
 
 export const readRefreshIntervalMs = async (): Promise<number> => {
-  const value = await readLocalValue(Constants.STORAGE.DATA_REFRESH_INTERVAL_MS);
+  const value = await readLocalValue(
+    Constants.STORAGE.DATA_REFRESH_INTERVAL_MS,
+  );
   if (typeof value === "number" && isRefreshIntervalOption(value)) {
     return value;
   }
   return Constants.DEFAULT_DATA_REFRESH_INTERVAL_MS;
 };
 
-export const readDatasetCacheRefreshInfo = async (): Promise<DatasetCacheRefreshInfo> => {
-  const value = await readLocalValue(Constants.STORAGE.DATASET_CACHE);
-  return decodeDatasetCacheRefreshInfo(value);
-};
+export const readDatasetCacheRefreshInfo =
+  async (): Promise<DatasetCacheRefreshInfo> => {
+    const value = await readLocalValue(Constants.STORAGE.DATASET_CACHE);
+    return decodeDatasetCacheRefreshInfo(value);
+  };
 
 export const readLastRefreshedAt = async (): Promise<number | null> => {
   const cache = await readDatasetCacheRefreshInfo();
@@ -128,4 +138,3 @@ export const readTabMatches = async (tabId: number): Promise<CargoEntry[]> => {
   const value = await readLocalValue(key);
   return decodeCargoEntries(value);
 };
-

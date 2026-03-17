@@ -13,8 +13,7 @@ export const getEntryKey = (entry: CargoEntry): string => {
 
 export const getIncidentPrimaryStatus = (entry: CargoEntry): string => {
   if (!isIncidentEntry(entry) || !entry.Status) return "";
-  const [primaryStatus] = entry.Status
-    .split(",")
+  const [primaryStatus] = entry.Status.split(",")
     .map((value) => value.trim())
     .filter(Boolean);
   return primaryStatus || "";
@@ -325,9 +324,7 @@ export const TopMatchBlock = (props: {
         </div>
       )}
 
-      {entry.Description && (
-        <DescriptionBlock value={entry.Description} />
-      )}
+      {entry.Description && <DescriptionBlock value={entry.Description} />}
 
       {shouldShowCompanyFallback && (
         <>

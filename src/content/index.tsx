@@ -75,7 +75,9 @@ const snoozeCurrentSiteUntilNewIncidentChanges = async (
   if (!current) return;
   const domains = await getSuppressedDomains();
   if (domains.includes(current)) {
-    await writeSuppressedDomains(domains.filter((domain) => domain !== current));
+    await writeSuppressedDomains(
+      domains.filter((domain) => domain !== current),
+    );
   }
   const snoozedSiteMap = await readSnoozedSiteMap();
   snoozedSiteMap[current] = {

@@ -1,4 +1,8 @@
-import { type CargoEntry, type IncidentEntry, isIncidentEntry } from "@/shared/types";
+import {
+  type CargoEntry,
+  type IncidentEntry,
+  isIncidentEntry,
+} from "@/shared/types";
 
 const normalizeToken = (value: string | null | undefined): string => {
   if (!value) return "";

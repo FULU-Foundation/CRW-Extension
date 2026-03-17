@@ -109,10 +109,8 @@ const getIncidentFocus = (
   const productLineNames = new Set<string>();
 
   if (topMatch) {
-    if (isCompanyEntry(topMatch))
-      addIfPresent(companyNames, topMatch.PageName);
-    if (isProductEntry(topMatch))
-      addIfPresent(productNames, topMatch.PageName);
+    if (isCompanyEntry(topMatch)) addIfPresent(companyNames, topMatch.PageName);
+    if (isProductEntry(topMatch)) addIfPresent(productNames, topMatch.PageName);
     if (isProductLineEntry(topMatch))
       addIfPresent(productLineNames, topMatch.PageName);
     addIfPresent(companyNames, getCompanyRef(topMatch));
@@ -252,7 +250,9 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     const companyMatch = resolveCompanyMatch(matches, topMatch);
     const incidentFocus = getIncidentFocus(topMatch, companyMatch);
     groupedRelated.Incident = sortIncidents(
-      relatedItems.filter((item): item is IncidentEntry => isIncidentEntry(item)),
+      relatedItems.filter((item): item is IncidentEntry =>
+        isIncidentEntry(item),
+      ),
       incidentFocus,
     );
     const hiddenRelatedPagesCount =

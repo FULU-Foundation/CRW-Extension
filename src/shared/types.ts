@@ -103,7 +103,10 @@ const asDescription = (value: unknown): string | null => {
 };
 
 const isCargoEntryType = (value: unknown): value is CargoEntryType => {
-  return typeof value === "string" && CARGO_ENTRY_TYPES.includes(value as CargoEntryType);
+  return (
+    typeof value === "string" &&
+    CARGO_ENTRY_TYPES.includes(value as CargoEntryType)
+  );
 };
 
 export const decodeCargoEntry = (value: unknown): CargoEntry | null => {
@@ -155,7 +158,8 @@ export const decodePageContext = (value: unknown): PageContext | null => {
   };
 
   if (typeof value.title === "string") next.title = value.title;
-  if (typeof value.textContent === "string") next.textContent = value.textContent;
+  if (typeof value.textContent === "string")
+    next.textContent = value.textContent;
 
   const decodeStringRecord = (
     recordValue: unknown,

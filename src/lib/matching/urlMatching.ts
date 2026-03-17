@@ -292,7 +292,11 @@ const splitWebsiteUrls = (website: string | undefined): string[] => {
 };
 
 const getEntryWebsite = (entry: CargoEntry): string | undefined => {
-  if (isCompanyEntry(entry) || isProductEntry(entry) || isProductLineEntry(entry)) {
+  if (
+    isCompanyEntry(entry) ||
+    isProductEntry(entry) ||
+    isProductLineEntry(entry)
+  ) {
     return entry.Website;
   }
   return undefined;

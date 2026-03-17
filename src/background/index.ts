@@ -6,10 +6,7 @@ import * as Dataset from "@/lib/dataset";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
 import { CargoEntry } from "@/shared/types";
-import {
-  readDatasetCacheRefreshInfo,
-  readTabMatches,
-} from "@/shared/storage";
+import { readDatasetCacheRefreshInfo, readTabMatches } from "@/shared/storage";
 
 let datasetCache: CargoEntry[] = [];
 let datasetLoadPromise: Promise<CargoEntry[]> | null = null;
