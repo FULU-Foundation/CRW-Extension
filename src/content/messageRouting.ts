@@ -1,8 +1,6 @@
 import type { CargoEntry } from "@/shared/types";
-
-const MATCH_RESULTS_UPDATED = "CRW_MATCH_RESULTS_UPDATED";
-const FORCE_SHOW_INLINE_POPUP = "CRW_FORCE_SHOW_INLINE_POPUP";
-const TOGGLE_INLINE_POPUP = "CRW_TOGGLE_INLINE_POPUP";
+import { decodeCargoEntries } from "@/shared/types";
+import { MessageType } from "@/messaging/type";
 
 export type InlinePopupInstruction = {
   matches: CargoEntry[];
@@ -15,7 +13,7 @@ const isObjectRecord = (value: unknown): value is Record<string, unknown> => {
 };
 
 const toCargoEntries = (payload: unknown): CargoEntry[] => {
-  return Array.isArray(payload) ? (payload as CargoEntry[]) : [];
+  return decodeCargoEntries(payload);
 };
 
 export const getInlinePopupInstruction = (
@@ -24,7 +22,7 @@ export const getInlinePopupInstruction = (
   if (!isObjectRecord(message)) return null;
 
   const messageType = message.type;
-  if (messageType === MATCH_RESULTS_UPDATED) {
+  if (messageType === MessageType.MATCH_RESULTS_UPDATED) {
     return {
       matches: toCargoEntries(message.payload),
       ignorePreferences: false,
@@ -32,7 +30,7 @@ export const getInlinePopupInstruction = (
     };
   }
 
-  if (messageType === FORCE_SHOW_INLINE_POPUP) {
+  if (messageType === MessageType.FORCE_SHOW_INLINE_POPUP) {
     return {
       matches: toCargoEntries(message.payload),
       ignorePreferences: true,
@@ -40,7 +38,7 @@ export const getInlinePopupInstruction = (
     };
   }
 
-  if (messageType === TOGGLE_INLINE_POPUP) {
+  if (messageType === MessageType.TOGGLE_INLINE_POPUP) {
     return {
       matches: toCargoEntries(message.payload),
       ignorePreferences: true,

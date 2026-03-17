@@ -27,15 +27,15 @@ const normalizeEntityName = (value: string): string => {
     .replace(/\s+/g, " ");
 };
 
-const splitReferenceValue = (value: unknown): string[] => {
-  if (typeof value !== "string") return [];
+const splitReferenceValue = (value: string | undefined): string[] => {
+  if (!value) return [];
   return value
     .split(/[,;|]/)
     .map((piece) => piece.trim())
     .filter(Boolean);
 };
 
-const normalizeReferenceSet = (value: unknown): Set<string> => {
+const normalizeReferenceSet = (value: string | undefined): Set<string> => {
   const normalized = splitReferenceValue(value)
     .map((piece) => normalizeEntityName(piece))
     .filter(Boolean);

@@ -42,8 +42,8 @@ const normalizeEntityToken = (value: string): string => {
     .replace(/\s+/g, " ");
 };
 
-const toNormalizedReferenceSet = (value: unknown): Set<string> => {
-  if (typeof value !== "string") return new Set<string>();
+const toNormalizedReferenceSet = (value: string | undefined): Set<string> => {
+  if (!value) return new Set<string>();
   const normalized = value
     .split(/[,;|]/)
     .map((piece) => normalizeEntityToken(piece))
@@ -51,8 +51,8 @@ const toNormalizedReferenceSet = (value: unknown): Set<string> => {
   return new Set(normalized);
 };
 
-const addIfPresent = (target: Set<string>, value: unknown) => {
-  if (typeof value !== "string") return;
+const addIfPresent = (target: Set<string>, value: string | undefined) => {
+  if (!value) return;
   const normalized = normalizeEntityToken(value);
   if (!normalized) return;
   target.add(normalized);
@@ -63,7 +63,7 @@ const isActiveIncident = (entry: CargoEntry): boolean => {
 };
 
 const parseStartDateMs = (entry: CargoEntry): number => {
-  if (typeof entry.StartDate !== "string") return Number.NEGATIVE_INFINITY;
+  if (!entry.StartDate) return Number.NEGATIVE_INFINITY;
   const value = Date.parse(entry.StartDate);
   if (Number.isNaN(value)) return Number.NEGATIVE_INFINITY;
   return value;
@@ -209,8 +209,8 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     const relatedItems = matches.filter(
       (item) => getEntryKey(item) !== topMatchKey,
     );
-    const groupedRelated = {
-      Incident: [] as CargoEntry[],
+    const groupedRelated: Record<"Incident" | "Product" | "ProductLine", CargoEntry[]> = {
+      Incident: [],
       Product: relatedItems.filter((item) => item._type === "Product"),
       ProductLine: relatedItems.filter((item) => item._type === "ProductLine"),
     };

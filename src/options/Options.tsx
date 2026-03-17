@@ -6,68 +6,24 @@ import { OptionsView } from "@/options/OptionsView";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
 import {
-  type SnoozedSiteMap,
-  normalizeSnoozedSiteMap,
-} from "@/shared/snoozedSites";
-
-const readWarningsEnabled = async (): Promise<boolean> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.WARNINGS_ENABLED,
-  );
-  const value = stored[Constants.STORAGE.WARNINGS_ENABLED];
-  if (typeof value === "boolean") return value;
-  return true;
-};
+  readHideWhenNoIncidents,
+  readLastRefreshedAt,
+  readRefreshErrorMessage,
+  readRefreshIntervalMs,
+  readSnoozedSiteMap,
+  readSuppressedDomains,
+  readWarningsEnabled,
+  writeHideWhenNoIncidents,
+  writeSnoozedSiteMap,
+  writeSuppressedDomains,
+  writeWarningsEnabled,
+} from "@/shared/storage";
 
 const normalizeHostname = (hostname: string): string => {
   return hostname
     .trim()
     .toLowerCase()
     .replace(/^www\./, "");
-};
-
-const readSuppressedDomains = async (): Promise<string[]> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.SUPPRESSED_DOMAINS,
-  );
-  const value = stored[Constants.STORAGE.SUPPRESSED_DOMAINS];
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((entry): entry is string => typeof entry === "string")
-    .map((entry) => normalizeHostname(entry))
-    .filter((entry) => entry.length > 0);
-};
-
-const readHideWhenNoIncidents = async (): Promise<boolean> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS,
-  );
-  const value = stored[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS];
-  if (typeof value === "boolean") return value;
-  return true;
-};
-
-const readSnoozedSiteMap = async (): Promise<SnoozedSiteMap> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE,
-  );
-  return normalizeSnoozedSiteMap(
-    stored[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE] as
-      | SnoozedSiteMap
-      | undefined,
-  );
-};
-
-const writeSuppressedDomains = async (domains: string[]): Promise<void> => {
-  await browser.storage.local.set({
-    [Constants.STORAGE.SUPPRESSED_DOMAINS]: domains,
-  });
-};
-
-const writeSnoozedSiteMap = async (value: SnoozedSiteMap): Promise<void> => {
-  await browser.storage.local.set({
-    [Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE]: value,
-  });
 };
 
 const readSnoozedSites = async (): Promise<string[]> => {
@@ -78,42 +34,12 @@ const readSnoozedSites = async (): Promise<string[]> => {
     .sort((left, right) => left.localeCompare(right));
 };
 
-const readRefreshIntervalMs = async (): Promise<number> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.DATA_REFRESH_INTERVAL_MS,
-  );
-  const value = stored[Constants.STORAGE.DATA_REFRESH_INTERVAL_MS];
+const readLastRefreshError = readRefreshErrorMessage;
 
-  if (
-    typeof value === "number" &&
-    Constants.DATA_REFRESH_INTERVAL_OPTIONS_MS.includes(
-      value as (typeof Constants.DATA_REFRESH_INTERVAL_OPTIONS_MS)[number],
-    )
-  ) {
-    return value;
-  }
-
-  return Constants.DEFAULT_DATA_REFRESH_INTERVAL_MS;
-};
-
-const readLastRefreshedAt = async (): Promise<number | null> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.DATASET_CACHE,
-  );
-  const cache = stored[Constants.STORAGE.DATASET_CACHE] as
-    | { fetchedAt?: unknown }
-    | undefined;
-  return typeof cache?.fetchedAt === "number" ? cache.fetchedAt : null;
-};
-
-const readLastRefreshError = async (): Promise<string | null> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.DATA_REFRESH_ERROR,
-  );
-  const value = stored[Constants.STORAGE.DATA_REFRESH_ERROR] as
-    | { message?: unknown }
-    | undefined;
-  return typeof value?.message === "string" ? value.message : null;
+const decodeRefreshNowResponseFetchedAt = (value: unknown): number | null => {
+  if (typeof value !== "object" || value === null) return null;
+  const record = value as Record<string, unknown>;
+  return typeof record.fetchedAt === "number" ? record.fetchedAt : null;
 };
 
 const Options = () => {
@@ -152,7 +78,11 @@ const Options = () => {
         ]);
         setWarningsEnabled(enabled);
         setHideWhenNoIncidents(hideWithoutIncidents);
-        setSuppressedDomains(domains);
+        setSuppressedDomains(
+          domains
+            .map((domain) => normalizeHostname(domain))
+            .filter((domain) => domain.length > 0),
+        );
         setSnoozedSites(snoozedSiteDomains);
         setRefreshIntervalMs(intervalMs);
         setLastRefreshedAt(refreshedAt);
@@ -171,56 +101,37 @@ const Options = () => {
       if (areaName !== "local") return;
 
       if (changes[Constants.STORAGE.DATA_REFRESH_INTERVAL_MS]) {
-        const nextValue =
-          changes[Constants.STORAGE.DATA_REFRESH_INTERVAL_MS].newValue;
-        if (
-          typeof nextValue === "number" &&
-          Constants.DATA_REFRESH_INTERVAL_OPTIONS_MS.includes(
-            nextValue as (typeof Constants.DATA_REFRESH_INTERVAL_OPTIONS_MS)[number],
-          )
-        ) {
-          setRefreshIntervalMs(nextValue);
-        } else {
-          setRefreshIntervalMs(Constants.DEFAULT_DATA_REFRESH_INTERVAL_MS);
-        }
+        void readRefreshIntervalMs().then(setRefreshIntervalMs);
       }
 
       if (changes[Constants.STORAGE.DATASET_CACHE]) {
-        const nextCache = changes[Constants.STORAGE.DATASET_CACHE].newValue as
-          | { fetchedAt?: unknown }
-          | undefined;
-        setLastRefreshedAt(
-          typeof nextCache?.fetchedAt === "number" ? nextCache.fetchedAt : null,
-        );
+        void readLastRefreshedAt().then(setLastRefreshedAt);
       }
 
       if (changes[Constants.STORAGE.DATA_REFRESH_ERROR]) {
-        const nextError = changes[Constants.STORAGE.DATA_REFRESH_ERROR]
-          .newValue as { message?: unknown } | undefined;
-        setLastRefreshError(
-          typeof nextError?.message === "string" ? nextError.message : null,
-        );
+        void readLastRefreshError().then(setLastRefreshError);
+      }
+
+      if (changes[Constants.STORAGE.WARNINGS_ENABLED]) {
+        void readWarningsEnabled().then(setWarningsEnabled);
       }
 
       if (changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS]) {
-        const nextValue =
-          changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS].newValue;
-        setHideWhenNoIncidents(
-          typeof nextValue === "boolean" ? nextValue : true,
-        );
+        void readHideWhenNoIncidents().then(setHideWhenNoIncidents);
+      }
+
+      if (changes[Constants.STORAGE.SUPPRESSED_DOMAINS]) {
+        void readSuppressedDomains().then((domains) => {
+          setSuppressedDomains(
+            domains
+              .map((domain) => normalizeHostname(domain))
+              .filter((domain) => domain.length > 0),
+          );
+        });
       }
 
       if (changes[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE]) {
-        const nextValue = normalizeSnoozedSiteMap(
-          changes[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE]
-            .newValue as SnoozedSiteMap | undefined,
-        );
-        setSnoozedSites(
-          Object.keys(nextValue)
-            .map((domain) => normalizeHostname(domain))
-            .filter((domain) => domain.length > 0)
-            .sort((left, right) => left.localeCompare(right)),
-        );
+        void readSnoozedSites().then(setSnoozedSites);
       }
     };
 
@@ -232,9 +143,7 @@ const Options = () => {
 
   const onToggleWarnings = async (enabled: boolean) => {
     setWarningsEnabled(enabled);
-    await browser.storage.local.set({
-      [Constants.STORAGE.WARNINGS_ENABLED]: enabled,
-    });
+    await writeWarningsEnabled(enabled);
   };
 
   const onRemoveSuppressedDomain = async (domain: string) => {
@@ -246,9 +155,7 @@ const Options = () => {
 
   const onToggleHideWhenNoIncidents = async (enabled: boolean) => {
     setHideWhenNoIncidents(enabled);
-    await browser.storage.local.set({
-      [Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS]: enabled,
-    });
+    await writeHideWhenNoIncidents(enabled);
   };
 
   const onRemoveSnoozedSite = async (domain: string) => {
@@ -281,12 +188,13 @@ const Options = () => {
     setRefreshError(null);
 
     try {
-      const response = (await browser.runtime.sendMessage(
+      const response = await browser.runtime.sendMessage(
         Messaging.createMessage(MessageType.REFRESH_DATASET_NOW, "options"),
-      )) as { fetchedAt?: number | null } | undefined;
+      );
 
-      if (typeof response?.fetchedAt === "number") {
-        setLastRefreshedAt(response.fetchedAt);
+      const fetchedAt = decodeRefreshNowResponseFetchedAt(response);
+      if (fetchedAt !== null) {
+        setLastRefreshedAt(fetchedAt);
       } else {
         setLastRefreshedAt(await readLastRefreshedAt());
       }

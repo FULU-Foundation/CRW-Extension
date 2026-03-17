@@ -95,8 +95,7 @@ const getCompanyAliasCandidates = (pageName: string): string[] => {
 const getExplicitCompanyAliasCandidates = (entry: CargoEntry): string[] => {
   if (entry._type !== "Company") return [];
 
-  const rawAliasValue =
-    typeof entry.CompanyAlias === "string" ? entry.CompanyAlias.trim() : "";
+  const rawAliasValue = entry.CompanyAlias?.trim() ?? "";
   if (!rawAliasValue) return [];
 
   const parts = rawAliasValue.includes(",")

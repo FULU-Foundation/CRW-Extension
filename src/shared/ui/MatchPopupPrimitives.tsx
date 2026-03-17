@@ -8,17 +8,17 @@ export const getEntryKey = (entry: CargoEntry): string => {
 };
 
 export const getIncidentPrimaryStatus = (entry: CargoEntry): string => {
-  if (typeof entry.Status !== "string") return "";
-  const [primaryStatus] = entry.Status.split(",")
+  if (!entry.Status) return "";
+  const [primaryStatus] = entry.Status
+    .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
   return primaryStatus || "";
 };
 
 export const getIncidentTooltipText = (entry: CargoEntry): string => {
-  if (typeof entry.Description === "string" && entry.Description.trim()) {
-    return entry.Description.trim();
-  }
+  const description = entry.Description?.trim();
+  if (description) return description;
   return "No description available.";
 };
 
@@ -317,12 +317,12 @@ export const TopMatchBlock = (props: {
 
       {entry._type === "Company" && entry.Industry && (
         <div style={{ fontSize: "13px", color: POPUP_CSS.muted }}>
-          {String(entry.Industry)}
+          {entry.Industry}
         </div>
       )}
 
       {entry.Description && (
-        <DescriptionBlock value={String(entry.Description)} />
+        <DescriptionBlock value={entry.Description} />
       )}
 
       {shouldShowCompanyFallback && (
@@ -357,11 +357,11 @@ export const TopMatchBlock = (props: {
             iconSize={13}
           />
           {companyFallback.Description ? (
-            <DescriptionBlock value={String(companyFallback.Description)} />
+            <DescriptionBlock value={companyFallback.Description} />
           ) : (
             companyFallback.Industry && (
               <div style={{ fontSize: "13px", color: POPUP_CSS.muted }}>
-                {String(companyFallback.Industry)}
+                {companyFallback.Industry}
               </div>
             )
           )}

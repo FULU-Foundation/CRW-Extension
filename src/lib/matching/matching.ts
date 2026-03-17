@@ -43,7 +43,7 @@ const entryKey = (entry: CargoEntry): string => {
 };
 
 const hasWebsite = (entry: CargoEntry): boolean => {
-  return typeof entry.Website === "string" && entry.Website.trim().length > 0;
+  return Boolean(entry.Website?.trim());
 };
 
 const hostnameMatchesSuffix = (hostname: string, suffix: string): boolean => {

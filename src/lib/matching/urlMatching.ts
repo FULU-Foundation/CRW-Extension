@@ -11,7 +11,7 @@ const MATCH_PRIORITY: Record<UrlMatchType, number> = {
 };
 
 export const safeParseUrl = (rawUrl: string | null | undefined): URL | null => {
-  if (!rawUrl || typeof rawUrl !== "string") return null;
+  if (!rawUrl) return null;
   const trimmed = rawUrl.trim();
   if (!trimmed) return null;
 
@@ -247,8 +247,8 @@ const sortDetailedMatches = (
   return left.entry.PageID.localeCompare(right.entry.PageID);
 };
 
-const splitWebsiteUrls = (website: unknown): string[] => {
-  if (typeof website !== "string") return [];
+const splitWebsiteUrls = (website: string | undefined): string[] => {
+  if (!website) return [];
 
   const values: string[] = [];
   const seen = new Set<string>();
@@ -327,7 +327,7 @@ const filterToMostSpecificPathMatches = (
       return true;
     }
     const deepest = deepestPathLengthByHost.get(match.detail.candidateHost);
-    if (typeof deepest !== "number") return true;
+    if (deepest === undefined) return true;
     return match.detail.matchedPath.length >= deepest;
   });
 };

@@ -30,4 +30,4 @@ export const STORAGE = {
     "crw_snoozed_sites_until_incident_change",
   HIDE_WHEN_NO_INCIDENTS: "crw_hide_when_no_incidents",
   WARNINGS_ENABLED: "crw_warnings_enabled",
-};
+} as const;

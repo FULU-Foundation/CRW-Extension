@@ -1,17 +1,49 @@
 import browser from "webextension-polyfill";
 import * as Constants from "@/shared/constants";
-import { CRWMessage, MessageType } from "./type";
-import { PageContext } from "@/shared/types";
+import {
+  type AnyCRWMessage,
+  type CRWMessage,
+  type MessagePayloadByType,
+  type MessageSource,
+  MessageType,
+} from "./type";
+import { decodePageContext } from "@/shared/types";
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === "object" && value !== null;
+};
+
+const isMessageType = (value: unknown): value is MessageType => {
+  return (
+    value === MessageType.PAGE_CONTEXT_UPDATE ||
+    value === MessageType.MATCH_RESULTS_UPDATED ||
+    value === MessageType.FORCE_SHOW_INLINE_POPUP ||
+    value === MessageType.TOGGLE_INLINE_POPUP ||
+    value === MessageType.OPEN_OPTIONS_PAGE ||
+    value === MessageType.REFRESH_DATASET_NOW
+  );
+};
+
+const decodeMessage = (value: unknown): AnyCRWMessage | null => {
+  if (!isObjectRecord(value)) return null;
+  if (!isMessageType(value.type)) return null;
+  return value as AnyCRWMessage;
+};
 
 /**
  * Helper to create typed messages
  */
-export function createMessage<T>(
-  type: MessageType,
-  source: CRWMessage["source"],
-  payload?: T,
-): CRWMessage<T> {
-  return { type, source, payload };
+export function createMessage<TType extends MessageType>(
+  type: TType,
+  source: MessageSource,
+  ...payload: MessagePayloadByType[TType] extends undefined
+    ? []
+    : [payload: MessagePayloadByType[TType]]
+): CRWMessage<TType> {
+  if (payload.length === 0) {
+    return { type, source };
+  }
+  return { type, source, payload: payload[0] };
 }
 
 /**
@@ -19,7 +51,7 @@ export function createMessage<T>(
  */
 export function createBackgroundMessageHandler(handlers: {
   onPageContextUpdated?: (
-    payload: PageContext,
+    payload: MessagePayloadByType[MessageType.PAGE_CONTEXT_UPDATE],
     sender: browser.Runtime.MessageSender,
   ) => void | Promise<void>;
   onOpenOptionsPage?: (
@@ -30,13 +62,17 @@ export function createBackgroundMessageHandler(handlers: {
   ) => unknown | Promise<unknown>;
 }) {
   browser.runtime.onMessage.addListener(
-    (msg: CRWMessage | any, sender: browser.Runtime.MessageSender) => {
-      if (!msg || !msg.type) return;
+    (msg: unknown, sender: browser.Runtime.MessageSender) => {
+      const decodedMessage = decodeMessage(msg);
+      if (!decodedMessage) return;
 
-      switch (msg.type) {
-        case MessageType.PAGE_CONTEXT_UPDATE:
-          handlers.onPageContextUpdated?.(msg.payload, sender);
+      switch (decodedMessage.type) {
+        case MessageType.PAGE_CONTEXT_UPDATE: {
+          const payload = decodePageContext(decodedMessage.payload);
+          if (!payload) return;
+          handlers.onPageContextUpdated?.(payload, sender);
           break;
+        }
         case MessageType.OPEN_OPTIONS_PAGE:
           return handlers.onOpenOptionsPage?.(sender);
         case MessageType.REFRESH_DATASET_NOW:
@@ -45,7 +81,7 @@ export function createBackgroundMessageHandler(handlers: {
         default:
           console.warn(
             `${Constants.LOG_PREFIX} Unknown message type:`,
-            msg.type,
+            decodedMessage.type,
           );
           return;
       }

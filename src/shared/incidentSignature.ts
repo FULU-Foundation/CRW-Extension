@@ -1,14 +1,16 @@
 import type { CargoEntry } from "@/shared/types";
 
-const normalizeToken = (value: unknown): string => {
-  if (typeof value !== "string") return "";
+const normalizeToken = (value: string | null | undefined): string => {
+  if (!value) return "";
   return value.trim().toLowerCase();
 };
 
 export const getIncidentPrimaryStatusToken = (entry: CargoEntry): string => {
-  if (typeof entry.Status !== "string") return "";
+  const status = entry.Status;
+  if (!status) return "";
 
-  const [primaryStatus] = entry.Status.split(",")
+  const [primaryStatus] = status
+    .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
 
