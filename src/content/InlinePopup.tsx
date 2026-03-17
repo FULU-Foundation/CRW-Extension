@@ -15,7 +15,9 @@ type InlinePopupProps = {
   onSnoozeUntilNewChanges?: () => void;
   onDisableWarnings?: () => void;
   snoozeUntilNewChangesLabel?: string;
+  snoozeUntilNewChangesTooltip?: string;
   suppressButtonLabel?: string;
+  suppressButtonTooltip?: string;
   disableWarningsLabel?: string;
 };
 
@@ -32,7 +34,9 @@ export const InlinePopup = (props: InlinePopupProps) => {
     onSnoozeUntilNewChanges,
     onDisableWarnings,
     snoozeUntilNewChangesLabel,
+    snoozeUntilNewChangesTooltip,
     suppressButtonLabel,
+    suppressButtonTooltip,
     disableWarningsLabel,
   } = props;
 
@@ -49,7 +53,9 @@ export const InlinePopup = (props: InlinePopupProps) => {
       onSnoozeUntilNewChanges={onSnoozeUntilNewChanges}
       onDisableWarnings={onDisableWarnings}
       snoozeUntilNewChangesLabel={snoozeUntilNewChangesLabel}
+      snoozeUntilNewChangesTooltip={snoozeUntilNewChangesTooltip}
       suppressButtonLabel={suppressButtonLabel}
+      suppressButtonTooltip={suppressButtonTooltip}
       disableWarningsLabel={disableWarningsLabel}
       showCloseButton
       hideRelatedButtonWhenEmpty

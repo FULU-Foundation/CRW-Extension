@@ -39,7 +39,7 @@ let popupHost: HTMLDivElement | null = null;
 let popupShadowMount: HTMLDivElement | null = null;
 let popupRoot: Root | null = null;
 let forcePopupVisible = false;
-const SNOOZE_UNTIL_NEW_CHANGES_LABEL = "Snooze until new changes";
+const SNOOZE_UNTIL_NEW_CHANGES_LABEL = "Hide until new incidents";
 
 const normalizeHostname = (hostname: string): string => {
   return hostname
@@ -97,11 +97,28 @@ const snoozeCurrentSiteUntilNewIncidentChanges = async (
 ): Promise<void> => {
   const current = normalizeHostname(location.hostname || "");
   if (!current) return;
+  const domains = await getSuppressedDomains();
+  if (domains.includes(current)) {
+    await browser.storage.local.set({
+      [Constants.STORAGE.SUPPRESSED_DOMAINS]: domains.filter(
+        (domain) => domain !== current,
+      ),
+    });
+  }
   const snoozedSiteMap = await readSnoozedSiteMap();
   snoozedSiteMap[current] = {
     incidentSignature,
     snoozedAt: Date.now(),
   };
+  await writeSnoozedSiteMap(snoozedSiteMap);
+};
+
+const unsnoozeCurrentSiteUntilNewIncidentChanges = async (): Promise<void> => {
+  const current = normalizeHostname(location.hostname || "");
+  if (!current) return;
+  const snoozedSiteMap = await readSnoozedSiteMap();
+  if (!snoozedSiteMap[current]) return;
+  delete snoozedSiteMap[current];
   await writeSnoozedSiteMap(snoozedSiteMap);
 };
 
@@ -177,10 +194,12 @@ const suppressCurrentSite = async (): Promise<void> => {
   const current = normalizeHostname(location.hostname || "");
   if (!current) return;
   const domains = await getSuppressedDomains();
-  if (domains.includes(current)) return;
-  await browser.storage.local.set({
-    [Constants.STORAGE.SUPPRESSED_DOMAINS]: [...domains, current],
-  });
+  if (!domains.includes(current)) {
+    await browser.storage.local.set({
+      [Constants.STORAGE.SUPPRESSED_DOMAINS]: [...domains, current],
+    });
+  }
+  await unsnoozeCurrentSiteUntilNewIncidentChanges();
 };
 
 const unsuppressCurrentSite = async (): Promise<void> => {
@@ -258,9 +277,12 @@ const renderInlinePopup = async (
   }
 
   const currentlySuppressed = await isCurrentSiteSuppressed();
-  if (!ignorePreferences && currentlySuppressed) {
-    removeInlinePopup();
-    return;
+  if (currentlySuppressed) {
+    await unsnoozeCurrentSiteUntilNewIncidentChanges();
+    if (!ignorePreferences) {
+      removeInlinePopup();
+      return;
+    }
   }
 
   const hideWhenNoIncidents = await isHideWhenNoIncidentsEnabled();
@@ -271,8 +293,9 @@ const renderInlinePopup = async (
     return;
   }
 
-  const currentlySnoozed =
-    await isCurrentSiteSnoozedUntilIncidentChanges(incidentSignature);
+  const currentlySnoozed = currentlySuppressed
+    ? false
+    : await isCurrentSiteSnoozedUntilIncidentChanges(incidentSignature);
   if (!ignorePreferences && currentlySnoozed) {
     removeInlinePopup();
     return;
@@ -320,6 +343,12 @@ const renderInlinePopup = async (
   };
 
   const handleSnoozeUntilNewChangesClick = async () => {
+    if (currentlySnoozed) {
+      await unsnoozeCurrentSiteUntilNewIncidentChanges();
+      void renderInlinePopup(matches, true);
+      return;
+    }
+
     await snoozeCurrentSiteUntilNewIncidentChanges(incidentSignature);
     removeInlinePopup();
   };
@@ -341,11 +370,33 @@ const renderInlinePopup = async (
       }
       suppressButtonLabel={
         ignorePreferences && currentlySuppressed
-          ? "Show this site"
-          : "Hide for this site"
+          ? "Always show for this site"
+          : "Always hide for this site"
       }
-      snoozeUntilNewChangesLabel={SNOOZE_UNTIL_NEW_CHANGES_LABEL}
-      onSnoozeUntilNewChanges={() => void handleSnoozeUntilNewChangesClick()}
+      suppressButtonTooltip={
+        ignorePreferences && currentlySuppressed
+          ? "Show alerts for this site again."
+          : "Hide alerts for this site until you choose to show them again."
+      }
+      snoozeUntilNewChangesLabel={
+        currentlySuppressed
+          ? undefined
+          : currentlySnoozed
+            ? "Resume alerts"
+            : SNOOZE_UNTIL_NEW_CHANGES_LABEL
+      }
+      snoozeUntilNewChangesTooltip={
+        currentlySuppressed
+          ? undefined
+          : currentlySnoozed
+            ? "Turn alerts back on for this site."
+            : "Hide alerts until there are new incidents."
+      }
+      onSnoozeUntilNewChanges={
+        currentlySuppressed
+          ? undefined
+          : () => void handleSnoozeUntilNewChangesClick()
+      }
       onSuppressSite={() => void handleSuppressSiteClick()}
     />,
   );

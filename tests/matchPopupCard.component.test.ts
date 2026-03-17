@@ -90,7 +90,7 @@ test("MatchPopupCard renders snooze action when handler is provided", () => {
     }),
   );
 
-  assert.ok(html.includes("Snooze until new changes"));
+  assert.ok(html.includes("Hide until new incidents"));
 });
 
 test("MatchPopupCard prefers product-linked company over marketplace company", () => {

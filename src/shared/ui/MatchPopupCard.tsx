@@ -23,7 +23,9 @@ type MatchPopupCardProps = {
   hideRelatedButtonWhenEmpty?: boolean;
   containerStyle?: React.CSSProperties;
   suppressButtonLabel?: string;
+  suppressButtonTooltip?: string;
   snoozeUntilNewChangesLabel?: string;
+  snoozeUntilNewChangesTooltip?: string;
   disableWarningsLabel?: string;
   onOpenSettings?: () => void;
   settingsIconUrl?: string;
@@ -189,8 +191,10 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     showCloseButton = false,
     hideRelatedButtonWhenEmpty = false,
     containerStyle,
-    suppressButtonLabel = "Hide for this site",
-    snoozeUntilNewChangesLabel = "Snooze until new changes",
+    suppressButtonLabel = "Always hide for this site",
+    suppressButtonTooltip = "Always hide alerts for this site until you choose to show them again.",
+    snoozeUntilNewChangesLabel = "Hide until new incidents",
+    snoozeUntilNewChangesTooltip = "Hide alerts until there are new incidents.",
     disableWarningsLabel = "Don't show me this again",
     onOpenSettings,
     settingsIconUrl,
@@ -274,8 +278,10 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
       <MatchPopupFooterActions
         onSnoozeUntilNewChanges={onSnoozeUntilNewChanges}
         snoozeUntilNewChangesLabel={snoozeUntilNewChangesLabel}
+        snoozeUntilNewChangesTooltip={snoozeUntilNewChangesTooltip}
         onSuppressSite={onSuppressSite}
         suppressButtonLabel={suppressButtonLabel}
+        suppressButtonTooltip={suppressButtonTooltip}
       />
 
       {onDisableWarnings && (
