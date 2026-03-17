@@ -52,9 +52,9 @@ const readSnoozedSiteMap = async (): Promise<SnoozedSiteMap> => {
     Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE,
   );
   return normalizeSnoozedSiteMap(
-    stored[
-      Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE
-    ] as SnoozedSiteMap | undefined,
+    stored[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE] as
+      | SnoozedSiteMap
+      | undefined,
   );
 };
 
@@ -203,8 +203,8 @@ const Options = () => {
       }
 
       if (changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS]) {
-        const nextValue = changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS]
-          .newValue;
+        const nextValue =
+          changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS].newValue;
         setHideWhenNoIncidents(
           typeof nextValue === "boolean" ? nextValue : true,
         );

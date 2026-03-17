@@ -71,9 +71,9 @@ const readSnoozedSiteMap = async (): Promise<SnoozedSiteMap> => {
     Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE,
   );
   return normalizeSnoozedSiteMap(
-    stored[
-      Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE
-    ] as SnoozedSiteMap | undefined,
+    stored[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE] as
+      | SnoozedSiteMap
+      | undefined,
   );
 };
 
@@ -271,9 +271,8 @@ const renderInlinePopup = async (
     return;
   }
 
-  const currentlySnoozed = await isCurrentSiteSnoozedUntilIncidentChanges(
-    incidentSignature,
-  );
+  const currentlySnoozed =
+    await isCurrentSiteSnoozedUntilIncidentChanges(incidentSignature);
   if (!ignorePreferences && currentlySnoozed) {
     removeInlinePopup();
     return;

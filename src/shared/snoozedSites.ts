@@ -12,7 +12,10 @@ export const normalizeSnoozedSiteMap = (
 
   const next: SnoozedSiteMap = {};
   for (const [domain, state] of Object.entries(value)) {
-    const normalizedDomain = domain.trim().toLowerCase().replace(/^www\./, "");
+    const normalizedDomain = domain
+      .trim()
+      .toLowerCase()
+      .replace(/^www\./, "");
     if (!normalizedDomain) continue;
     next[normalizedDomain] = state;
   }
