@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 
-import { CargoEntry } from "@/shared/types";
+import {
+  type CargoEntry,
+  type CompanyEntry,
+  isIncidentEntry,
+} from "@/shared/types";
 import { POPUP_CSS } from "@/shared/ui/matchPopupStyles";
 
 export const getEntryKey = (entry: CargoEntry): string => {
@@ -8,7 +12,7 @@ export const getEntryKey = (entry: CargoEntry): string => {
 };
 
 export const getIncidentPrimaryStatus = (entry: CargoEntry): string => {
-  if (!entry.Status) return "";
+  if (!isIncidentEntry(entry) || !entry.Status) return "";
   const [primaryStatus] = entry.Status
     .split(",")
     .map((value) => value.trim())
@@ -272,7 +276,7 @@ const IncidentEntry = (props: {
 
 export const TopMatchBlock = (props: {
   entry: CargoEntry;
-  companyFallback?: CargoEntry;
+  companyFallback?: CompanyEntry;
   externalIconUrl: string;
 }) => {
   const { entry, companyFallback, externalIconUrl } = props;

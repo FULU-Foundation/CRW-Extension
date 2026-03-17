@@ -1,4 +1,9 @@
-import type { CargoEntry } from "@/shared/types";
+import {
+  type CargoEntry,
+  isCompanyEntry,
+  isProductEntry,
+  isProductLineEntry,
+} from "@/shared/types";
 import { getDomain, parse } from "tldts";
 import type { UrlEntryMatch, UrlMatchDetail, UrlMatchType } from "./types";
 import { getEcommerceFamily } from "./ecommerce.ts";
@@ -286,6 +291,13 @@ const splitWebsiteUrls = (website: string | undefined): string[] => {
   return values;
 };
 
+const getEntryWebsite = (entry: CargoEntry): string | undefined => {
+  if (isCompanyEntry(entry) || isProductEntry(entry) || isProductLineEntry(entry)) {
+    return entry.Website;
+  }
+  return undefined;
+};
+
 const getEntryKey = (entry: CargoEntry): string => {
   return `${entry._type}:${entry.PageID}`;
 };
@@ -342,7 +354,7 @@ export const matchEntriesByUrl = (
 
   const matches: DetailedUrlEntryMatch[] = [];
   for (const entry of entries) {
-    const websiteUrls = splitWebsiteUrls(entry?.Website);
+    const websiteUrls = splitWebsiteUrls(getEntryWebsite(entry));
 
     for (const websiteUrl of websiteUrls) {
       const candidateUrl = safeParseUrl(websiteUrl);

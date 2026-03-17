@@ -7,31 +7,36 @@ type CargoEntryCommon = {
   PageID: string;
   PageName: string;
   Description: string | null;
-  Company?: string;
-  Product?: string;
-  ProductLine?: string;
-  CompanyAlias?: string;
-  Website?: string;
-  Status?: string;
-  StartDate?: string;
-  Industry?: string;
   [key: string]: unknown;
 };
 
 export type CompanyEntry = CargoEntryCommon & {
   _type: "Company";
+  CompanyAlias?: string;
+  Industry?: string;
+  Website?: string;
 };
 
 export type IncidentEntry = CargoEntryCommon & {
   _type: "Incident";
+  Company?: string;
+  Product?: string;
+  ProductLine?: string;
+  StartDate?: string;
+  Status?: string;
 };
 
 export type ProductEntry = CargoEntryCommon & {
   _type: "Product";
+  Company?: string;
+  ProductLine?: string;
+  Website?: string;
 };
 
 export type ProductLineEntry = CargoEntryCommon & {
   _type: "ProductLine";
+  Company?: string;
+  Website?: string;
 };
 
 export type CargoEntry =
@@ -171,4 +176,22 @@ export const decodePageContext = (value: unknown): PageContext | null => {
   if (marketplaceProperties) next.marketplaceProperties = marketplaceProperties;
 
   return next;
+};
+
+export const isCompanyEntry = (entry: CargoEntry): entry is CompanyEntry => {
+  return entry._type === "Company";
+};
+
+export const isIncidentEntry = (entry: CargoEntry): entry is IncidentEntry => {
+  return entry._type === "Incident";
+};
+
+export const isProductEntry = (entry: CargoEntry): entry is ProductEntry => {
+  return entry._type === "Product";
+};
+
+export const isProductLineEntry = (
+  entry: CargoEntry,
+): entry is ProductLineEntry => {
+  return entry._type === "ProductLine";
 };

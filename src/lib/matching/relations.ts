@@ -42,6 +42,21 @@ const normalizeReferenceSet = (value: string | undefined): Set<string> => {
   return new Set(normalized);
 };
 
+const getCompanyRef = (entry: CargoEntry): string | undefined => {
+  if (!("Company" in entry)) return undefined;
+  return typeof entry.Company === "string" ? entry.Company : undefined;
+};
+
+const getProductRef = (entry: CargoEntry): string | undefined => {
+  if (!("Product" in entry)) return undefined;
+  return typeof entry.Product === "string" ? entry.Product : undefined;
+};
+
+const getProductLineRef = (entry: CargoEntry): string | undefined => {
+  if (!("ProductLine" in entry)) return undefined;
+  return typeof entry.ProductLine === "string" ? entry.ProductLine : undefined;
+};
+
 const entryKey = (entry: CargoEntry): string => {
   const pageId = String(entry.PageID || "").trim();
   if (pageId) return pageId;
@@ -80,9 +95,9 @@ const getRelationSignals = (entry: CargoEntry): RelationSignals => {
     companyNames,
     productNames,
     productLineNames,
-    companyRefs: normalizeReferenceSet(entry.Company),
-    productRefs: normalizeReferenceSet(entry.Product),
-    productLineRefs: normalizeReferenceSet(entry.ProductLine),
+    companyRefs: normalizeReferenceSet(getCompanyRef(entry)),
+    productRefs: normalizeReferenceSet(getProductRef(entry)),
+    productLineRefs: normalizeReferenceSet(getProductLineRef(entry)),
   };
 };
 
