@@ -1,4 +1,10 @@
-import type { CargoEntry, PageContext } from "@/shared/types";
+import {
+  type CargoEntry,
+  type PageContext,
+  isCompanyEntry,
+  isProductEntry,
+  isProductLineEntry,
+} from "@/shared/types";
 import { matchingConfig } from "./matchingConfig.ts";
 import { expandRelatedEntries } from "./relations.ts";
 import { matchEntriesByUrl } from "./urlMatching.ts";
@@ -43,7 +49,14 @@ const entryKey = (entry: CargoEntry): string => {
 };
 
 const hasWebsite = (entry: CargoEntry): boolean => {
-  return typeof entry.Website === "string" && entry.Website.trim().length > 0;
+  if (
+    isCompanyEntry(entry) ||
+    isProductEntry(entry) ||
+    isProductLineEntry(entry)
+  ) {
+    return Boolean(entry.Website?.trim());
+  }
+  return false;
 };
 
 const hostnameMatchesSuffix = (hostname: string, suffix: string): boolean => {

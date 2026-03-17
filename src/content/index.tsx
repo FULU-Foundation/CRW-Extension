@@ -4,11 +4,16 @@ import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
 import { buildIncidentSignature } from "@/shared/incidentSignature";
-import {
-  type SnoozedSiteMap,
-  normalizeSnoozedSiteMap,
-} from "@/shared/snoozedSites";
 import { CargoEntry, PageContext } from "@/shared/types";
+import {
+  readHideWhenNoIncidents,
+  readSnoozedSiteMap,
+  readSuppressedDomains,
+  readWarningsEnabled,
+  writeSnoozedSiteMap,
+  writeSuppressedDomains,
+  writeWarningsEnabled,
+} from "@/shared/storage";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
 import { InlinePopup } from "@/content/InlinePopup";
@@ -49,13 +54,8 @@ const normalizeHostname = (hostname: string): string => {
 };
 
 const getSuppressedDomains = async (): Promise<string[]> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.SUPPRESSED_DOMAINS,
-  );
-  const value = stored[Constants.STORAGE.SUPPRESSED_DOMAINS];
-  if (!Array.isArray(value)) return [];
+  const value = await readSuppressedDomains();
   return value
-    .filter((entry): entry is string => typeof entry === "string")
     .map((entry) => normalizeHostname(entry))
     .filter((entry) => entry.length > 0);
 };
@@ -66,31 +66,7 @@ const isCurrentSiteSuppressed = async (): Promise<boolean> => {
   return current.length > 0 && domains.includes(current);
 };
 
-const readSnoozedSiteMap = async (): Promise<SnoozedSiteMap> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE,
-  );
-  return normalizeSnoozedSiteMap(
-    stored[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE] as
-      | SnoozedSiteMap
-      | undefined,
-  );
-};
-
-const writeSnoozedSiteMap = async (next: SnoozedSiteMap): Promise<void> => {
-  await browser.storage.local.set({
-    [Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE]: next,
-  });
-};
-
-const isHideWhenNoIncidentsEnabled = async (): Promise<boolean> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS,
-  );
-  const value = stored[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS];
-  if (typeof value === "boolean") return value;
-  return true;
-};
+const isHideWhenNoIncidentsEnabled = readHideWhenNoIncidents;
 
 const snoozeCurrentSiteUntilNewIncidentChanges = async (
   incidentSignature: string,
@@ -99,11 +75,9 @@ const snoozeCurrentSiteUntilNewIncidentChanges = async (
   if (!current) return;
   const domains = await getSuppressedDomains();
   if (domains.includes(current)) {
-    await browser.storage.local.set({
-      [Constants.STORAGE.SUPPRESSED_DOMAINS]: domains.filter(
-        (domain) => domain !== current,
-      ),
-    });
+    await writeSuppressedDomains(
+      domains.filter((domain) => domain !== current),
+    );
   }
   const snoozedSiteMap = await readSnoozedSiteMap();
   snoozedSiteMap[current] = {
@@ -141,20 +115,8 @@ const isCurrentSiteSnoozedUntilIncidentChanges = async (
   return false;
 };
 
-const isWarningsEnabled = async (): Promise<boolean> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.WARNINGS_ENABLED,
-  );
-  const value = stored[Constants.STORAGE.WARNINGS_ENABLED];
-  if (typeof value === "boolean") return value;
-  return true;
-};
-
-const setWarningsEnabled = async (enabled: boolean): Promise<void> => {
-  await browser.storage.local.set({
-    [Constants.STORAGE.WARNINGS_ENABLED]: enabled,
-  });
-};
+const isWarningsEnabled = readWarningsEnabled;
+const setWarningsEnabled = writeWarningsEnabled;
 
 const openOptions = () => {
   void (async () => {
@@ -195,9 +157,7 @@ const suppressCurrentSite = async (): Promise<void> => {
   if (!current) return;
   const domains = await getSuppressedDomains();
   if (!domains.includes(current)) {
-    await browser.storage.local.set({
-      [Constants.STORAGE.SUPPRESSED_DOMAINS]: [...domains, current],
-    });
+    await writeSuppressedDomains([...domains, current]);
   }
   await unsnoozeCurrentSiteUntilNewIncidentChanges();
 };
@@ -207,9 +167,7 @@ const unsuppressCurrentSite = async (): Promise<void> => {
   if (!current) return;
   const domains = await getSuppressedDomains();
   const next = domains.filter((domain) => domain !== current);
-  await browser.storage.local.set({
-    [Constants.STORAGE.SUPPRESSED_DOMAINS]: next,
-  });
+  await writeSuppressedDomains(next);
 };
 
 const ensurePopupRoot = (): Root => {
