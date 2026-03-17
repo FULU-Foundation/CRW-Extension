@@ -12,10 +12,12 @@ type InlinePopupProps = {
   onClose: () => void;
   onOpenSettings: () => void;
   onSuppressSite: () => void;
-  onSuppressPageName?: () => void;
+  onSnoozeUntilNewChanges?: () => void;
   onDisableWarnings?: () => void;
-  suppressPageNameLabel?: string;
+  snoozeUntilNewChangesLabel?: string;
+  snoozeUntilNewChangesTooltip?: string;
   suppressButtonLabel?: string;
+  suppressButtonTooltip?: string;
   disableWarningsLabel?: string;
 };
 
@@ -29,10 +31,12 @@ export const InlinePopup = (props: InlinePopupProps) => {
     onClose,
     onOpenSettings,
     onSuppressSite,
-    onSuppressPageName,
+    onSnoozeUntilNewChanges,
     onDisableWarnings,
-    suppressPageNameLabel,
+    snoozeUntilNewChangesLabel,
+    snoozeUntilNewChangesTooltip,
     suppressButtonLabel,
+    suppressButtonTooltip,
     disableWarningsLabel,
   } = props;
 
@@ -46,10 +50,12 @@ export const InlinePopup = (props: InlinePopupProps) => {
       settingsIconUrl={settingsIconUrl}
       closeIconUrl={closeIconUrl}
       onSuppressSite={onSuppressSite}
-      onSuppressPageName={onSuppressPageName}
+      onSnoozeUntilNewChanges={onSnoozeUntilNewChanges}
       onDisableWarnings={onDisableWarnings}
-      suppressPageNameLabel={suppressPageNameLabel}
+      snoozeUntilNewChangesLabel={snoozeUntilNewChangesLabel}
+      snoozeUntilNewChangesTooltip={snoozeUntilNewChangesTooltip}
       suppressButtonLabel={suppressButtonLabel}
+      suppressButtonTooltip={suppressButtonTooltip}
       disableWarningsLabel={disableWarningsLabel}
       showCloseButton
       hideRelatedButtonWhenEmpty

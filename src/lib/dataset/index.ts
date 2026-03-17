@@ -1,11 +1,17 @@
 import browser from "webextension-polyfill";
-import { CargoEntry, LoadResult } from "@/shared/types";
+import {
+  type CargoEntry,
+  type LoadResult,
+  type RawCargoDataset,
+  decodeCargoEntry,
+} from "@/shared/types";
 import * as Constants from "@/shared/constants";
 import { decodeEntityStrings } from "@/shared/html";
+import { readRefreshIntervalMs } from "@/shared/storage";
 
 type DatasetCacheRecord = {
   version: number;
-  raw: any;
+  raw: unknown;
   etag?: string;
   fetchedAt: number;
   lastCheckedAt: number;
@@ -19,6 +25,10 @@ type DatasetRefreshErrorRecord = {
 const DATASET_CACHE_VERSION = 1;
 const REMOTE_FETCH_MAX_ATTEMPTS = 3;
 const REMOTE_FETCH_BASE_DELAY_MS = 500;
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === "object" && value !== null;
+};
 
 export const load = async (): Promise<LoadResult> => {
   console.log(`${Constants.LOG_PREFIX} Loading dataset...`);
@@ -68,44 +78,53 @@ export const refreshNow = async (): Promise<LoadResult> => {
   }
 };
 
-const validateDataset = (json: any) => {
+const normalizeDataset = (value: unknown): RawCargoDataset => {
+  const json = isObjectRecord(value) ? value : {};
+  const normalized = createEmptyRawDataset();
+
   for (const key of Constants.DATASET_KEYS) {
-    if (!Array.isArray(json[key])) {
+    const section = json[key];
+    if (!Array.isArray(section)) {
       console.warn(
         `${Constants.LOG_PREFIX} Missing or invalid dataset section: ${key}`,
       );
-      json[key] = [];
+      continue;
     }
+    normalized[key] = section;
   }
+
+  return normalized;
 };
 
-const flattenDataset = (json: any): CargoEntry[] => {
+const flattenDataset = (json: RawCargoDataset): CargoEntry[] => {
   const flattened: CargoEntry[] = [];
 
   for (const key of Constants.DATASET_KEYS) {
-    const section = json[key] || [];
+    const section = json[key];
 
     for (const item of section) {
-      const decodedItem = decodeEntityStrings(item) as Record<string, unknown>;
-      flattened.push({
-        ...decodedItem,
+      const decodedItem = decodeEntityStrings(item);
+      const typedItem = decodeCargoEntry({
+        ...(isObjectRecord(decodedItem) ? decodedItem : {}),
         _type: key,
-      } as CargoEntry);
+      });
+      if (!typedItem) continue;
+      flattened.push(typedItem);
     }
   }
 
   return flattened;
 };
 
-const buildLoadResult = (raw: any, source: string): LoadResult => {
-  validateDataset(raw);
-  const typedData = flattenDataset(raw);
+const buildLoadResult = (raw: unknown, source: string): LoadResult => {
+  const normalizedRaw = normalizeDataset(raw);
+  const typedData = flattenDataset(normalizedRaw);
 
   console.log(
     `${Constants.LOG_PREFIX} Dataset loaded from ${source} with ${typedData.length} entries`,
   );
 
-  return { raw, all: typedData };
+  return { raw: normalizedRaw, all: typedData };
 };
 
 const readCache = async (): Promise<DatasetCacheRecord | null> => {
@@ -118,23 +137,7 @@ const readCache = async (): Promise<DatasetCacheRecord | null> => {
   return value;
 };
 
-export const readConfiguredRefreshIntervalMs = async (): Promise<number> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.DATA_REFRESH_INTERVAL_MS,
-  );
-  const value = stored[Constants.STORAGE.DATA_REFRESH_INTERVAL_MS];
-
-  if (
-    typeof value === "number" &&
-    Constants.DATA_REFRESH_INTERVAL_OPTIONS_MS.includes(
-      value as (typeof Constants.DATA_REFRESH_INTERVAL_OPTIONS_MS)[number],
-    )
-  ) {
-    return value;
-  }
-
-  return Constants.DEFAULT_DATA_REFRESH_INTERVAL_MS;
-};
+export const readConfiguredRefreshIntervalMs = readRefreshIntervalMs;
 
 const writeRefreshError = async (error: unknown): Promise<void> => {
   const message =
@@ -156,16 +159,12 @@ const clearRefreshError = async (): Promise<void> => {
   await browser.storage.local.remove(Constants.STORAGE.DATA_REFRESH_ERROR);
 };
 
-const isValidCacheRecord = (value: any): value is DatasetCacheRecord => {
-  return Boolean(
-    value &&
-    typeof value === "object" &&
-    value.version === DATASET_CACHE_VERSION &&
-    typeof value.fetchedAt === "number" &&
-    typeof value.lastCheckedAt === "number" &&
-    value.raw &&
-    typeof value.raw === "object",
-  );
+const isValidCacheRecord = (value: unknown): value is DatasetCacheRecord => {
+  if (!isObjectRecord(value)) return false;
+  if (value.version !== DATASET_CACHE_VERSION) return false;
+  if (typeof value.fetchedAt !== "number") return false;
+  if (typeof value.lastCheckedAt !== "number") return false;
+  return isObjectRecord(value.raw);
 };
 
 const refreshCache = async (
@@ -200,11 +199,11 @@ const refreshCache = async (
   }
 
   const json = await response.json();
-  validateDataset(json);
+  const normalizedRaw = normalizeDataset(json);
 
   const record: DatasetCacheRecord = {
     version: DATASET_CACHE_VERSION,
-    raw: json,
+    raw: normalizedRaw,
     etag: response.headers.get("etag") || undefined,
     fetchedAt: now,
     lastCheckedAt: now,
@@ -258,7 +257,7 @@ const sleep = async (ms: number): Promise<void> => {
   });
 };
 
-const createEmptyRawDataset = (): Record<string, unknown> => {
+const createEmptyRawDataset = (): RawCargoDataset => {
   return {
     Company: [],
     Incident: [],

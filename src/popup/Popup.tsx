@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
 import browser from "webextension-polyfill";
 
-import * as Constants from "@/shared/constants";
 import { CargoEntry } from "@/shared/types";
+import {
+  readSuppressedDomains,
+  readTabMatches,
+  writeSuppressedDomains,
+} from "@/shared/storage";
 
 const POPUP_BG = "#004080";
 const POPUP_TEXT = "#FFFFFF";
@@ -27,16 +31,8 @@ const entryUrl = (entry: CargoEntry): string => {
 };
 
 const getEntryDescription = (entry: CargoEntry): string => {
-  if (typeof entry.Description === "string" && entry.Description.trim()) {
-    return entry.Description;
-  }
-  if (entry.Description == null) return "No description available.";
-  if (
-    typeof entry.Description === "number" ||
-    typeof entry.Description === "boolean"
-  ) {
-    return String(entry.Description);
-  }
+  const description = entry.Description?.trim();
+  if (description) return description;
   return "No description available.";
 };
 
@@ -59,16 +55,7 @@ const Popup = () => {
         if (url) {
           const normalizedDomain = normalizeHostname(new URL(url).hostname);
           setDomain(normalizedDomain);
-          const suppressedStored = await browser.storage.local.get(
-            Constants.STORAGE.SUPPRESSED_DOMAINS,
-          );
-          const suppressedRaw =
-            suppressedStored[Constants.STORAGE.SUPPRESSED_DOMAINS];
-          const suppressedDomains = Array.isArray(suppressedRaw)
-            ? suppressedRaw.filter(
-                (entry): entry is string => typeof entry === "string",
-              )
-            : [];
+          const suppressedDomains = await readSuppressedDomains();
           setSuppressed(
             suppressedDomains.map(normalizeHostname).includes(normalizedDomain),
           );
@@ -76,9 +63,7 @@ const Popup = () => {
 
         if (!tabId) return;
 
-        const storageKey = Constants.STORAGE.MATCHES(tabId);
-        const stored = await browser.storage.local.get(storageKey);
-        const results = (stored[storageKey] as CargoEntry[]) || [];
+        const results = await readTabMatches(tabId);
         setArticles(results);
       } catch {
         setDomain("unknown");
@@ -92,44 +77,26 @@ const Popup = () => {
 
   const suppressDomain = async () => {
     if (!domain || domain === "unknown") return;
-    const key = Constants.STORAGE.SUPPRESSED_DOMAINS;
-    const stored = await browser.storage.local.get(key);
-    const existingRaw = stored[key];
-    const existing = Array.isArray(existingRaw)
-      ? existingRaw.filter(
-          (entry): entry is string => typeof entry === "string",
-        )
-      : [];
+    const existing = await readSuppressedDomains();
     const normalized = normalizeHostname(domain);
     if (!normalized || existing.map(normalizeHostname).includes(normalized)) {
       window.close();
       return;
     }
 
-    await browser.storage.local.set({
-      [key]: [...existing, normalized],
-    });
+    await writeSuppressedDomains([...existing, normalized]);
     setSuppressed(true);
     window.close();
   };
 
   const unsuppressDomain = async () => {
     if (!domain || domain === "unknown") return;
-    const key = Constants.STORAGE.SUPPRESSED_DOMAINS;
-    const stored = await browser.storage.local.get(key);
-    const existingRaw = stored[key];
-    const existing = Array.isArray(existingRaw)
-      ? existingRaw.filter(
-          (entry): entry is string => typeof entry === "string",
-        )
-      : [];
+    const existing = await readSuppressedDomains();
     const normalized = normalizeHostname(domain);
     const next = existing.filter(
       (entry) => normalizeHostname(entry) !== normalized,
     );
-    await browser.storage.local.set({
-      [key]: next,
-    });
+    await writeSuppressedDomains(next);
     setSuppressed(false);
     window.close();
   };

@@ -6,6 +6,7 @@ import * as Dataset from "@/lib/dataset";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
 import { CargoEntry } from "@/shared/types";
+import { readDatasetCacheRefreshInfo, readTabMatches } from "@/shared/storage";
 
 let datasetCache: CargoEntry[] = [];
 let datasetLoadPromise: Promise<CargoEntry[]> | null = null;
@@ -20,13 +21,16 @@ const getBadgeText = (count: number): string => {
 const sendMatchUpdateToTab = async (
   tabId: number,
   matches: CargoEntry[],
-  type: MessageType = MessageType.MATCH_RESULTS_UPDATED,
+  type:
+    | MessageType.MATCH_RESULTS_UPDATED
+    | MessageType.FORCE_SHOW_INLINE_POPUP
+    | MessageType.TOGGLE_INLINE_POPUP = MessageType.MATCH_RESULTS_UPDATED,
   attempt = 0,
 ): Promise<void> => {
   try {
     await browser.tabs.sendMessage(
       tabId,
-      Messaging.createMessage(type, "backgroud", matches),
+      Messaging.createMessage(type, "background", matches),
     );
   } catch {
     if (attempt >= 2) return;
@@ -41,18 +45,7 @@ const readDatasetRefreshInfo = async (): Promise<{
   fetchedAt: number | null;
   lastCheckedAt: number | null;
 }> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.DATASET_CACHE,
-  );
-  const cache = stored[Constants.STORAGE.DATASET_CACHE] as
-    | { fetchedAt?: unknown; lastCheckedAt?: unknown }
-    | undefined;
-
-  return {
-    fetchedAt: typeof cache?.fetchedAt === "number" ? cache.fetchedAt : null,
-    lastCheckedAt:
-      typeof cache?.lastCheckedAt === "number" ? cache.lastCheckedAt : null,
-  };
+  return await readDatasetCacheRefreshInfo();
 };
 
 const loadDatasetCache = async (options?: {
@@ -118,9 +111,7 @@ browser.tabs.onActivated.addListener(async ({ tabId }) => {
     `${Constants.LOG_PREFIX} Active tab has been changed. TabId:${tabId}`,
   );
 
-  const storageKey = Constants.STORAGE.MATCHES(tabId);
-  const stored = await browser.storage.local.get(storageKey);
-  const results = (stored[storageKey] as CargoEntry[]) || [];
+  const results = await readTabMatches(tabId);
 
   browser.action.setBadgeText({
     tabId,
@@ -133,9 +124,7 @@ browser.action.onClicked.addListener(async (tab) => {
   const tabId = tab.id;
   if (!tabId) return;
 
-  const storageKey = Constants.STORAGE.MATCHES(tabId);
-  const stored = await browser.storage.local.get(storageKey);
-  const matches = (stored[storageKey] as CargoEntry[]) || [];
+  const matches = await readTabMatches(tabId);
 
   void sendMatchUpdateToTab(tabId, matches, MessageType.TOGGLE_INLINE_POPUP);
 });

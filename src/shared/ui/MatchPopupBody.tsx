@@ -1,6 +1,12 @@
 import React from "react";
 
-import { CargoEntry } from "@/shared/types";
+import {
+  type CargoEntry,
+  type CompanyEntry,
+  type IncidentEntry,
+  type ProductEntry,
+  type ProductLineEntry,
+} from "@/shared/types";
 import { RelatedGroup, TopMatchBlock } from "@/shared/ui/MatchPopupPrimitives";
 import {
   POPUP_CSS,
@@ -10,12 +16,12 @@ import {
 
 type MatchPopupBodyProps = {
   topMatch: CargoEntry;
-  companyMatch?: CargoEntry;
+  companyMatch?: CompanyEntry;
   externalIconUrl: string;
-  visibleIncidents: CargoEntry[];
-  expandedIncidents: CargoEntry[];
-  relatedProducts: CargoEntry[];
-  relatedProductLines: CargoEntry[];
+  visibleIncidents: IncidentEntry[];
+  expandedIncidents: IncidentEntry[];
+  relatedProducts: ProductEntry[];
+  relatedProductLines: ProductLineEntry[];
   showsRelatedPagesToggle: boolean;
   hiddenRelatedPagesCount: number;
   showRelatedPages: boolean;

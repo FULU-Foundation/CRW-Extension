@@ -3,7 +3,17 @@ import { createRoot, type Root } from "react-dom/client";
 import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
+import { buildIncidentSignature } from "@/shared/incidentSignature";
 import { CargoEntry, PageContext } from "@/shared/types";
+import {
+  readHideWhenNoIncidents,
+  readSnoozedSiteMap,
+  readSuppressedDomains,
+  readWarningsEnabled,
+  writeSnoozedSiteMap,
+  writeSuppressedDomains,
+  writeWarningsEnabled,
+} from "@/shared/storage";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
 import { InlinePopup } from "@/content/InlinePopup";
@@ -34,6 +44,7 @@ let popupHost: HTMLDivElement | null = null;
 let popupShadowMount: HTMLDivElement | null = null;
 let popupRoot: Root | null = null;
 let forcePopupVisible = false;
+const SNOOZE_UNTIL_NEW_CHANGES_LABEL = "Hide until new incidents";
 
 const normalizeHostname = (hostname: string): string => {
   return hostname
@@ -43,13 +54,8 @@ const normalizeHostname = (hostname: string): string => {
 };
 
 const getSuppressedDomains = async (): Promise<string[]> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.SUPPRESSED_DOMAINS,
-  );
-  const value = stored[Constants.STORAGE.SUPPRESSED_DOMAINS];
-  if (!Array.isArray(value)) return [];
+  const value = await readSuppressedDomains();
   return value
-    .filter((entry): entry is string => typeof entry === "string")
     .map((entry) => normalizeHostname(entry))
     .filter((entry) => entry.length > 0);
 };
@@ -60,57 +66,57 @@ const isCurrentSiteSuppressed = async (): Promise<boolean> => {
   return current.length > 0 && domains.includes(current);
 };
 
-const normalizePageName = (pageName: string): string => {
-  return pageName.trim().toLowerCase();
+const isHideWhenNoIncidentsEnabled = readHideWhenNoIncidents;
+
+const snoozeCurrentSiteUntilNewIncidentChanges = async (
+  incidentSignature: string,
+): Promise<void> => {
+  const current = normalizeHostname(location.hostname || "");
+  if (!current) return;
+  const domains = await getSuppressedDomains();
+  if (domains.includes(current)) {
+    await writeSuppressedDomains(
+      domains.filter((domain) => domain !== current),
+    );
+  }
+  const snoozedSiteMap = await readSnoozedSiteMap();
+  snoozedSiteMap[current] = {
+    incidentSignature,
+    snoozedAt: Date.now(),
+  };
+  await writeSnoozedSiteMap(snoozedSiteMap);
 };
 
-const getSuppressedPageNames = async (): Promise<string[]> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.SUPPRESSED_PAGE_NAMES,
-  );
-  const value = stored[Constants.STORAGE.SUPPRESSED_PAGE_NAMES];
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((entry): entry is string => typeof entry === "string")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
+const unsnoozeCurrentSiteUntilNewIncidentChanges = async (): Promise<void> => {
+  const current = normalizeHostname(location.hostname || "");
+  if (!current) return;
+  const snoozedSiteMap = await readSnoozedSiteMap();
+  if (!snoozedSiteMap[current]) return;
+  delete snoozedSiteMap[current];
+  await writeSnoozedSiteMap(snoozedSiteMap);
 };
 
-const suppressPageName = async (pageName: string): Promise<void> => {
-  const trimmed = pageName.trim();
-  const normalized = normalizePageName(pageName);
-  if (!normalized) return;
-  const names = await getSuppressedPageNames();
-  if (names.some((name) => normalizePageName(name) === normalized)) return;
-  await browser.storage.local.set({
-    [Constants.STORAGE.SUPPRESSED_PAGE_NAMES]: [...names, trimmed],
-  });
+const isCurrentSiteSnoozedUntilIncidentChanges = async (
+  incidentSignature: string,
+): Promise<boolean> => {
+  const current = normalizeHostname(location.hostname || "");
+  if (!current) return false;
+
+  const snoozedSiteMap = await readSnoozedSiteMap();
+  const state = snoozedSiteMap[current];
+  if (!state) return false;
+
+  if (state.incidentSignature === incidentSignature) {
+    return true;
+  }
+
+  delete snoozedSiteMap[current];
+  await writeSnoozedSiteMap(snoozedSiteMap);
+  return false;
 };
 
-const unsuppressPageName = async (pageName: string): Promise<void> => {
-  const normalized = normalizePageName(pageName);
-  if (!normalized) return;
-  const names = await getSuppressedPageNames();
-  const next = names.filter((name) => normalizePageName(name) !== normalized);
-  await browser.storage.local.set({
-    [Constants.STORAGE.SUPPRESSED_PAGE_NAMES]: next,
-  });
-};
-
-const isWarningsEnabled = async (): Promise<boolean> => {
-  const stored = await browser.storage.local.get(
-    Constants.STORAGE.WARNINGS_ENABLED,
-  );
-  const value = stored[Constants.STORAGE.WARNINGS_ENABLED];
-  if (typeof value === "boolean") return value;
-  return true;
-};
-
-const setWarningsEnabled = async (enabled: boolean): Promise<void> => {
-  await browser.storage.local.set({
-    [Constants.STORAGE.WARNINGS_ENABLED]: enabled,
-  });
-};
+const isWarningsEnabled = readWarningsEnabled;
+const setWarningsEnabled = writeWarningsEnabled;
 
 const openOptions = () => {
   void (async () => {
@@ -150,10 +156,10 @@ const suppressCurrentSite = async (): Promise<void> => {
   const current = normalizeHostname(location.hostname || "");
   if (!current) return;
   const domains = await getSuppressedDomains();
-  if (domains.includes(current)) return;
-  await browser.storage.local.set({
-    [Constants.STORAGE.SUPPRESSED_DOMAINS]: [...domains, current],
-  });
+  if (!domains.includes(current)) {
+    await writeSuppressedDomains([...domains, current]);
+  }
+  await unsnoozeCurrentSiteUntilNewIncidentChanges();
 };
 
 const unsuppressCurrentSite = async (): Promise<void> => {
@@ -161,9 +167,7 @@ const unsuppressCurrentSite = async (): Promise<void> => {
   if (!current) return;
   const domains = await getSuppressedDomains();
   const next = domains.filter((domain) => domain !== current);
-  await browser.storage.local.set({
-    [Constants.STORAGE.SUPPRESSED_DOMAINS]: next,
-  });
+  await writeSuppressedDomains(next);
 };
 
 const ensurePopupRoot = (): Root => {
@@ -221,44 +225,7 @@ const renderInlinePopup = async (
   matches: CargoEntry[],
   ignorePreferences = false,
 ) => {
-  const suppressedPageNames = await getSuppressedPageNames();
-  const suppressedPageNameSet = new Set(
-    suppressedPageNames.map((name) => normalizePageName(name)),
-  );
-  const filteredMatches =
-    suppressedPageNameSet.size === 0
-      ? matches
-      : matches.filter((match) => {
-          const normalizedPageName = normalizePageName(
-            String(match.PageName || ""),
-          );
-          if (suppressedPageNameSet.has(normalizedPageName)) return false;
-
-          if (
-            match._type === "Product" ||
-            match._type === "ProductLine" ||
-            match._type === "Incident"
-          ) {
-            const normalizedCompany = normalizePageName(
-              String(match.Company || ""),
-            );
-            if (
-              normalizedCompany &&
-              suppressedPageNameSet.has(normalizedCompany)
-            ) {
-              return false;
-            }
-          }
-
-          return true;
-        });
-
-  const visibleMatches = ignorePreferences ? matches : filteredMatches;
-
-  if (visibleMatches.length === 0 && !ignorePreferences) {
-    removeInlinePopup();
-    return;
-  }
+  const visibleMatches = matches;
 
   const currentlyWarningsEnabled = await isWarningsEnabled();
 
@@ -268,10 +235,35 @@ const renderInlinePopup = async (
   }
 
   const currentlySuppressed = await isCurrentSiteSuppressed();
-  if (!ignorePreferences && currentlySuppressed) {
+  if (currentlySuppressed) {
+    await unsnoozeCurrentSiteUntilNewIncidentChanges();
+    if (!ignorePreferences) {
+      removeInlinePopup();
+      return;
+    }
+  }
+
+  const hideWhenNoIncidents = await isHideWhenNoIncidentsEnabled();
+  const incidentSignature = buildIncidentSignature(visibleMatches);
+  const hasIncidents = incidentSignature.length > 0;
+  if (!ignorePreferences && hideWhenNoIncidents && !hasIncidents) {
     removeInlinePopup();
     return;
   }
+
+  const currentlySnoozed = currentlySuppressed
+    ? false
+    : await isCurrentSiteSnoozedUntilIncidentChanges(incidentSignature);
+  if (!ignorePreferences && currentlySnoozed) {
+    removeInlinePopup();
+    return;
+  }
+
+  if (visibleMatches.length === 0 && !ignorePreferences) {
+    removeInlinePopup();
+    return;
+  }
+
   forcePopupVisible = ignorePreferences;
   const root = ensurePopupRoot();
   if (visibleMatches.length === 0) {
@@ -297,65 +289,6 @@ const renderInlinePopup = async (
     removeInlinePopup();
   };
 
-  const topVisibleMatch = visibleMatches[0];
-  const topVisiblePageName = String(topVisibleMatch?.PageName || "").trim();
-  const topVisiblePageNameNormalized = normalizePageName(topVisiblePageName);
-  const topVisibleCompanyName = String(topVisibleMatch?.Company || "").trim();
-  const topVisibleCompanyNormalized = normalizePageName(topVisibleCompanyName);
-  const topVisibleScopeType = topVisibleMatch?._type;
-  const topVisibleTypeUsesCompanyToggle =
-    topVisibleScopeType === "Product" ||
-    topVisibleScopeType === "ProductLine" ||
-    topVisibleScopeType === "Incident";
-  const topVisiblePageSuppressed =
-    Boolean(topVisiblePageNameNormalized) &&
-    suppressedPageNameSet.has(topVisiblePageNameNormalized);
-  const topVisibleCompanySuppressed =
-    topVisibleTypeUsesCompanyToggle &&
-    Boolean(topVisibleCompanyNormalized) &&
-    suppressedPageNameSet.has(topVisibleCompanyNormalized);
-
-  const getSuppressPageNameAction = () => {
-    if (
-      ignorePreferences &&
-      topVisibleCompanySuppressed &&
-      topVisibleCompanyName
-    ) {
-      return {
-        label: "Show this company",
-        run: async () => {
-          await unsuppressPageName(topVisibleCompanyName);
-          void renderInlinePopup(matches, true);
-        },
-      };
-    }
-
-    if (ignorePreferences && topVisiblePageSuppressed && topVisibleMatch) {
-      const scope =
-        topVisibleMatch._type === "ProductLine"
-          ? "product"
-          : topVisibleMatch._type.toLowerCase();
-      return {
-        label: `Show this ${scope}`,
-        run: async () => {
-          await unsuppressPageName(topVisiblePageName);
-          void renderInlinePopup(matches, true);
-        },
-      };
-    }
-
-    return {
-      label: undefined,
-      run: async () => {
-        if (!topVisiblePageName) return;
-        await suppressPageName(topVisiblePageName);
-        void renderInlinePopup(matches, ignorePreferences);
-      },
-    };
-  };
-
-  const suppressPageNameAction = getSuppressPageNameAction();
-
   const handleSuppressSiteClick = async () => {
     if (ignorePreferences && currentlySuppressed) {
       await unsuppressCurrentSite();
@@ -364,6 +297,17 @@ const renderInlinePopup = async (
     }
 
     await suppressCurrentSite();
+    removeInlinePopup();
+  };
+
+  const handleSnoozeUntilNewChangesClick = async () => {
+    if (currentlySnoozed) {
+      await unsnoozeCurrentSiteUntilNewIncidentChanges();
+      void renderInlinePopup(matches, true);
+      return;
+    }
+
+    await snoozeCurrentSiteUntilNewIncidentChanges(incidentSignature);
     removeInlinePopup();
   };
 
@@ -384,11 +328,33 @@ const renderInlinePopup = async (
       }
       suppressButtonLabel={
         ignorePreferences && currentlySuppressed
-          ? "Show this site"
-          : "Hide for this site"
+          ? "Always show for this site"
+          : "Always hide for this site"
       }
-      suppressPageNameLabel={suppressPageNameAction.label}
-      onSuppressPageName={() => void suppressPageNameAction.run()}
+      suppressButtonTooltip={
+        ignorePreferences && currentlySuppressed
+          ? "Show alerts for this site again."
+          : "Hide alerts for this site until you choose to show them again."
+      }
+      snoozeUntilNewChangesLabel={
+        currentlySuppressed
+          ? undefined
+          : currentlySnoozed
+            ? "Resume alerts"
+            : SNOOZE_UNTIL_NEW_CHANGES_LABEL
+      }
+      snoozeUntilNewChangesTooltip={
+        currentlySuppressed
+          ? undefined
+          : currentlySnoozed
+            ? "Turn alerts back on for this site."
+            : "Hide alerts until there are new incidents."
+      }
+      onSnoozeUntilNewChanges={
+        currentlySuppressed
+          ? undefined
+          : () => void handleSnoozeUntilNewChangesClick()
+      }
       onSuppressSite={() => void handleSuppressSiteClick()}
     />,
   );
@@ -492,7 +458,10 @@ browser.storage.onChanged.addListener((changes, areaName) => {
     ) {
       removeInlinePopup();
     }
-    if (changes[Constants.STORAGE.SUPPRESSED_PAGE_NAMES]) {
+    if (
+      changes[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE] ||
+      changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS]
+    ) {
       void runContentScript();
     }
   };

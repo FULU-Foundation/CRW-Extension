@@ -11,8 +11,9 @@ test("OptionsView shows enabled state and empty ignored-sites list", () => {
   const html = renderToStaticMarkup(
     React.createElement(OptionsView, {
       warningsEnabled: true,
+      hideWhenNoIncidents: true,
       suppressedDomains: [],
-      suppressedPageNames: [],
+      snoozedSites: [],
       refreshIntervalMs: 24 * 60 * 60 * 1000,
       lastRefreshedAt: null,
       refreshingNow: false,
@@ -20,10 +21,11 @@ test("OptionsView shows enabled state and empty ignored-sites list", () => {
       lastRefreshError: null,
       loading: false,
       onToggleWarnings: noop,
+      onToggleHideWhenNoIncidents: noop,
       onChangeRefreshInterval: noop,
       onRefreshNow: noop,
       onRemoveSuppressedDomain: noop,
-      onRemoveSuppressedPageName: noop,
+      onRemoveSnoozedSite: noop,
     }),
   );
 
@@ -37,15 +39,21 @@ test("OptionsView shows enabled state and empty ignored-sites list", () => {
   assert.ok(html.includes("Last refreshed: Never"));
   assert.ok(html.includes("Refresh now"));
   assert.ok(html.includes("No ignored sites."));
-  assert.ok(html.includes("No hidden products or companies."));
+  assert.ok(html.includes("No snoozed sites."));
+  assert.ok(
+    html.includes(
+      "Enabled: automatic popups are hidden unless incident matches are present.",
+    ),
+  );
 });
 
 test("OptionsView shows disabled state and removable ignored-site entries", () => {
   const html = renderToStaticMarkup(
     React.createElement(OptionsView, {
       warningsEnabled: false,
+      hideWhenNoIncidents: false,
       suppressedDomains: ["example.com"],
-      suppressedPageNames: ["airpods"],
+      snoozedSites: ["shop.example"],
       refreshIntervalMs: 60 * 60 * 1000,
       lastRefreshedAt: Date.UTC(2026, 1, 22, 18, 30),
       refreshingNow: true,
@@ -53,16 +61,22 @@ test("OptionsView shows disabled state and removable ignored-site entries", () =
       lastRefreshError: "Failed to fetch dataset (500)",
       loading: true,
       onToggleWarnings: noop,
+      onToggleHideWhenNoIncidents: noop,
       onChangeRefreshInterval: noop,
       onRefreshNow: noop,
       onRemoveSuppressedDomain: noop,
-      onRemoveSuppressedPageName: noop,
+      onRemoveSnoozedSite: noop,
     }),
   );
 
   assert.ok(html.includes("Disabled: popups will not auto-show on page load."));
   assert.ok(html.includes("example.com"));
-  assert.ok(html.includes("airpods"));
+  assert.ok(html.includes("shop.example"));
+  assert.ok(
+    html.includes(
+      "Disabled: automatic popups can show even without incident matches.",
+    ),
+  );
   assert.ok(html.includes("Remove"));
   assert.ok(html.includes("Refreshing..."));
   assert.ok(html.includes("Refresh failed. Please try again."));

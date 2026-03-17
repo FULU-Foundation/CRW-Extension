@@ -9,8 +9,9 @@ Browser extension that shows a popup and notifications when the site, product, o
 ## Contributing
 ### Technical Contributions
 Contributions are welcome!
-Please read the [CONTRIBUTING.md](CONTRIBUTING.md) guide for details on how to ask questions, report bugs, suggest enhancements, and submit Pull Requests.  
-You can also check the [project board](https://github.com/FULU-Foundation/CRW-Extension/projects) and look for issues labelled **good first issue** to get started.
+Please read the [CONTRIBUTING.md](CONTRIBUTING.md) guide for details on how to ask questions, report bugs, suggest enhancements, and submit Pull Requests.
+> [!IMPORTANT]
+> Before opening an issue or bug report, please ensure you have read [CONTRIBUTING.md](CONTRIBUTING.md) carefully. **Issues that do not follow the guidelines will be closed without review.**
 ### Editorial and Wiki Contributions
 The extension matches sites and services against data sourced from the [Consumer Rights Wiki](https://consumerrights.wiki). You can contribute in two ways:
 - **Editorial** - Help improve or add articles directly on the [Consumer Rights Wiki](https://consumerrights.wiki)

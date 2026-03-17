@@ -27,19 +27,34 @@ const normalizeEntityName = (value: string): string => {
     .replace(/\s+/g, " ");
 };
 
-const splitReferenceValue = (value: unknown): string[] => {
-  if (typeof value !== "string") return [];
+const splitReferenceValue = (value: string | undefined): string[] => {
+  if (!value) return [];
   return value
     .split(/[,;|]/)
     .map((piece) => piece.trim())
     .filter(Boolean);
 };
 
-const normalizeReferenceSet = (value: unknown): Set<string> => {
+const normalizeReferenceSet = (value: string | undefined): Set<string> => {
   const normalized = splitReferenceValue(value)
     .map((piece) => normalizeEntityName(piece))
     .filter(Boolean);
   return new Set(normalized);
+};
+
+const getCompanyRef = (entry: CargoEntry): string | undefined => {
+  if (!("Company" in entry)) return undefined;
+  return typeof entry.Company === "string" ? entry.Company : undefined;
+};
+
+const getProductRef = (entry: CargoEntry): string | undefined => {
+  if (!("Product" in entry)) return undefined;
+  return typeof entry.Product === "string" ? entry.Product : undefined;
+};
+
+const getProductLineRef = (entry: CargoEntry): string | undefined => {
+  if (!("ProductLine" in entry)) return undefined;
+  return typeof entry.ProductLine === "string" ? entry.ProductLine : undefined;
 };
 
 const entryKey = (entry: CargoEntry): string => {
@@ -80,9 +95,9 @@ const getRelationSignals = (entry: CargoEntry): RelationSignals => {
     companyNames,
     productNames,
     productLineNames,
-    companyRefs: normalizeReferenceSet(entry.Company),
-    productRefs: normalizeReferenceSet(entry.Product),
-    productLineRefs: normalizeReferenceSet(entry.ProductLine),
+    companyRefs: normalizeReferenceSet(getCompanyRef(entry)),
+    productRefs: normalizeReferenceSet(getProductRef(entry)),
+    productLineRefs: normalizeReferenceSet(getProductLineRef(entry)),
   };
 };
 
