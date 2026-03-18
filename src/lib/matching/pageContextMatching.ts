@@ -320,6 +320,7 @@ export const matchEntriesByPageContext = (
       hasScopedMarketplacePropertySignals &&
       (entry._type === "Product" || entry._type === "ProductLine") &&
       marketplacePropertyHitTotal === 0 &&
+      (entry.Company?.trim() ?? "") !== "" &&
       !entryCompanyMatchesMarketplaceBrands(entry, marketplaceBrandNames)
     ) {
       continue;
