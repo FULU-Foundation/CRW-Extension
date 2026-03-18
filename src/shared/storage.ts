@@ -133,6 +133,26 @@ export const readRefreshErrorMessage = async (): Promise<string | null> => {
   return typeof record.message === "string" ? record.message : null;
 };
 
+export type PillPosition = { x: number; y: number };
+
+const decodePillPosition = (value: unknown): PillPosition | null => {
+  if (typeof value !== "object" || value === null) return null;
+  const record = value as Record<string, unknown>;
+  if (typeof record.x !== "number" || typeof record.y !== "number") return null;
+  return { x: record.x, y: record.y };
+};
+
+export const readPillPosition = async (): Promise<PillPosition | null> => {
+  const value = await readLocalValue(Constants.STORAGE.PILL_POSITION);
+  return decodePillPosition(value);
+};
+
+export const writePillPosition = async (
+  position: PillPosition,
+): Promise<void> => {
+  await writeLocalValue(Constants.STORAGE.PILL_POSITION, position);
+};
+
 export const readTabMatches = async (tabId: number): Promise<CargoEntry[]> => {
   const key = Constants.STORAGE.MATCHES(tabId);
   const value = await readLocalValue(key);
