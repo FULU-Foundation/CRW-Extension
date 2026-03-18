@@ -13,6 +13,10 @@ import {
   POPUP_LAYOUT,
   ghostButtonHoverHandlers,
 } from "@/shared/ui/matchPopupStyles";
+import {
+  getSeverityLevel,
+  SEVERITY_CONFIG,
+} from "@/shared/severity";
 
 type MatchPopupBodyProps = {
   topMatch: CargoEntry;
@@ -59,6 +63,10 @@ export const MatchPopupBody = (props: MatchPopupBodyProps) => {
     flex: shouldUseScrollableBody ? "0 1 auto" : "0 0 auto",
   };
 
+  const totalIncidentCount =
+    visibleIncidents.length + expandedIncidents.length;
+  const severity = getSeverityLevel(totalIncidentCount);
+
   return (
     <div style={bodyPanelStyle}>
       <TopMatchBlock
@@ -66,6 +74,44 @@ export const MatchPopupBody = (props: MatchPopupBodyProps) => {
         companyFallback={companyMatch}
         externalIconUrl={externalIconUrl}
       />
+
+      {severity && (
+        <div
+          style={{
+            ...POPUP_LAYOUT.bodySection,
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              padding: "3px 8px",
+              borderRadius: "6px",
+              fontSize: "11px",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: ".03em",
+              color: SEVERITY_CONFIG[severity].uiColor,
+              background: SEVERITY_CONFIG[severity].uiBg,
+              border: `1px solid ${SEVERITY_CONFIG[severity].uiBorder}`,
+            }}
+          >
+            {SEVERITY_CONFIG[severity].label}
+          </span>
+          <span
+            style={{
+              fontSize: "11px",
+              color: POPUP_CSS.muted,
+            }}
+          >
+            {totalIncidentCount}{" "}
+            {totalIncidentCount === 1 ? "incident" : "incidents"}
+          </span>
+        </div>
+      )}
 
       {visibleIncidents.length > 0 && (
         <div style={POPUP_LAYOUT.bodySection}>

@@ -170,6 +170,89 @@ test("matches company aliases from space-separated CompanyAlias field", () => {
   assert.ok(ids.includes("company-ibm"));
 });
 
+test("does not match product mentioned only in compatibility list when brand differs", () => {
+  const results = matchEntriesByPageContext(
+    [
+      ...fixture(),
+      entry({
+        _type: "Product",
+        PageID: "product-steam-deck",
+        PageName: "Steam Deck",
+        Company: "Valve",
+      }),
+      entry({
+        _type: "Company",
+        PageID: "company-valve",
+        PageName: "Valve",
+        Website: "https://store.steampowered.com/",
+      }),
+    ],
+    {
+      url: "https://www.amazon.fr/UGREEN-DisplayPort-Commutateur/dp/B0F47VTB29",
+      hostname: "www.amazon.fr",
+      title:
+        "UGREEN Switch DisplayPort USB C 8K60Hz Compatible avec PC PS5 Xbox One Steam Deck",
+      meta: {
+        description: "UGREEN USB C DisplayPort switch",
+      },
+      marketplaceProperties: {
+        brand: "UGREEN",
+        manufacturer: "UGREEN",
+      },
+    },
+  );
+
+  const ids = results.map((entryItem) => entryItem.PageID);
+  assert.equal(
+    ids.includes("product-steam-deck"),
+    false,
+    "Steam Deck should not match when brand is UGREEN",
+  );
+  assert.equal(
+    ids.includes("company-valve"),
+    false,
+    "Valve should not match when brand is UGREEN",
+  );
+});
+
+test("still matches product when marketplace brand aligns with product company", () => {
+  const results = matchEntriesByPageContext(
+    [
+      ...fixture(),
+      entry({
+        _type: "Product",
+        PageID: "product-steam-deck",
+        PageName: "Steam Deck",
+        Company: "Valve",
+      }),
+      entry({
+        _type: "Company",
+        PageID: "company-valve",
+        PageName: "Valve",
+        Website: "https://store.steampowered.com/",
+      }),
+    ],
+    {
+      url: "https://www.amazon.com/Valve-Steam-Deck-OLED-1TB/dp/B0DEXAMPLE",
+      hostname: "www.amazon.com",
+      title: "Valve Steam Deck OLED 1TB",
+      meta: {
+        description: "Valve Steam Deck OLED handheld gaming PC",
+      },
+      marketplaceProperties: {
+        brand: "Valve",
+        manufacturer: "Valve",
+      },
+    },
+  );
+
+  const ids = results.map((entryItem) => entryItem.PageID);
+  assert.ok(
+    ids.includes("product-steam-deck"),
+    "Steam Deck should match when brand is Valve",
+  );
+});
+
 test("matches provided CompanyAlias values for X Corp record", () => {
   const results = matchEntriesByPageContext(
     [

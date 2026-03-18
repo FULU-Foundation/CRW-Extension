@@ -122,6 +122,29 @@ const getNameCandidates = (entry: CargoEntry): string[] => {
   );
 };
 
+const entryCompanyMatchesMarketplaceBrands = (
+  entry: CargoEntry,
+  brandNames: Set<string>,
+): boolean => {
+  if (brandNames.size === 0) return false;
+  if (entry._type !== "Product" && entry._type !== "ProductLine") return false;
+
+  const companyField = entry.Company?.trim() ?? "";
+  if (!companyField) return false;
+
+  const companyRefs = companyField.split(",").map((ref) => normalizeText(ref));
+
+  for (const ref of companyRefs) {
+    if (!ref) continue;
+    if (brandNames.has(ref)) return true;
+    for (const alias of getCompanyAliasCandidates(ref)) {
+      if (brandNames.has(alias)) return true;
+    }
+  }
+
+  return false;
+};
+
 const rankMatches = (matches: TextMatch[], limit: number): CargoEntry[] => {
   matches.sort((left, right) => {
     if (right.score !== left.score) return right.score - left.score;
@@ -193,6 +216,21 @@ export const matchEntriesByPageContext = (
   const canonicalText =
     `${title} ${metaTitle} ${description} ${ogTitle} ${ogDescription} ${amazonBrandPropertyText} ${amazonManufacturerPropertyText} ${ebayBrandPropertyText} ${ebayManufacturerPropertyText}`.trim();
   if (!canonicalText) return [];
+
+  const marketplaceBrandNames = new Set<string>();
+  for (const name of [
+    amazonBrandPropertyText,
+    amazonManufacturerPropertyText,
+    ebayBrandPropertyText,
+    ebayManufacturerPropertyText,
+  ]) {
+    if (name) {
+      marketplaceBrandNames.add(name);
+      for (const alias of getCompanyAliasCandidates(name)) {
+        marketplaceBrandNames.add(alias);
+      }
+    }
+  }
 
   const matches: TextMatch[] = [];
 
@@ -270,6 +308,19 @@ export const matchEntriesByPageContext = (
       hasScopedMarketplacePropertySignals &&
       entry._type === "Company" &&
       marketplacePropertyHitTotal === 0
+    ) {
+      continue;
+    }
+
+    // When marketplace-specific structured signals are present, avoid
+    // promoting Product/ProductLine matches that come only from generic
+    // title/meta text when the entry's Company does not align with the
+    // marketplace brand or manufacturer.
+    if (
+      hasScopedMarketplacePropertySignals &&
+      (entry._type === "Product" || entry._type === "ProductLine") &&
+      marketplacePropertyHitTotal === 0 &&
+      !entryCompanyMatchesMarketplaceBrands(entry, marketplaceBrandNames)
     ) {
       continue;
     }

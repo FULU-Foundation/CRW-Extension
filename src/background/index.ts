@@ -7,6 +7,7 @@ import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
 import { CargoEntry } from "@/shared/types";
 import { readDatasetCacheRefreshInfo, readTabMatches } from "@/shared/storage";
+import { getIncidentCount, getBadgeColor } from "@/shared/severity";
 
 let datasetCache: CargoEntry[] = [];
 let datasetLoadPromise: Promise<CargoEntry[]> | null = null;
@@ -117,7 +118,10 @@ browser.tabs.onActivated.addListener(async ({ tabId }) => {
     tabId,
     text: getBadgeText(results.length),
   });
-  browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
+  browser.action.setBadgeBackgroundColor({
+    tabId,
+    color: getBadgeColor(getIncidentCount(results)),
+  });
 });
 
 browser.action.onClicked.addListener(async (tab) => {
@@ -153,7 +157,10 @@ Messaging.createBackgroundMessageHandler({
       tabId,
       text: getBadgeText(matches.length),
     });
-    browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
+    browser.action.setBadgeBackgroundColor({
+      tabId,
+      color: getBadgeColor(getIncidentCount(matches)),
+    });
 
     void sendMatchUpdateToTab(tabId, matches);
   },
