@@ -8,17 +8,6 @@ import {
 import { buildIncidentSignature } from "../src/shared/incidentSignature.ts";
 import { entry } from "./helpers.ts";
 
-/**
- * These tests simulate the exact bug from GitHub issue #136:
- * Two tabs on amazon.com — one showing Amazon incidents, one showing
- * Google Pixel incidents — and verify that snoozing one tab no longer
- * causes the other tab's snooze to break.
- *
- * Since the actual snooze/unsnooze/check functions live in the content
- * script and depend on browser APIs (location.hostname, browser.storage),
- * we replicate their logic here against a plain SnoozedSiteMap object.
- */
-
 // -- Helpers that mirror content script logic without browser APIs --
 
 const snooze = (
