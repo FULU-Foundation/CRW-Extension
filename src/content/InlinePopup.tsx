@@ -1,13 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 
 import { CargoEntry } from "@/shared/types";
 import { MatchPopupCard } from "@/shared/ui/MatchPopupCard";
 import { POPUP_CSS } from "@/shared/ui/matchPopupStyles";
-import {
-  type PillPosition,
-  readPillPosition,
-  writePillPosition,
-} from "@/shared/storage";
+
+type PillPosition = { x: number; y: number };
 
 type InlinePopupProps = {
   matches: CargoEntry[];
@@ -28,8 +25,6 @@ type InlinePopupProps = {
 };
 
 const DEFAULT_POSITION: PillPosition = { x: 16, y: 16 };
-const SAVE_DEBOUNCE_MS = 400;
-// Approximate expanded card dimensions used for overflow detection
 const CARD_WIDTH = 460;
 const CARD_HEIGHT = 420;
 const EDGE_MARGIN = 8;
@@ -45,11 +40,9 @@ const clampPosition = (
 });
 
 /**
- * Given the pill's top-left position, return the top-left corner that the
- * expanded card should open from so it stays fully on-screen.
- *
- * Strategy: prefer to open down-right from the pill. If that would clip the
- * right/bottom edge, flip to open left and/or up instead.
+ * Given the pill's position and size, pick a card position that stays
+ * fully on-screen. Opens down-right by default; flips left/up when near
+ * the right/bottom edges.
  */
 const resolveCardPosition = (
   pillX: number,
@@ -62,96 +55,18 @@ const resolveCardPosition = (
   const cardW = Math.min(CARD_WIDTH, vw - EDGE_MARGIN * 2);
   const cardH = Math.min(CARD_HEIGHT, vh - EDGE_MARGIN * 2);
 
-  // Horizontal: open to the right if room, otherwise align right edge to pill right edge
-  const spaceRight = vw - pillX;
   const x =
-    spaceRight >= cardW + EDGE_MARGIN
+    vw - pillX >= cardW + EDGE_MARGIN
       ? pillX
       : Math.max(EDGE_MARGIN, pillX + pillW - cardW);
 
-  // Vertical: open downward if room, otherwise open upward from pill top
-  const spaceBelow = vh - pillY;
   const y =
-    spaceBelow >= cardH + EDGE_MARGIN
+    vh - pillY >= cardH + EDGE_MARGIN
       ? pillY
       : Math.max(EDGE_MARGIN, pillY + pillH - cardH);
 
   return { x, y };
 };
-
-// ─── Shared drag hook ────────────────────────────────────────────────────────
-
-type UseDragOptions = {
-  initialPosition: PillPosition;
-  elWidth: number;
-  elHeight: number;
-  onDragEnd: (pos: PillPosition) => void;
-};
-
-const useDrag = ({ initialPosition, elWidth, elHeight, onDragEnd }: UseDragOptions) => {
-  const [position, setPosition] = useState<PillPosition>(initialPosition);
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartPointer = useRef<{ px: number; py: number } | null>(null);
-  const dragStartPos = useRef<PillPosition>(initialPosition);
-  const hasDragged = useRef(false);
-
-  // Keep position in sync if initialPosition changes (e.g. loaded from storage)
-  const isFirstSync = useRef(true);
-  useEffect(() => {
-    if (isFirstSync.current) {
-      setPosition(initialPosition);
-      dragStartPos.current = initialPosition;
-      isFirstSync.current = false;
-    }
-  }, [initialPosition]);
-
-  const onPointerDown = useCallback(
-    (e: React.PointerEvent<HTMLElement>) => {
-      if (e.button !== 0) return;
-      if ((e.target as HTMLElement).closest("button")) return;
-      e.currentTarget.setPointerCapture(e.pointerId);
-      dragStartPointer.current = { px: e.clientX, py: e.clientY };
-      dragStartPos.current = position;
-      hasDragged.current = false;
-      setIsDragging(true);
-    },
-    [position],
-  );
-
-  const onPointerMove = useCallback(
-    (e: React.PointerEvent<HTMLElement>) => {
-      if (!dragStartPointer.current) return;
-      const dx = e.clientX - dragStartPointer.current.px;
-      const dy = e.clientY - dragStartPointer.current.py;
-      if (!hasDragged.current && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
-      hasDragged.current = true;
-      setPosition(
-        clampPosition(
-          dragStartPos.current.x + dx,
-          dragStartPos.current.y + dy,
-          elWidth,
-          elHeight,
-        ),
-      );
-    },
-    [elWidth, elHeight],
-  );
-
-  const onPointerUp = useCallback(
-    (_e: React.PointerEvent<HTMLElement>) => {
-      if (!dragStartPointer.current) return;
-      dragStartPointer.current = null;
-      setIsDragging(false);
-      if (hasDragged.current) onDragEnd(position);
-      return hasDragged.current;
-    },
-    [position, onDragEnd],
-  );
-
-  return { position, setPosition, isDragging, hasDragged, onPointerDown, onPointerMove, onPointerUp };
-};
-
-// ─── Main component ──────────────────────────────────────────────────────────
 
 export const InlinePopup = (props: InlinePopupProps) => {
   const {
@@ -173,56 +88,69 @@ export const InlinePopup = (props: InlinePopupProps) => {
   } = props;
 
   const [expanded, setExpanded] = useState(false);
-  const [storedPosition, setStoredPosition] = useState<PillPosition | null>(null);
+  const [pillPosition, setPillPosition] = useState<PillPosition>(DEFAULT_POSITION);
   const [cardPosition, setCardPosition] = useState<PillPosition | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const pillRef = useRef<HTMLDivElement>(null);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragStartPointer = useRef<{ px: number; py: number } | null>(null);
+  const dragStartPos = useRef<PillPosition>(DEFAULT_POSITION);
+  const hasDragged = useRef(false);
 
-  // Load persisted pill position on mount
-  useEffect(() => {
-    readPillPosition().then((saved) => {
-      setStoredPosition(saved ?? DEFAULT_POSITION);
-    });
-  }, []);
-
-  const persistPosition = useCallback((pos: PillPosition) => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => void writePillPosition(pos), SAVE_DEBOUNCE_MS);
-  }, []);
-
-  const { position: pillPosition, isDragging, hasDragged, onPointerDown, onPointerMove, onPointerUp } = useDrag({
-    initialPosition: storedPosition ?? DEFAULT_POSITION,
-    elWidth: pillRef.current?.offsetWidth ?? 220,
-    elHeight: pillRef.current?.offsetHeight ?? 40,
-    onDragEnd: (pos) => {
-      setStoredPosition(pos);
-      persistPosition(pos);
-    },
-  });
-
-  const handlePillPointerUp = useCallback(
+  const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      onPointerUp(e);
+      if (e.button !== 0) return;
+      if ((e.target as HTMLElement).closest("button")) return;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      dragStartPointer.current = { px: e.clientX, py: e.clientY };
+      dragStartPos.current = pillPosition;
+      hasDragged.current = false;
+      setIsDragging(true);
+    },
+    [pillPosition],
+  );
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!dragStartPointer.current) return;
+      const dx = e.clientX - dragStartPointer.current.px;
+      const dy = e.clientY - dragStartPointer.current.py;
+      if (!hasDragged.current && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+      hasDragged.current = true;
+      const el = pillRef.current;
+      setPillPosition(
+        clampPosition(
+          dragStartPos.current.x + dx,
+          dragStartPos.current.y + dy,
+          el?.offsetWidth ?? 220,
+          el?.offsetHeight ?? 40,
+        ),
+      );
+    },
+    [],
+  );
+
+  const onPointerUp = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!dragStartPointer.current) return;
+      dragStartPointer.current = null;
+      setIsDragging(false);
       if (!hasDragged.current) {
-        // It was a plain click — open the card
+        // Plain click — compute where the card should open and expand
         const pill = pillRef.current;
         const pw = pill?.offsetWidth ?? 220;
         const ph = pill?.offsetHeight ?? 40;
-        const cardPos = resolveCardPosition(pillPosition.x, pillPosition.y, pw, ph);
-        setCardPosition(cardPos);
+        setCardPosition(resolveCardPosition(pillPosition.x, pillPosition.y, pw, ph));
         setExpanded(true);
       }
     },
-    [onPointerUp, hasDragged, pillPosition],
+    [pillPosition],
   );
 
   const topMatchName = matches[0]?.PageName ?? "Entry found";
   const incidentCount = matches.filter(
     (m) => "StartDate" in m || "Status" in m,
   ).length;
-
-  if (storedPosition === null) return null;
 
   const pillStyle: React.CSSProperties = {
     position: "fixed",
@@ -252,7 +180,7 @@ export const InlinePopup = (props: InlinePopupProps) => {
         style={pillStyle}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
-        onPointerUp={handlePillPointerUp}
+        onPointerUp={onPointerUp}
         title="Drag to move · Click to expand"
       >
         {/* Drag handle dots */}
@@ -293,7 +221,7 @@ export const InlinePopup = (props: InlinePopupProps) => {
         >×</button>
       </div>
 
-      {/* Expanded card — positioned smartly to stay on-screen */}
+      {/* Expanded card — smart-positioned to stay fully on screen */}
       {expanded && cardPosition !== null && (
         <MatchPopupCard
           matches={matches}
