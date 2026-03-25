@@ -1,5 +1,7 @@
 import React from "react";
 
+import { getCurrentPopupPlacementStyle } from "@/content/popupPlacement";
+
 type InlineEmptyStateProps = {
   logoUrl: string;
   settingsIconUrl: string;
@@ -9,16 +11,12 @@ type InlineEmptyStateProps = {
 
 export const InlineEmptyState = (props: InlineEmptyStateProps) => {
   const { logoUrl, settingsIconUrl, onOpenSettings, onClose } = props;
+  const containerStyle = getCurrentPopupPlacementStyle();
 
   return (
     <div
       style={{
-        position: "fixed",
-        right: "16px",
-        top: "16px",
-        width: "460px",
-        maxWidth: "calc(100vw - 32px)",
-        zIndex: 2147483647,
+        ...containerStyle,
         background: "#004080",
         color: "#FFFFFF",
         border: "1px solid rgba(255,255,255,0.25)",
