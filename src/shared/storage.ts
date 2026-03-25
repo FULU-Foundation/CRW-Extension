@@ -1,6 +1,8 @@
 import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
+import { canonicalizeSiteScopeList } from "@/shared/siteScope";
+import { ensureDataMigration } from "@/shared/dataMigrations";
 import { type CargoEntry, decodeCargoEntries } from "@/shared/types";
 import {
   type SnoozedSiteMap,
@@ -78,6 +80,7 @@ export const writeHideWhenNoIncidents = async (
 };
 
 export const readSuppressedDomains = async (): Promise<string[]> => {
+  await ensureDataMigration(1);
   const value = await readLocalValue(Constants.STORAGE.SUPPRESSED_DOMAINS);
   return asStringArray(value);
 };
@@ -85,7 +88,10 @@ export const readSuppressedDomains = async (): Promise<string[]> => {
 export const writeSuppressedDomains = async (
   domains: string[],
 ): Promise<void> => {
-  await writeLocalValue(Constants.STORAGE.SUPPRESSED_DOMAINS, domains);
+  await writeLocalValue(
+    Constants.STORAGE.SUPPRESSED_DOMAINS,
+    canonicalizeSiteScopeList(domains),
+  );
 };
 
 export const readSnoozedSiteMap = async (): Promise<SnoozedSiteMap> => {

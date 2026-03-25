@@ -5,6 +5,7 @@ import * as Constants from "@/shared/constants";
 import { OptionsView } from "@/options/OptionsView";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
+import { normalizeHostname } from "@/shared/siteScope";
 import {
   readHideWhenNoIncidents,
   readLastRefreshedAt,
@@ -18,13 +19,6 @@ import {
   writeSuppressedDomains,
   writeWarningsEnabled,
 } from "@/shared/storage";
-
-const normalizeHostname = (hostname: string): string => {
-  return hostname
-    .trim()
-    .toLowerCase()
-    .replace(/^www\./, "");
-};
 
 const readSnoozedSites = async (): Promise<string[]> => {
   const value = await readSnoozedSiteMap();
@@ -78,11 +72,7 @@ const Options = () => {
         ]);
         setWarningsEnabled(enabled);
         setHideWhenNoIncidents(hideWithoutIncidents);
-        setSuppressedDomains(
-          domains
-            .map((domain) => normalizeHostname(domain))
-            .filter((domain) => domain.length > 0),
-        );
+        setSuppressedDomains(domains);
         setSnoozedSites(snoozedSiteDomains);
         setRefreshIntervalMs(intervalMs);
         setLastRefreshedAt(refreshedAt);
@@ -122,11 +112,7 @@ const Options = () => {
 
       if (changes[Constants.STORAGE.SUPPRESSED_DOMAINS]) {
         void readSuppressedDomains().then((domains) => {
-          setSuppressedDomains(
-            domains
-              .map((domain) => normalizeHostname(domain))
-              .filter((domain) => domain.length > 0),
-          );
+          setSuppressedDomains(domains);
         });
       }
 

@@ -4,6 +4,11 @@ import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
 import { buildIncidentSignature } from "@/shared/incidentSignature";
+import {
+  getSiteScopeHostname,
+  isHostnameInSiteScopeList,
+  removeMatchingSiteScopes,
+} from "@/shared/siteScope";
 import { CargoEntry, PageContext } from "@/shared/types";
 import {
   readHideWhenNoIncidents,
@@ -46,24 +51,14 @@ let popupRoot: Root | null = null;
 let forcePopupVisible = false;
 const SNOOZE_UNTIL_NEW_CHANGES_LABEL = "Hide until new incidents";
 
-const normalizeHostname = (hostname: string): string => {
-  return hostname
-    .trim()
-    .toLowerCase()
-    .replace(/^www\./, "");
-};
-
 const getSuppressedDomains = async (): Promise<string[]> => {
-  const value = await readSuppressedDomains();
-  return value
-    .map((entry) => normalizeHostname(entry))
-    .filter((entry) => entry.length > 0);
+  return readSuppressedDomains();
 };
 
 const isCurrentSiteSuppressed = async (): Promise<boolean> => {
   const domains = await getSuppressedDomains();
-  const current = normalizeHostname(location.hostname || "");
-  return current.length > 0 && domains.includes(current);
+  const current = location.hostname || "";
+  return current.length > 0 && isHostnameInSiteScopeList(current, domains);
 };
 
 const isHideWhenNoIncidentsEnabled = readHideWhenNoIncidents;
@@ -71,13 +66,11 @@ const isHideWhenNoIncidentsEnabled = readHideWhenNoIncidents;
 const snoozeCurrentSiteUntilNewIncidentChanges = async (
   incidentSignature: string,
 ): Promise<void> => {
-  const current = normalizeHostname(location.hostname || "");
+  const current = getSiteScopeHostname(location.hostname || "");
   if (!current) return;
   const domains = await getSuppressedDomains();
-  if (domains.includes(current)) {
-    await writeSuppressedDomains(
-      domains.filter((domain) => domain !== current),
-    );
+  if (isHostnameInSiteScopeList(current, domains)) {
+    await writeSuppressedDomains(removeMatchingSiteScopes(domains, current));
   }
   const snoozedSiteMap = await readSnoozedSiteMap();
   snoozedSiteMap[current] = {
@@ -88,7 +81,7 @@ const snoozeCurrentSiteUntilNewIncidentChanges = async (
 };
 
 const unsnoozeCurrentSiteUntilNewIncidentChanges = async (): Promise<void> => {
-  const current = normalizeHostname(location.hostname || "");
+  const current = getSiteScopeHostname(location.hostname || "");
   if (!current) return;
   const snoozedSiteMap = await readSnoozedSiteMap();
   if (!snoozedSiteMap[current]) return;
@@ -99,7 +92,7 @@ const unsnoozeCurrentSiteUntilNewIncidentChanges = async (): Promise<void> => {
 const isCurrentSiteSnoozedUntilIncidentChanges = async (
   incidentSignature: string,
 ): Promise<boolean> => {
-  const current = normalizeHostname(location.hostname || "");
+  const current = getSiteScopeHostname(location.hostname || "");
   if (!current) return false;
 
   const snoozedSiteMap = await readSnoozedSiteMap();
@@ -153,20 +146,20 @@ const openOptions = () => {
 };
 
 const suppressCurrentSite = async (): Promise<void> => {
-  const current = normalizeHostname(location.hostname || "");
+  const current = getSiteScopeHostname(location.hostname || "");
   if (!current) return;
   const domains = await getSuppressedDomains();
-  if (!domains.includes(current)) {
+  if (!isHostnameInSiteScopeList(current, domains)) {
     await writeSuppressedDomains([...domains, current]);
   }
   await unsnoozeCurrentSiteUntilNewIncidentChanges();
 };
 
 const unsuppressCurrentSite = async (): Promise<void> => {
-  const current = normalizeHostname(location.hostname || "");
+  const current = location.hostname || "";
   if (!current) return;
   const domains = await getSuppressedDomains();
-  const next = domains.filter((domain) => domain !== current);
+  const next = removeMatchingSiteScopes(domains, current);
   await writeSuppressedDomains(next);
 };
 
