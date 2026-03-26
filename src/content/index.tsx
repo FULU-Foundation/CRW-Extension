@@ -89,7 +89,7 @@ const snoozeCurrentSiteUntilNewIncidentChanges = async (
 const unsnoozeCurrentSiteUntilNewIncidentChanges = async (
   incidentSignature?: string,
 ): Promise<void> => {
-  const current = normalizeHostname(location.hostname || "");
+  const current = getSiteScopeHostname(location.hostname || "");
   if (!current) return;
   const snoozedSiteMap = await readSnoozedSiteMap();
   const entries = snoozedSiteMap[current];
