@@ -2,6 +2,7 @@ import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
 import { type CargoEntry, decodeCargoEntries } from "@/shared/types";
+import type { DisplayMode } from "@/shared/constants";
 import {
   type SnoozedSiteMap,
   normalizeSnoozedSiteMap,
@@ -137,4 +138,20 @@ export const readTabMatches = async (tabId: number): Promise<CargoEntry[]> => {
   const key = Constants.STORAGE.MATCHES(tabId);
   const value = await readLocalValue(key);
   return decodeCargoEntries(value);
+};
+
+const isDisplayMode = (value: unknown): value is DisplayMode => {
+  return (
+    typeof value === "string" &&
+    Constants.DISPLAY_MODE_OPTIONS.includes(value as DisplayMode)
+  );
+};
+
+export const readDisplayMode = async (): Promise<DisplayMode> => {
+  const value = await readLocalValue(Constants.STORAGE.DISPLAY_MODE);
+  return isDisplayMode(value) ? value : "full-popup";
+};
+
+export const writeDisplayMode = async (mode: DisplayMode): Promise<void> => {
+  await writeLocalValue(Constants.STORAGE.DISPLAY_MODE, mode);
 };

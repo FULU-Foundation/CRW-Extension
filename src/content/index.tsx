@@ -10,6 +10,7 @@ import {
   readSnoozedSiteMap,
   readSuppressedDomains,
   readWarningsEnabled,
+  readDisplayMode,
   writeSnoozedSiteMap,
   writeSuppressedDomains,
   writeWarningsEnabled,
@@ -17,6 +18,7 @@ import {
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
 import { InlinePopup } from "@/content/InlinePopup";
+import { CompactBanner } from "@/content/CompactBanner";
 import { InlineEmptyState } from "@/content/InlineEmptyState";
 import {
   getInlinePopupInstruction,
@@ -241,6 +243,7 @@ const renderInlinePopup = async (
   ignorePreferences = false,
 ) => {
   const visibleMatches = matches;
+  const displayMode = await readDisplayMode();
 
   const currentlyWarningsEnabled = await isWarningsEnabled();
 
@@ -281,6 +284,23 @@ const renderInlinePopup = async (
 
   forcePopupVisible = ignorePreferences;
   const root = ensurePopupRoot();
+
+  if (displayMode === "compact-badge") {
+    if (visibleMatches.length === 0) {
+      removeInlinePopup();
+      return;
+    }
+    root.render(
+      <CompactBanner
+        matches={visibleMatches}
+        logoUrl={ASSET_URLS.logo}
+        onClose={removeInlinePopup}
+        onOpenSettings={openOptions}
+      />,
+    );
+    return;
+  }
+
   if (visibleMatches.length === 0) {
     root.render(
       <InlineEmptyState

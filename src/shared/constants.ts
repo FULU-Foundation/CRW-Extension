@@ -18,6 +18,14 @@ export const DATASET_KEYS: CargoEntryType[] = [
   "ProductLine",
 ];
 
+export type DisplayMode = "full-popup" | "badge-only" | "compact-badge";
+
+export const DISPLAY_MODE_OPTIONS: DisplayMode[] = [
+  "full-popup",
+  "badge-only",
+  "compact-badge",
+];
+
 export const STORAGE = {
   MATCHES: (tabId: number) => {
     return `crw_matched_${tabId}`;
@@ -30,4 +38,5 @@ export const STORAGE = {
     "crw_snoozed_sites_until_incident_change",
   HIDE_WHEN_NO_INCIDENTS: "crw_hide_when_no_incidents",
   WARNINGS_ENABLED: "crw_warnings_enabled",
+  DISPLAY_MODE: "crw_display_mode",
 } as const;

@@ -13,11 +13,15 @@ import {
   readSnoozedSiteMap,
   readSuppressedDomains,
   readWarningsEnabled,
+  readDisplayMode,
   writeHideWhenNoIncidents,
   writeSnoozedSiteMap,
   writeSuppressedDomains,
   writeWarningsEnabled,
+  writeDisplayMode,
 } from "@/shared/storage";
+
+import type { DisplayMode } from "@/shared/constants";
 
 const normalizeHostname = (hostname: string): string => {
   return hostname
@@ -45,6 +49,7 @@ const decodeRefreshNowResponseFetchedAt = (value: unknown): number | null => {
 const Options = () => {
   const [warningsEnabled, setWarningsEnabled] = useState<boolean>(true);
   const [hideWhenNoIncidents, setHideWhenNoIncidents] = useState<boolean>(true);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>("full-popup");
   const [suppressedDomains, setSuppressedDomains] = useState<string[]>([]);
   const [snoozedSites, setSnoozedSites] = useState<string[]>([]);
   const [refreshIntervalMs, setRefreshIntervalMs] = useState<number>(
@@ -62,6 +67,7 @@ const Options = () => {
         const [
           enabled,
           hideWithoutIncidents,
+          mode,
           domains,
           snoozedSiteDomains,
           intervalMs,
@@ -70,6 +76,7 @@ const Options = () => {
         ] = await Promise.all([
           readWarningsEnabled(),
           readHideWhenNoIncidents(),
+          readDisplayMode(),
           readSuppressedDomains(),
           readSnoozedSites(),
           readRefreshIntervalMs(),
@@ -78,6 +85,7 @@ const Options = () => {
         ]);
         setWarningsEnabled(enabled);
         setHideWhenNoIncidents(hideWithoutIncidents);
+        setDisplayMode(mode);
         setSuppressedDomains(
           domains
             .map((domain) => normalizeHostname(domain))
@@ -120,6 +128,10 @@ const Options = () => {
         void readHideWhenNoIncidents().then(setHideWhenNoIncidents);
       }
 
+      if (changes[Constants.STORAGE.DISPLAY_MODE]) {
+        void readDisplayMode().then(setDisplayMode);
+      }
+
       if (changes[Constants.STORAGE.SUPPRESSED_DOMAINS]) {
         void readSuppressedDomains().then((domains) => {
           setSuppressedDomains(
@@ -156,6 +168,11 @@ const Options = () => {
   const onToggleHideWhenNoIncidents = async (enabled: boolean) => {
     setHideWhenNoIncidents(enabled);
     await writeHideWhenNoIncidents(enabled);
+  };
+
+  const onChangeDisplayMode = async (mode: DisplayMode) => {
+    setDisplayMode(mode);
+    await writeDisplayMode(mode);
   };
 
   const onRemoveSnoozedSite = async (domain: string) => {
@@ -214,6 +231,7 @@ const Options = () => {
     <OptionsView
       warningsEnabled={warningsEnabled}
       hideWhenNoIncidents={hideWhenNoIncidents}
+      displayMode={displayMode}
       suppressedDomains={suppressedDomains}
       snoozedSites={snoozedSites}
       refreshIntervalMs={refreshIntervalMs}
@@ -227,6 +245,9 @@ const Options = () => {
       }}
       onToggleHideWhenNoIncidents={(enabled) => {
         void onToggleHideWhenNoIncidents(enabled);
+      }}
+      onChangeDisplayMode={(mode) => {
+        void onChangeDisplayMode(mode);
       }}
       onChangeRefreshInterval={(nextRefreshIntervalMs) => {
         void onChangeRefreshInterval(nextRefreshIntervalMs);

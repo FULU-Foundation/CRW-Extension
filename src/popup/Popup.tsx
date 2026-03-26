@@ -6,6 +6,7 @@ import {
   readSuppressedDomains,
   readTabMatches,
   writeSuppressedDomains,
+  readDisplayMode,
 } from "@/shared/storage";
 
 const POPUP_BG = "#004080";
@@ -65,6 +66,12 @@ const Popup = () => {
 
         const results = await readTabMatches(tabId);
         setArticles(results);
+
+        const displayMode = await readDisplayMode();
+        if (displayMode === "compact-badge" && results.length > 0) {
+          window.close();
+          return;
+        }
       } catch {
         setDomain("unknown");
         setSuppressed(false);
