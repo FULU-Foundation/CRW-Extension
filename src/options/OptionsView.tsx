@@ -79,9 +79,10 @@ export const OptionsView = (props: OptionsViewProps) => {
       }}
     >
       <style>
-        {
-          "@keyframes crwOptionsSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }"
-        }
+        {`
+          body { margin: 0; }
+          @keyframes crwOptionsSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        `}
       </style>
       <div
         style={{
