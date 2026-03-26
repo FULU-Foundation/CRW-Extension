@@ -73,19 +73,40 @@ const snoozeCurrentSiteUntilNewIncidentChanges = async (
     await writeSuppressedDomains(removeMatchingSiteScopes(domains, current));
   }
   const snoozedSiteMap = await readSnoozedSiteMap();
-  snoozedSiteMap[current] = {
-    incidentSignature,
-    snoozedAt: Date.now(),
-  };
+  const entries = snoozedSiteMap[current] || [];
+  const existingIndex = entries.findIndex(
+    (entry) => entry.incidentSignature === incidentSignature,
+  );
+  if (existingIndex >= 0) {
+    entries[existingIndex] = { incidentSignature, snoozedAt: Date.now() };
+  } else {
+    entries.push({ incidentSignature, snoozedAt: Date.now() });
+  }
+  snoozedSiteMap[current] = entries;
   await writeSnoozedSiteMap(snoozedSiteMap);
 };
 
-const unsnoozeCurrentSiteUntilNewIncidentChanges = async (): Promise<void> => {
-  const current = getSiteScopeHostname(location.hostname || "");
+const unsnoozeCurrentSiteUntilNewIncidentChanges = async (
+  incidentSignature?: string,
+): Promise<void> => {
+  const current = normalizeHostname(location.hostname || "");
   if (!current) return;
   const snoozedSiteMap = await readSnoozedSiteMap();
-  if (!snoozedSiteMap[current]) return;
-  delete snoozedSiteMap[current];
+  const entries = snoozedSiteMap[current];
+  if (!entries || entries.length === 0) return;
+
+  if (incidentSignature) {
+    const filtered = entries.filter(
+      (entry) => entry.incidentSignature !== incidentSignature,
+    );
+    if (filtered.length === 0) {
+      delete snoozedSiteMap[current];
+    } else {
+      snoozedSiteMap[current] = filtered;
+    }
+  } else {
+    delete snoozedSiteMap[current];
+  }
   await writeSnoozedSiteMap(snoozedSiteMap);
 };
 
@@ -96,16 +117,10 @@ const isCurrentSiteSnoozedUntilIncidentChanges = async (
   if (!current) return false;
 
   const snoozedSiteMap = await readSnoozedSiteMap();
-  const state = snoozedSiteMap[current];
-  if (!state) return false;
+  const entries = snoozedSiteMap[current];
+  if (!entries || entries.length === 0) return false;
 
-  if (state.incidentSignature === incidentSignature) {
-    return true;
-  }
-
-  delete snoozedSiteMap[current];
-  await writeSnoozedSiteMap(snoozedSiteMap);
-  return false;
+  return entries.some((entry) => entry.incidentSignature === incidentSignature);
 };
 
 const isWarningsEnabled = readWarningsEnabled;
@@ -295,7 +310,7 @@ const renderInlinePopup = async (
 
   const handleSnoozeUntilNewChangesClick = async () => {
     if (currentlySnoozed) {
-      await unsnoozeCurrentSiteUntilNewIncidentChanges();
+      await unsnoozeCurrentSiteUntilNewIncidentChanges(incidentSignature);
       void renderInlinePopup(matches, true);
       return;
     }

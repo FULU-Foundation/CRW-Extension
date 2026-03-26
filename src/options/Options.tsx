@@ -149,11 +149,12 @@ const Options = () => {
     if (!normalized) return;
 
     const existing = await readSnoozedSiteMap();
-    if (!Object.prototype.hasOwnProperty.call(existing, normalized)) return;
+    if (!existing[normalized] || existing[normalized].length === 0) return;
     const next = { ...existing };
     delete next[normalized];
     setSnoozedSites(
       Object.keys(next)
+        .filter((key) => next[key] && next[key].length > 0)
         .map((value) => normalizeHostname(value))
         .filter((value) => value.length > 0)
         .sort((left, right) => left.localeCompare(right)),
