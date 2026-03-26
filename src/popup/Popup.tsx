@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from "react";
 import browser from "webextension-polyfill";
 
+import {
+  getSiteScopeHostname,
+  isHostnameInSiteScopeList,
+  normalizeHostname,
+  removeMatchingSiteScopes,
+} from "@/shared/siteScope";
 import { CargoEntry } from "@/shared/types";
 import {
   readSuppressedDomains,
@@ -10,13 +16,6 @@ import {
 
 const POPUP_BG = "#004080";
 const POPUP_TEXT = "#FFFFFF";
-
-const normalizeHostname = (hostname: string): string => {
-  return hostname
-    .trim()
-    .toLowerCase()
-    .replace(/^www\./, "");
-};
 
 const safeRuntimeUrl = (assetPath: string): string => {
   try {
@@ -57,7 +56,7 @@ const Popup = () => {
           setDomain(normalizedDomain);
           const suppressedDomains = await readSuppressedDomains();
           setSuppressed(
-            suppressedDomains.map(normalizeHostname).includes(normalizedDomain),
+            isHostnameInSiteScopeList(normalizedDomain, suppressedDomains),
           );
         }
 
@@ -78,13 +77,13 @@ const Popup = () => {
   const suppressDomain = async () => {
     if (!domain || domain === "unknown") return;
     const existing = await readSuppressedDomains();
-    const normalized = normalizeHostname(domain);
-    if (!normalized || existing.map(normalizeHostname).includes(normalized)) {
+    const siteScope = getSiteScopeHostname(domain);
+    if (!siteScope || isHostnameInSiteScopeList(domain, existing)) {
       window.close();
       return;
     }
 
-    await writeSuppressedDomains([...existing, normalized]);
+    await writeSuppressedDomains([...existing, siteScope]);
     setSuppressed(true);
     window.close();
   };
@@ -92,10 +91,7 @@ const Popup = () => {
   const unsuppressDomain = async () => {
     if (!domain || domain === "unknown") return;
     const existing = await readSuppressedDomains();
-    const normalized = normalizeHostname(domain);
-    const next = existing.filter(
-      (entry) => normalizeHostname(entry) !== normalized,
-    );
+    const next = removeMatchingSiteScopes(existing, domain);
     await writeSuppressedDomains(next);
     setSuppressed(false);
     window.close();

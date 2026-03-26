@@ -25,6 +25,7 @@ export const STORAGE = {
   DATASET_CACHE: "crw_dataset_cache",
   DATA_REFRESH_INTERVAL_MS: "crw_data_refresh_interval_ms",
   DATA_REFRESH_ERROR: "crw_data_refresh_error",
+  DATA_MIGRATION_STATE: "crw_data_migration_state",
   SUPPRESSED_DOMAINS: "crw_suppressed_domains",
   SNOOZED_SITES_UNTIL_INCIDENT_CHANGE:
     "crw_snoozed_sites_until_incident_change",
