@@ -2,6 +2,7 @@ import React from "react";
 
 import { CargoEntry } from "@/shared/types";
 import { MatchPopupCard } from "@/shared/ui/MatchPopupCard";
+import { getCurrentPopupPlacementStyle } from "@/content/popupPlacement";
 
 type InlinePopupProps = {
   matches: CargoEntry[];
@@ -40,6 +41,8 @@ export const InlinePopup = (props: InlinePopupProps) => {
     disableWarningsLabel,
   } = props;
 
+  const containerStyle = getCurrentPopupPlacementStyle();
+
   return (
     <MatchPopupCard
       matches={matches}
@@ -60,12 +63,7 @@ export const InlinePopup = (props: InlinePopupProps) => {
       showCloseButton
       hideRelatedButtonWhenEmpty
       containerStyle={{
-        position: "fixed",
-        right: "16px",
-        top: "16px",
-        width: "460px",
-        maxWidth: "calc(100vw - 32px)",
-        zIndex: 2147483647,
+        ...containerStyle,
         maxHeight: "60vh",
       }}
     />
