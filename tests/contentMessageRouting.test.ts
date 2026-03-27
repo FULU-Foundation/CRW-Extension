@@ -5,8 +5,11 @@ import { getInlinePopupInstruction } from "../src/content/messageRouting.ts";
 import { entry } from "./helpers.ts";
 
 const FORCE_SHOW_INLINE_POPUP = "CRW_FORCE_SHOW_INLINE_POPUP";
+const HIDE_INLINE_POPUP = "CRW_HIDE_INLINE_POPUP";
 const MATCH_RESULTS_UPDATED = "CRW_MATCH_RESULTS_UPDATED";
 const TOGGLE_INLINE_POPUP = "CRW_TOGGLE_INLINE_POPUP";
+const TOGGLE_SNOOZE_CURRENT_SITE = "CRW_TOGGLE_SNOOZE_CURRENT_SITE";
+const TOGGLE_SUPPRESS_CURRENT_SITE = "CRW_TOGGLE_SUPPRESS_CURRENT_SITE";
 const PAGE_SCAN_RESULT = "CRW_PAGE_SCAN_RESULT";
 
 test("returns force-show instruction for browser-action click with zero matches", () => {
@@ -16,8 +19,8 @@ test("returns force-show instruction for browser-action click with zero matches"
   });
 
   assert.ok(instruction);
+  assert.equal(instruction.action, "show");
   assert.equal(instruction.ignorePreferences, true);
-  assert.equal(instruction.toggle, false);
   assert.deepEqual(instruction.matches, []);
 });
 
@@ -36,8 +39,8 @@ test("returns force-show instruction for browser-action click with matches", () 
   });
 
   assert.ok(instruction);
+  assert.equal(instruction.action, "show");
   assert.equal(instruction.ignorePreferences, true);
-  assert.equal(instruction.toggle, false);
   assert.equal(instruction.matches.length, 1);
   assert.equal(instruction.matches[0]?.PageID, "pl-wallet");
 });
@@ -57,9 +60,60 @@ test("returns toggle instruction for browser-action toggle clicks", () => {
   });
 
   assert.ok(instruction);
+  assert.equal(instruction.action, "toggle");
   assert.equal(instruction.ignorePreferences, true);
-  assert.equal(instruction.toggle, true);
   assert.equal(instruction.matches[0]?.PageID, "company-example");
+});
+
+test("returns hide instruction for hide shortcut command", () => {
+  const instruction = getInlinePopupInstruction({
+    type: HIDE_INLINE_POPUP,
+  });
+
+  assert.ok(instruction);
+  assert.equal(instruction.action, "hide");
+  assert.equal(instruction.ignorePreferences, true);
+  assert.deepEqual(instruction.matches, []);
+});
+
+test("returns snooze instruction for snooze shortcut command", () => {
+  const matches = [
+    entry({
+      _type: "Company",
+      PageID: "company-snooze",
+      PageName: "Snooze Co",
+    }),
+  ];
+
+  const instruction = getInlinePopupInstruction({
+    type: TOGGLE_SNOOZE_CURRENT_SITE,
+    payload: matches,
+  });
+
+  assert.ok(instruction);
+  assert.equal(instruction.action, "toggleSnooze");
+  assert.equal(instruction.ignorePreferences, true);
+  assert.equal(instruction.matches[0]?.PageID, "company-snooze");
+});
+
+test("returns suppress instruction for ignore shortcut command", () => {
+  const matches = [
+    entry({
+      _type: "Company",
+      PageID: "company-ignore",
+      PageName: "Ignore Co",
+    }),
+  ];
+
+  const instruction = getInlinePopupInstruction({
+    type: TOGGLE_SUPPRESS_CURRENT_SITE,
+    payload: matches,
+  });
+
+  assert.ok(instruction);
+  assert.equal(instruction.action, "toggleSuppress");
+  assert.equal(instruction.ignorePreferences, true);
+  assert.equal(instruction.matches[0]?.PageID, "company-ignore");
 });
 
 test("returns regular update instruction for match updates", () => {
@@ -77,8 +131,8 @@ test("returns regular update instruction for match updates", () => {
   });
 
   assert.ok(instruction);
+  assert.equal(instruction.action, "show");
   assert.equal(instruction.ignorePreferences, false);
-  assert.equal(instruction.toggle, false);
   assert.equal(instruction.matches[0]?.PageID, "company-7eleven");
 });
 
