@@ -78,7 +78,10 @@ const readShortcutBindings = async (): Promise<ShortcutCommandBinding[]> => {
       };
     });
   } catch (error) {
-    console.error(`${Constants.LOG_PREFIX} Failed to read shortcut bindings`, error);
+    console.error(
+      `${Constants.LOG_PREFIX} Failed to read shortcut bindings`,
+      error,
+    );
     return fallback;
   }
 };

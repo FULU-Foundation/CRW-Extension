@@ -249,7 +249,9 @@ const toggleCurrentSiteSuppression = async (
   removeInlinePopup();
 };
 
-const toggleCurrentSiteSnooze = async (matches: CargoEntry[]): Promise<void> => {
+const toggleCurrentSiteSnooze = async (
+  matches: CargoEntry[],
+): Promise<void> => {
   const incidentSignature = buildIncidentSignature(matches);
 
   if (await isCurrentSiteSnoozedUntilIncidentChanges(incidentSignature)) {

@@ -14,7 +14,8 @@ export const SHORTCUT_COMMANDS = [
   {
     name: "toggle-site-snooze",
     label: "Toggle CRW snooze for this domain",
-    description: "Hide alerts on the current domain until incident matches change.",
+    description:
+      "Hide alerts on the current domain until incident matches change.",
     suggestedBinding: "Alt+Shift+S",
   },
   {

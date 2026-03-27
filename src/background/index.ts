@@ -181,7 +181,11 @@ browser.action.onClicked.addListener(async (tab) => {
 
   void sendMessageToTab(
     tabId,
-    Messaging.createMessage(MessageType.TOGGLE_INLINE_POPUP, "background", matches),
+    Messaging.createMessage(
+      MessageType.TOGGLE_INLINE_POPUP,
+      "background",
+      matches,
+    ),
   );
 });
 
@@ -217,7 +221,11 @@ Messaging.createBackgroundMessageHandler({
 
     void sendMessageToTab(
       tabId,
-      Messaging.createMessage(MessageType.MATCH_RESULTS_UPDATED, "background", matches),
+      Messaging.createMessage(
+        MessageType.MATCH_RESULTS_UPDATED,
+        "background",
+        matches,
+      ),
     );
   },
 });
