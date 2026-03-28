@@ -1,6 +1,19 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 # CRW-Extension
-Browser extension that shows a popup and notifications when the site, product, or service you're viewing has an article on the Consumer Rights Wiki.
+Browser extension that notifies you when the site, product, or service you're viewing has an article on the Consumer Rights Wiki.
+
+When a match is found, a compact pill-shaped badge appears unobtrusively in the corner of your screen showing the matched entry name and an incident count if any active incidents exist. Clicking the pill expands it into the full article card, which opens in a position calculated to always stay fully on-screen. The pill can also be dragged and repositioned anywhere on the screen. Clicking × on the pill dismisses it for the current page.
+
+## Goal
+The aim of this fork is to improve the user experience of the original extension in two ways. First, to replace the full-sized popup that appears automatically on every matched page with a compact, collapsible pill-shaped notification that stays out of the way until the user chooses to interact with it. Second, to reduce notification frequency so the pill only appears when there is an active incident report associated with the matched entry, rather than on every match regardless of whether anything actionable is present.
+
+## Changes made
+- **Collapsed by default** — the notification no longer opens as a full popup card automatically. It appears as a small pill in the corner of the screen instead.
+- **Incident-only notifications** — the pill only appears when the matched entry has one or more active incident reports. Pages that match an entry with no incidents no longer trigger a notification.
+- **Expandable on demand** — clicking the pill opens the full article card. The card is smart-positioned to avoid being cut off at screen edges, flipping its anchor point based on where the pill is located on screen.
+- **Draggable pill** — the pill can be freely repositioned anywhere on screen by clicking and dragging. Position resets on each new page load.
+- **Dismiss without suppressing** — clicking × on the pill closes it for the current page without permanently suppressing alerts for that site, preserving all existing snooze and suppress options inside the expanded card.
+
 ## Install
 - Install on Chrome, Edge and Brave
   https://chromewebstore.google.com/detail/consumer-rights-wiki/bppajinomefndbbmopljhbdfefnefdha
