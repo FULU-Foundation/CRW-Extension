@@ -229,6 +229,34 @@ const removeInlinePopup = () => {
 const isInlinePopupOpen = (): boolean =>
   Boolean(popupHost?.isConnected && popupShadowMount?.isConnected && popupRoot);
 
+const toggleCurrentSiteSuppression = async (
+  matches: CargoEntry[],
+): Promise<void> => {
+  if (await isCurrentSiteSuppressed()) {
+    await unsuppressCurrentSite();
+    void renderInlinePopup(matches, true);
+    return;
+  }
+
+  await suppressCurrentSite();
+  removeInlinePopup();
+};
+
+const toggleCurrentSiteSnooze = async (
+  matches: CargoEntry[],
+): Promise<void> => {
+  const incidentSignature = buildIncidentSignature(matches);
+
+  if (await isCurrentSiteSnoozedUntilIncidentChanges(incidentSignature)) {
+    await unsnoozeCurrentSiteUntilNewIncidentChanges(incidentSignature);
+    void renderInlinePopup(matches, true);
+    return;
+  }
+
+  await snoozeCurrentSiteUntilNewIncidentChanges(incidentSignature);
+  removeInlinePopup();
+};
+
 const renderInlinePopup = async (
   matches: CargoEntry[],
   ignorePreferences = false,
@@ -424,23 +452,34 @@ const runContentScript = async () => {
 const handleInlinePopupInstruction = async (
   instruction: InlinePopupInstruction,
 ) => {
-  if (instruction.toggle) {
-    if (isInlinePopupOpen()) {
+  switch (instruction.action) {
+    case "hide":
       removeInlinePopup();
       return;
-    }
+    case "toggle":
+      if (isInlinePopupOpen()) {
+        removeInlinePopup();
+        return;
+      }
 
-    void renderInlinePopup(instruction.matches, true);
-    return;
+      void renderInlinePopup(instruction.matches, true);
+      return;
+    case "toggleSnooze":
+      await toggleCurrentSiteSnooze(instruction.matches);
+      return;
+    case "toggleSuppress":
+      await toggleCurrentSiteSuppression(instruction.matches);
+      return;
+    case "show":
+      if (!instruction.ignorePreferences) {
+        if (forcePopupVisible && !(await isWarningsEnabled())) return;
+        void renderInlinePopup(instruction.matches, false);
+        return;
+      }
+
+      void renderInlinePopup(instruction.matches, true);
+      return;
   }
-
-  if (!instruction.ignorePreferences) {
-    if (forcePopupVisible && !(await isWarningsEnabled())) return;
-    void renderInlinePopup(instruction.matches, false);
-    return;
-  }
-
-  void renderInlinePopup(instruction.matches, true);
 };
 
 browser.runtime.onMessage.addListener((msg: unknown) => {

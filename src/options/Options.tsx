@@ -19,6 +19,11 @@ import {
   writeSuppressedDomains,
   writeWarningsEnabled,
 } from "@/shared/storage";
+import {
+  getDefaultShortcutBindings,
+  SHORTCUT_SETTINGS_FALLBACK_URL,
+  type ShortcutCommandBinding,
+} from "@/shared/shortcuts";
 
 const readSnoozedSites = async (): Promise<string[]> => {
   const value = await readSnoozedSiteMap();
@@ -29,6 +34,51 @@ const readSnoozedSites = async (): Promise<string[]> => {
 };
 
 const readLastRefreshError = readRefreshErrorMessage;
+
+type BrowserShortcutCommand = {
+  name?: string;
+  shortcut?: string;
+};
+
+type BrowserCommandsApi = {
+  getAll?: () => Promise<BrowserShortcutCommand[]>;
+  openShortcutSettings?: () => Promise<void>;
+};
+
+const getCommandsApi = (): BrowserCommandsApi | null => {
+  const extendedBrowser = browser as typeof browser & {
+    commands?: BrowserCommandsApi;
+  };
+  return extendedBrowser.commands ?? null;
+};
+
+const readShortcutBindings = async (): Promise<ShortcutCommandBinding[]> => {
+  const fallback = getDefaultShortcutBindings();
+  const commandsApi = getCommandsApi();
+  if (!commandsApi?.getAll) return fallback;
+
+  try {
+    const commands = await commandsApi.getAll();
+
+    return fallback.map((binding) => {
+      const matchedCommand = commands.find(
+        (command) => command.name === binding.name,
+      );
+      const shortcut = matchedCommand?.shortcut?.trim() || null;
+
+      return {
+        ...binding,
+        shortcut,
+      };
+    });
+  } catch (error) {
+    console.error(
+      `${Constants.LOG_PREFIX} Failed to read shortcut bindings`,
+      error,
+    );
+    return fallback;
+  }
+};
 
 const decodeRefreshNowResponseFetchedAt = (value: unknown): number | null => {
   if (typeof value !== "object" || value === null) return null;
@@ -48,6 +98,9 @@ const Options = () => {
   const [lastRefreshError, setLastRefreshError] = useState<string | null>(null);
   const [refreshingNow, setRefreshingNow] = useState<boolean>(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [shortcutBindings, setShortcutBindings] = useState<
+    ShortcutCommandBinding[]
+  >(getDefaultShortcutBindings());
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -61,6 +114,7 @@ const Options = () => {
           intervalMs,
           refreshedAt,
           fetchError,
+          shortcuts,
         ] = await Promise.all([
           readWarningsEnabled(),
           readHideWhenNoIncidents(),
@@ -69,6 +123,7 @@ const Options = () => {
           readRefreshIntervalMs(),
           readLastRefreshedAt(),
           readLastRefreshError(),
+          readShortcutBindings(),
         ]);
         setWarningsEnabled(enabled);
         setHideWhenNoIncidents(hideWithoutIncidents);
@@ -77,10 +132,22 @@ const Options = () => {
         setRefreshIntervalMs(intervalMs);
         setLastRefreshedAt(refreshedAt);
         setLastRefreshError(fetchError);
+        setShortcutBindings(shortcuts);
       } finally {
         setLoading(false);
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    const syncShortcutBindings = () => {
+      void readShortcutBindings().then(setShortcutBindings);
+    };
+
+    window.addEventListener("focus", syncShortcutBindings);
+    return () => {
+      window.removeEventListener("focus", syncShortcutBindings);
+    };
   }, []);
 
   useEffect(() => {
@@ -196,6 +263,24 @@ const Options = () => {
     }
   };
 
+  const onOpenShortcutSettings = async () => {
+    const commandsApi = getCommandsApi();
+
+    try {
+      if (commandsApi?.openShortcutSettings) {
+        await commandsApi.openShortcutSettings();
+        return;
+      }
+
+      await browser.tabs.create({ url: SHORTCUT_SETTINGS_FALLBACK_URL });
+    } catch (error) {
+      console.error(
+        `${Constants.LOG_PREFIX} Failed to open browser shortcut settings`,
+        error,
+      );
+    }
+  };
+
   return (
     <OptionsView
       warningsEnabled={warningsEnabled}
@@ -207,6 +292,7 @@ const Options = () => {
       refreshingNow={refreshingNow}
       refreshError={refreshError}
       lastRefreshError={lastRefreshError}
+      shortcutBindings={shortcutBindings}
       loading={loading}
       onToggleWarnings={(enabled) => {
         void onToggleWarnings(enabled);
@@ -219,6 +305,9 @@ const Options = () => {
       }}
       onRefreshNow={() => {
         void onRefreshNow();
+      }}
+      onOpenShortcutSettings={() => {
+        void onOpenShortcutSettings();
       }}
       onRemoveSuppressedDomain={(domain) => {
         void onRemoveSuppressedDomain(domain);
