@@ -3,7 +3,6 @@ import { createRoot, type Root } from "react-dom/client";
 import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
-import { DEFAULT_POPUP_POSITION } from "@/shared/constants";
 import type { PopupPosition } from "@/shared/constants";
 import { buildIncidentSignature } from "@/shared/incidentSignature";
 import {
@@ -276,7 +275,7 @@ const renderInlinePopup = async (
   }
 
   forcePopupVisible = ignorePreferences;
-  const popupPosition = await readPopupPosition();
+  const popupPosition: PopupPosition = await readPopupPosition();
   const root = ensurePopupRoot();
   if (visibleMatches.length === 0) {
     root.render(
