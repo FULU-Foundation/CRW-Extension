@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
+import type { PopupPosition } from "@/shared/constants";
+import { DEFAULT_POPUP_POSITION } from "@/shared/constants";
 import { OptionsView } from "@/options/OptionsView";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
@@ -9,12 +11,14 @@ import { normalizeHostname } from "@/shared/siteScope";
 import {
   readHideWhenNoIncidents,
   readLastRefreshedAt,
+  readPopupPosition,
   readRefreshErrorMessage,
   readRefreshIntervalMs,
   readSnoozedSiteMap,
   readSuppressedDomains,
   readWarningsEnabled,
   writeHideWhenNoIncidents,
+  writePopupPosition,
   writeSnoozedSiteMap,
   writeSuppressedDomains,
   writeWarningsEnabled,
@@ -49,6 +53,7 @@ const Options = () => {
   const [refreshingNow, setRefreshingNow] = useState<boolean>(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [popupPosition, setPopupPosition] = useState<PopupPosition>(DEFAULT_POPUP_POSITION);
 
   useEffect(() => {
     void (async () => {
@@ -61,6 +66,7 @@ const Options = () => {
           intervalMs,
           refreshedAt,
           fetchError,
+          position,
         ] = await Promise.all([
           readWarningsEnabled(),
           readHideWhenNoIncidents(),
@@ -69,6 +75,7 @@ const Options = () => {
           readRefreshIntervalMs(),
           readLastRefreshedAt(),
           readLastRefreshError(),
+          readPopupPosition(),
         ]);
         setWarningsEnabled(enabled);
         setHideWhenNoIncidents(hideWithoutIncidents);
@@ -77,6 +84,7 @@ const Options = () => {
         setRefreshIntervalMs(intervalMs);
         setLastRefreshedAt(refreshedAt);
         setLastRefreshError(fetchError);
+        setPopupPosition(position);
       } finally {
         setLoading(false);
       }
@@ -119,6 +127,10 @@ const Options = () => {
       if (changes[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE]) {
         void readSnoozedSites().then(setSnoozedSites);
       }
+
+      if (changes[Constants.STORAGE.POPUP_POSITION]) {
+        void readPopupPosition().then(setPopupPosition);
+      }
     };
 
     browser.storage.onChanged.addListener(onStorageChanged);
@@ -160,6 +172,11 @@ const Options = () => {
         .sort((left, right) => left.localeCompare(right)),
     );
     await writeSnoozedSiteMap(next);
+  };
+
+  const onChangePopupPosition = async (position: PopupPosition) => {
+    setPopupPosition(position);
+    await writePopupPosition(position);
   };
 
   const onChangeRefreshInterval = async (nextRefreshIntervalMs: number) => {
@@ -208,6 +225,7 @@ const Options = () => {
       refreshError={refreshError}
       lastRefreshError={lastRefreshError}
       loading={loading}
+      popupPosition={popupPosition}
       onToggleWarnings={(enabled) => {
         void onToggleWarnings(enabled);
       }}
@@ -225,6 +243,9 @@ const Options = () => {
       }}
       onRemoveSnoozedSite={(domain) => {
         void onRemoveSnoozedSite(domain);
+      }}
+      onChangePopupPosition={(position) => {
+        void onChangePopupPosition(position);
       }}
     />
   );

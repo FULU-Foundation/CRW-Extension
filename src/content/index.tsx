@@ -3,6 +3,8 @@ import { createRoot, type Root } from "react-dom/client";
 import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
+import { DEFAULT_POPUP_POSITION } from "@/shared/constants";
+import type { PopupPosition } from "@/shared/constants";
 import { buildIncidentSignature } from "@/shared/incidentSignature";
 import {
   getSiteScopeHostname,
@@ -12,6 +14,7 @@ import {
 import { CargoEntry, PageContext } from "@/shared/types";
 import {
   readHideWhenNoIncidents,
+  readPopupPosition,
   readSnoozedSiteMap,
   readSuppressedDomains,
   readWarningsEnabled,
@@ -273,12 +276,14 @@ const renderInlinePopup = async (
   }
 
   forcePopupVisible = ignorePreferences;
+  const popupPosition = await readPopupPosition();
   const root = ensurePopupRoot();
   if (visibleMatches.length === 0) {
     root.render(
       <InlineEmptyState
         logoUrl={ASSET_URLS.logo}
         settingsIconUrl={ASSET_URLS.settings}
+        position={popupPosition}
         onOpenSettings={openOptions}
         onClose={removeInlinePopup}
       />,
@@ -326,6 +331,7 @@ const renderInlinePopup = async (
       externalIconUrl={ASSET_URLS.external}
       settingsIconUrl={ASSET_URLS.settings}
       closeIconUrl={ASSET_URLS.close}
+      position={popupPosition}
       onClose={removeInlinePopup}
       onOpenSettings={openOptions}
       onDisableWarnings={() => void handleDisableWarnings()}
