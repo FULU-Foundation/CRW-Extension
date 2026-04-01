@@ -309,6 +309,8 @@ export const OptionsView = (props: OptionsViewProps) => {
           </p>
 
           <div
+            role="radiogroup"
+            aria-label="Popup position"
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
@@ -322,6 +324,8 @@ export const OptionsView = (props: OptionsViewProps) => {
                 <button
                   key={option.value}
                   type="button"
+                  role="radio"
+                  aria-checked={selected}
                   disabled={loading}
                   onClick={() => onChangePopupPosition(option.value)}
                   style={{
