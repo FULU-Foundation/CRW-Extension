@@ -2,7 +2,11 @@ import type { CargoEntryType } from "@/shared/types";
 
 export const LOG_PREFIX = "[CRW_EXTENSION]";
 
-export type PopupPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+export type PopupPosition =
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right";
 export const DEFAULT_POPUP_POSITION: PopupPosition = "top-right";
 
 export const DATA_REMOTE_URL =

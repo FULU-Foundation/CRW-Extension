@@ -19,11 +19,15 @@ const REFRESH_INTERVAL_OPTIONS = [
   { value: 7 * 24 * 60 * 60 * 1000, label: "1 week" },
 ] as const;
 
-const POPUP_POSITION_OPTIONS: { value: PopupPosition; label: string; corner: [boolean, boolean] }[] = [
-  { value: "top-left",     label: "Top left",     corner: [false, true]  },
-  { value: "top-right",    label: "Top right",    corner: [false, false] },
-  { value: "bottom-left",  label: "Bottom left",  corner: [true,  true]  },
-  { value: "bottom-right", label: "Bottom right", corner: [true,  false] },
+const POPUP_POSITION_OPTIONS: {
+  value: PopupPosition;
+  label: string;
+  corner: [boolean, boolean];
+}[] = [
+  { value: "top-left", label: "Top left", corner: [false, true] },
+  { value: "top-right", label: "Top right", corner: [false, false] },
+  { value: "bottom-left", label: "Bottom left", corner: [true, true] },
+  { value: "bottom-right", label: "Bottom right", corner: [true, false] },
 ];
 
 export type OptionsViewProps = {

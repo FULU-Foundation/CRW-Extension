@@ -53,7 +53,9 @@ const Options = () => {
   const [refreshingNow, setRefreshingNow] = useState<boolean>(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [popupPosition, setPopupPosition] = useState<PopupPosition>(DEFAULT_POPUP_POSITION);
+  const [popupPosition, setPopupPosition] = useState<PopupPosition>(
+    DEFAULT_POPUP_POSITION,
+  );
 
   useEffect(() => {
     void (async () => {
