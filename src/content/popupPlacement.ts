@@ -1,5 +1,8 @@
 import React from "react";
 
+import type { PopupPosition } from "@/shared/constants";
+import { DEFAULT_POPUP_POSITION } from "@/shared/constants";
+
 const POPUP_EDGE_OFFSET_PX = 16;
 const TABLET_MAX_WIDTH_PX = 1024;
 
@@ -36,6 +39,7 @@ export const shouldPlacePopupAtBottom = (
 };
 
 export const getInlinePopupPlacementStyle = (
+  position: PopupPosition = DEFAULT_POPUP_POSITION,
   environment: PopupPlacementEnvironment = {},
 ): React.CSSProperties => {
   const baseStyle: React.CSSProperties = {
@@ -45,28 +49,37 @@ export const getInlinePopupPlacementStyle = (
     zIndex: 2147483647,
   };
 
-  if (!shouldPlacePopupAtBottom(environment)) {
+  if (shouldPlacePopupAtBottom(environment)) {
     return {
       ...baseStyle,
-      right: `${POPUP_EDGE_OFFSET_PX}px`,
-      top: `${POPUP_EDGE_OFFSET_PX}px`,
+      left: "50%",
+      bottom: `${POPUP_EDGE_OFFSET_PX}px`,
+      transform: "translateX(-50%)",
     };
   }
 
+  const isBottom = position === "bottom-left" || position === "bottom-right";
+  const isLeft = position === "top-left" || position === "bottom-left";
+
   return {
     ...baseStyle,
-    left: "50%",
-    bottom: `${POPUP_EDGE_OFFSET_PX}px`,
-    transform: "translateX(-50%)",
+    ...(isBottom
+      ? { bottom: `${POPUP_EDGE_OFFSET_PX}px` }
+      : { top: `${POPUP_EDGE_OFFSET_PX}px` }),
+    ...(isLeft
+      ? { left: `${POPUP_EDGE_OFFSET_PX}px` }
+      : { right: `${POPUP_EDGE_OFFSET_PX}px` }),
   };
 };
 
-export const getCurrentPopupPlacementStyle = (): React.CSSProperties => {
+export const getCurrentPopupPlacementStyle = (
+  position: PopupPosition = DEFAULT_POPUP_POSITION,
+): React.CSSProperties => {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
-    return getInlinePopupPlacementStyle();
+    return getInlinePopupPlacementStyle(position);
   }
 
-  return getInlinePopupPlacementStyle({
+  return getInlinePopupPlacementStyle(position, {
     userAgent: navigator.userAgent,
     maxTouchPoints: navigator.maxTouchPoints,
     hasCoarsePointer: window.matchMedia("(pointer: coarse)").matches,

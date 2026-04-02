@@ -1,17 +1,19 @@
 import React from "react";
 
+import type { PopupPosition } from "@/shared/constants";
 import { getCurrentPopupPlacementStyle } from "@/content/popupPlacement";
 
 type InlineEmptyStateProps = {
   logoUrl: string;
   settingsIconUrl: string;
+  position: PopupPosition;
   onOpenSettings: () => void;
   onClose: () => void;
 };
 
 export const InlineEmptyState = (props: InlineEmptyStateProps) => {
-  const { logoUrl, settingsIconUrl, onOpenSettings, onClose } = props;
-  const containerStyle = getCurrentPopupPlacementStyle();
+  const { logoUrl, settingsIconUrl, position, onOpenSettings, onClose } = props;
+  const containerStyle = getCurrentPopupPlacementStyle(position);
 
   return (
     <div

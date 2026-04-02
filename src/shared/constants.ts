@@ -2,6 +2,13 @@ import type { CargoEntryType } from "@/shared/types";
 
 export const LOG_PREFIX = "[CRW_EXTENSION]";
 
+export type PopupPosition =
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right";
+export const DEFAULT_POPUP_POSITION: PopupPosition = "top-right";
+
 export const DATA_REMOTE_URL =
   "https://raw.githubusercontent.com/FULU-Foundation/CRW-Extension/refs/heads/export_cargo/all_cargo_combined.json";
 export const DEFAULT_DATA_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -31,4 +38,5 @@ export const STORAGE = {
     "crw_snoozed_sites_until_incident_change",
   HIDE_WHEN_NO_INCIDENTS: "crw_hide_when_no_incidents",
   WARNINGS_ENABLED: "crw_warnings_enabled",
+  POPUP_POSITION: "crw_popup_position",
 } as const;

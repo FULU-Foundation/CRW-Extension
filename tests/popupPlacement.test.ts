@@ -15,7 +15,7 @@ test("popup stays top-right on desktop environments", () => {
     viewportWidth: 1440,
     viewportHeight: 900,
   };
-  const style = getInlinePopupPlacementStyle({
+  const style = getInlinePopupPlacementStyle("top-right", {
     ...environment,
   });
 
@@ -28,7 +28,7 @@ test("popup stays top-right on desktop environments", () => {
 });
 
 test("popup moves to bottom-center on Android phones", () => {
-  const style = getInlinePopupPlacementStyle({
+  const style = getInlinePopupPlacementStyle("top-right", {
     userAgent:
       "Mozilla/5.0 (Android 14; Mobile; rv:137.0) Gecko/137.0 Firefox/137.0",
     maxTouchPoints: 5,
@@ -45,7 +45,7 @@ test("popup moves to bottom-center on Android phones", () => {
 });
 
 test("popup moves to bottom-center on touch tablets even without a mobile user agent token", () => {
-  const style = getInlinePopupPlacementStyle({
+  const style = getInlinePopupPlacementStyle("top-right", {
     userAgent:
       "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
     maxTouchPoints: 10,
@@ -60,7 +60,7 @@ test("popup moves to bottom-center on touch tablets even without a mobile user a
 });
 
 test("popup stays top-right on touch laptops with a fine pointer", () => {
-  const style = getInlinePopupPlacementStyle({
+  const style = getInlinePopupPlacementStyle("top-right", {
     userAgent:
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
     maxTouchPoints: 10,

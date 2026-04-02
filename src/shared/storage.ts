@@ -1,6 +1,7 @@
 import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
+import type { PopupPosition } from "@/shared/constants";
 import { canonicalizeSiteScopeList } from "@/shared/siteScope";
 import { ensureDataMigration } from "@/shared/dataMigrations";
 import { type CargoEntry, decodeCargoEntries } from "@/shared/types";
@@ -137,6 +138,26 @@ export const readRefreshErrorMessage = async (): Promise<string | null> => {
 
   const record = value as Record<string, unknown>;
   return typeof record.message === "string" ? record.message : null;
+};
+
+const isPopupPosition = (value: unknown): value is PopupPosition => {
+  return (
+    value === "top-left" ||
+    value === "top-right" ||
+    value === "bottom-left" ||
+    value === "bottom-right"
+  );
+};
+
+export const readPopupPosition = async (): Promise<PopupPosition> => {
+  const value = await readLocalValue(Constants.STORAGE.POPUP_POSITION);
+  return isPopupPosition(value) ? value : Constants.DEFAULT_POPUP_POSITION;
+};
+
+export const writePopupPosition = async (
+  position: PopupPosition,
+): Promise<void> => {
+  await writeLocalValue(Constants.STORAGE.POPUP_POSITION, position);
 };
 
 export const readTabMatches = async (tabId: number): Promise<CargoEntry[]> => {
