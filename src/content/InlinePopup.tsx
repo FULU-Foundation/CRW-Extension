@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import type {
   AutoDismissCursorOutBehavior,
@@ -8,6 +8,8 @@ import { CargoEntry } from "@/shared/types";
 import { MatchPopupCard } from "@/shared/ui/MatchPopupCard";
 import { getCurrentPopupPlacementStyle } from "@/content/popupPlacement";
 import { PopupDismissBar } from "@/content/PopupDismissBar";
+
+const FADE_DURATION_MS = 1500;
 
 type InlinePopupProps = {
   matches: CargoEntry[];
@@ -20,6 +22,7 @@ type InlinePopupProps = {
   autoDismissTimeoutMs: number;
   autoDismissShowProgressBar: boolean;
   autoDismissCursorOutBehavior: AutoDismissCursorOutBehavior;
+  manuallyOpened: boolean;
   onClose: () => void;
   onOpenSettings: () => void;
   onSuppressSite: () => void;
@@ -44,6 +47,7 @@ export const InlinePopup = (props: InlinePopupProps) => {
     autoDismissTimeoutMs,
     autoDismissShowProgressBar,
     autoDismissCursorOutBehavior,
+    manuallyOpened,
     onClose,
     onOpenSettings,
     onSuppressSite,
@@ -57,12 +61,28 @@ export const InlinePopup = (props: InlinePopupProps) => {
   } = props;
 
   const [hovering, setHovering] = useState(false);
+  const [fading, setFading] = useState(false);
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleDismiss = () => {
+    setFading(true);
+    fadeTimerRef.current = setTimeout(() => {
+      onClose();
+    }, FADE_DURATION_MS);
+  };
 
   const containerStyle = getCurrentPopupPlacementStyle(position);
+  const showDismissBar = autoDismissEnabled && !manuallyOpened;
 
   return (
     <div
-      style={{ ...containerStyle, maxHeight: "60vh" }}
+      style={{
+        ...containerStyle,
+        maxHeight: "60vh",
+        opacity: fading ? 0 : 1,
+        transition: fading ? `opacity ${FADE_DURATION_MS}ms ease` : undefined,
+        pointerEvents: fading ? "none" : undefined,
+      }}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >
@@ -86,13 +106,13 @@ export const InlinePopup = (props: InlinePopupProps) => {
         hideRelatedButtonWhenEmpty
         containerStyle={{ maxHeight: "60vh" }}
         bottomSlot={
-          autoDismissEnabled ? (
+          showDismissBar ? (
             <PopupDismissBar
               timeoutMs={autoDismissTimeoutMs}
               showProgressBar={autoDismissShowProgressBar}
               cursorOutBehavior={autoDismissCursorOutBehavior}
               hovering={hovering}
-              onDismiss={onClose}
+              onDismiss={handleDismiss}
             />
           ) : undefined
         }

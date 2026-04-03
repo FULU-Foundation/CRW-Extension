@@ -69,15 +69,19 @@ export const PopupDismissBar = ({
   }, []); // intentionally empty — runs once on mount
 
   // Respond to hover changes.
+  // "reset" resets on mouse-enter (so the user sees the bar restart while hovering),
+  // then resumes from that zero on mouse-leave.
   useEffect(() => {
     if (hovering) {
+      if (cursorOutBehavior === "reset") {
+        elapsedRef.current = 0;
+        setElapsed(0);
+      }
       cancelRaf();
     } else {
-      const resumeFrom = cursorOutBehavior === "reset" ? 0 : elapsedRef.current;
-      startRunning(resumeFrom);
+      startRunning(elapsedRef.current);
     }
-  }, [hovering]); // intentionally omits stable refs and `cursorOutBehavior` — see note below
-  // Note: `cursorOutBehavior` and `startRunning` are intentionally omitted.
+  }, [hovering]); // intentionally omits stable refs and `cursorOutBehavior`
   // `cursorOutBehavior` is a settings value that doesn't change mid-session.
   // `startRunning` is a stable local function defined in the same scope.
 

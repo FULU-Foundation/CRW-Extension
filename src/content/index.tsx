@@ -342,6 +342,7 @@ const renderInlinePopup = async (
       autoDismissTimeoutMs={autoDismissTimeoutMs}
       autoDismissShowProgressBar={autoDismissShowProgressBar}
       autoDismissCursorOutBehavior={autoDismissCursorOutBehavior}
+      manuallyOpened={ignorePreferences}
       onClose={removeInlinePopup}
       onOpenSettings={openOptions}
       onDisableWarnings={() => void handleDisableWarnings()}
