@@ -288,6 +288,9 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
         ...containerStyle,
         position: "relative",
         overflow: "hidden",
+        isolation: "isolate",
+        transform: "translateZ(0)",
+        clipPath: "inset(0 round 14px)",
       }}
     >
       <MatchPopupHeader

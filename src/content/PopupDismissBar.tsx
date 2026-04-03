@@ -79,7 +79,7 @@ export const PopupDismissBar = ({
       }
       cancelRaf();
     } else {
-      startRunning(elapsedRef.current);
+      startRunning(cursorOutBehavior === "reset" ? 0 : elapsedRef.current);
     }
   }, [hovering]); // intentionally omits stable refs and `cursorOutBehavior`
   // `cursorOutBehavior` is a settings value that doesn't change mid-session.

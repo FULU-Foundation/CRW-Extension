@@ -9,7 +9,7 @@ import { MatchPopupCard } from "@/shared/ui/MatchPopupCard";
 import { getCurrentPopupPlacementStyle } from "@/content/popupPlacement";
 import { PopupDismissBar } from "@/content/PopupDismissBar";
 
-const FADE_DURATION_MS = 1500;
+const FADE_DURATION_MS = 2000;
 
 type InlinePopupProps = {
   matches: CargoEntry[];
@@ -71,8 +71,18 @@ export const InlinePopup = (props: InlinePopupProps) => {
     }, FADE_DURATION_MS);
   };
 
+  const handleMouseEnter = () => {
+    if (fading) {
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+      setFading(false);
+    }
+    setHovering(true);
+  };
+
   const containerStyle = getCurrentPopupPlacementStyle(position);
   const showDismissBar = autoDismissEnabled && !manuallyOpened;
+  // Subtract fade duration so the total time from popup open to fully gone equals autoDismissTimeoutMs.
+  const barTimeoutMs = Math.max(0, autoDismissTimeoutMs - FADE_DURATION_MS);
 
   return (
     <div
@@ -80,10 +90,9 @@ export const InlinePopup = (props: InlinePopupProps) => {
         ...containerStyle,
         maxHeight: "60vh",
         opacity: fading ? 0 : 1,
-        transition: fading ? `opacity ${FADE_DURATION_MS}ms ease` : undefined,
-        pointerEvents: fading ? "none" : undefined,
+        transition: `opacity ${FADE_DURATION_MS}ms ease`,
       }}
-      onMouseEnter={() => setHovering(true)}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setHovering(false)}
     >
       <MatchPopupCard
@@ -108,7 +117,7 @@ export const InlinePopup = (props: InlinePopupProps) => {
         bottomSlot={
           showDismissBar ? (
             <PopupDismissBar
-              timeoutMs={autoDismissTimeoutMs}
+              timeoutMs={barTimeoutMs}
               showProgressBar={autoDismissShowProgressBar}
               cursorOutBehavior={autoDismissCursorOutBehavior}
               hovering={hovering}
