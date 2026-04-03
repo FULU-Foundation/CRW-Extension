@@ -9,7 +9,7 @@ export type PopupPosition =
   | "bottom-right";
 export const DEFAULT_POPUP_POSITION: PopupPosition = "top-right";
 
-export type AutoDismissCursorOutBehavior = "continue" | "reset" | "remove";
+export type AutoDismissCursorOutBehavior = "continue" | "reset";
 
 export type AutoDismissConfig = {
   enabled: boolean;

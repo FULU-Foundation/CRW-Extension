@@ -48,11 +48,6 @@ const CURSOR_OUT_BEHAVIOR_OPTIONS: {
     label: "Reset",
     description: "Restart the countdown after cursor leaves",
   },
-  {
-    value: "remove",
-    label: "Remove",
-    description: "Cancel the countdown once cursor leaves",
-  },
 ];
 
 export type OptionsViewProps = {

@@ -19,7 +19,6 @@ export const PopupDismissBar = ({
   onDismiss,
 }: PopupDismissBarProps) => {
   const [elapsed, setElapsed] = useState(0);
-  const [removed, setRemoved] = useState(false);
 
   // Keep latest prop values accessible inside rAF callbacks without
   // re-creating the animation loop on every render.
@@ -71,26 +70,18 @@ export const PopupDismissBar = ({
 
   // Respond to hover changes.
   useEffect(() => {
-    if (removed) return;
-
     if (hovering) {
       cancelRaf();
     } else {
-      if (cursorOutBehavior === "remove") {
-        setRemoved(true);
-        cancelRaf();
-        return;
-      }
       const resumeFrom = cursorOutBehavior === "reset" ? 0 : elapsedRef.current;
       startRunning(resumeFrom);
     }
-  }, [hovering]); // intentionally omits stable refs and `removed`/`cursorOutBehavior` — see note below
-  // Note: `removed`, `cursorOutBehavior`, and `startRunning` are intentionally
-  // omitted. `removed` is only ever set to true and is guarded at the top.
+  }, [hovering]); // intentionally omits stable refs and `cursorOutBehavior` — see note below
+  // Note: `cursorOutBehavior` and `startRunning` are intentionally omitted.
   // `cursorOutBehavior` is a settings value that doesn't change mid-session.
   // `startRunning` is a stable local function defined in the same scope.
 
-  if (removed || !showProgressBar) return null;
+  if (!showProgressBar) return null;
 
   const remaining = 1 - Math.min(elapsed / timeoutMs, 1);
 
