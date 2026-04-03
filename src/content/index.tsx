@@ -1,4 +1,3 @@
-import React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import browser from "webextension-polyfill";
 
@@ -12,6 +11,10 @@ import {
 } from "@/shared/siteScope";
 import { CargoEntry, PageContext } from "@/shared/types";
 import {
+  readAutoDismissCursorOutBehavior,
+  readAutoDismissEnabled,
+  readAutoDismissShowProgressBar,
+  readAutoDismissTimeoutMs,
   readHideWhenNoIncidents,
   readPopupPosition,
   readSnoozedSiteMap,
@@ -276,6 +279,10 @@ const renderInlinePopup = async (
 
   forcePopupVisible = ignorePreferences;
   const popupPosition: PopupPosition = await readPopupPosition();
+  const autoDismissEnabled = await readAutoDismissEnabled();
+  const autoDismissTimeoutMs = await readAutoDismissTimeoutMs();
+  const autoDismissShowProgressBar = await readAutoDismissShowProgressBar();
+  const autoDismissCursorOutBehavior = await readAutoDismissCursorOutBehavior();
   const root = ensurePopupRoot();
   if (visibleMatches.length === 0) {
     root.render(
@@ -331,6 +338,10 @@ const renderInlinePopup = async (
       settingsIconUrl={ASSET_URLS.settings}
       closeIconUrl={ASSET_URLS.close}
       position={popupPosition}
+      autoDismissEnabled={autoDismissEnabled}
+      autoDismissTimeoutMs={autoDismissTimeoutMs}
+      autoDismissShowProgressBar={autoDismissShowProgressBar}
+      autoDismissCursorOutBehavior={autoDismissCursorOutBehavior}
       onClose={removeInlinePopup}
       onOpenSettings={openOptions}
       onDisableWarnings={() => void handleDisableWarnings()}

@@ -1,5 +1,8 @@
 import React from "react";
-import type { PopupPosition } from "@/shared/constants";
+import type {
+  AutoDismissCursorOutBehavior,
+  PopupPosition,
+} from "@/shared/constants";
 
 const PAGE_CSS = {
   bg: "#004080",
@@ -30,6 +33,28 @@ const POPUP_POSITION_OPTIONS: {
   { value: "bottom-right", label: "Bottom right", corner: [true, false] },
 ];
 
+const CURSOR_OUT_BEHAVIOR_OPTIONS: {
+  value: AutoDismissCursorOutBehavior;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "continue",
+    label: "Continue",
+    description: "Keep counting down after cursor leaves",
+  },
+  {
+    value: "reset",
+    label: "Reset",
+    description: "Restart the countdown after cursor leaves",
+  },
+  {
+    value: "remove",
+    label: "Remove",
+    description: "Cancel the countdown once cursor leaves",
+  },
+];
+
 export type OptionsViewProps = {
   warningsEnabled: boolean;
   hideWhenNoIncidents: boolean;
@@ -42,6 +67,10 @@ export type OptionsViewProps = {
   lastRefreshError: string | null;
   loading: boolean;
   popupPosition: PopupPosition;
+  autoDismissEnabled: boolean;
+  autoDismissTimeoutMs: number;
+  autoDismissShowProgressBar: boolean;
+  autoDismissCursorOutBehavior: AutoDismissCursorOutBehavior;
   onToggleWarnings: (enabled: boolean) => void;
   onToggleHideWhenNoIncidents: (enabled: boolean) => void;
   onChangeRefreshInterval: (refreshIntervalMs: number) => void;
@@ -49,6 +78,12 @@ export type OptionsViewProps = {
   onRemoveSuppressedDomain: (domain: string) => void;
   onRemoveSnoozedSite: (domain: string) => void;
   onChangePopupPosition: (position: PopupPosition) => void;
+  onToggleAutoDismiss: (enabled: boolean) => void;
+  onChangeAutoDismissTimeoutMs: (ms: number) => void;
+  onToggleAutoDismissShowProgressBar: (show: boolean) => void;
+  onChangeAutoDismissCursorOutBehavior: (
+    behavior: AutoDismissCursorOutBehavior,
+  ) => void;
 };
 
 const formatLastRefreshed = (value: number | null): string => {
@@ -76,6 +111,10 @@ export const OptionsView = (props: OptionsViewProps) => {
     lastRefreshError,
     loading,
     popupPosition,
+    autoDismissEnabled,
+    autoDismissTimeoutMs,
+    autoDismissShowProgressBar,
+    autoDismissCursorOutBehavior,
     onToggleWarnings,
     onToggleHideWhenNoIncidents,
     onChangeRefreshInterval,
@@ -83,6 +122,10 @@ export const OptionsView = (props: OptionsViewProps) => {
     onRemoveSuppressedDomain,
     onRemoveSnoozedSite,
     onChangePopupPosition,
+    onToggleAutoDismiss,
+    onChangeAutoDismissTimeoutMs,
+    onToggleAutoDismissShowProgressBar,
+    onChangeAutoDismissCursorOutBehavior,
   } = props;
 
   return (
@@ -384,6 +427,225 @@ export const OptionsView = (props: OptionsViewProps) => {
               );
             })}
           </div>
+        </section>
+
+        {/* Auto-Dismiss section */}
+        <section
+          aria-labelledby="auto-dismiss-heading"
+          style={{
+            border: `1px solid ${PAGE_CSS.border}`,
+            borderRadius: "12px",
+            padding: "14px",
+            background: PAGE_CSS.subtleBg,
+          }}
+        >
+          <h2
+            id="auto-dismiss-heading"
+            style={{
+              margin: 0,
+              fontSize: "16px",
+              lineHeight: 1.2,
+              fontWeight: 700,
+              color: PAGE_CSS.text,
+            }}
+          >
+            Auto-Dismiss
+          </h2>
+          <p
+            style={{
+              margin: "6px 0 10px 0",
+              fontSize: "13px",
+              color: PAGE_CSS.muted,
+            }}
+          >
+            Automatically close the popup after a set time. Pauses while your
+            cursor is over it.
+          </p>
+
+          {/* Enable toggle */}
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              border: `1px solid ${PAGE_CSS.border}`,
+              borderRadius: "10px",
+              padding: "10px 12px",
+              fontSize: "14px",
+              color: PAGE_CSS.text,
+            }}
+          >
+            <span>Enable auto-dismiss</span>
+            <input
+              type="checkbox"
+              checked={autoDismissEnabled}
+              disabled={loading}
+              onChange={(e) => onToggleAutoDismiss(e.target.checked)}
+              style={{ width: "16px", height: "16px", accentColor: "#FFFFFF" }}
+            />
+          </label>
+
+          {autoDismissEnabled && (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+                marginTop: "10px",
+              }}
+            >
+              {/* Timeout duration */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px",
+                  border: `1px solid ${PAGE_CSS.border}`,
+                  borderRadius: "10px",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  color: PAGE_CSS.text,
+                }}
+              >
+                <label
+                  htmlFor="auto-dismiss-timeout"
+                  style={{ fontSize: "14px", color: PAGE_CSS.text }}
+                >
+                  Dismiss after (seconds)
+                </label>
+                <input
+                  id="auto-dismiss-timeout"
+                  type="number"
+                  min={1}
+                  max={300}
+                  step={1}
+                  value={autoDismissTimeoutMs / 1000}
+                  disabled={loading}
+                  onChange={(e) => {
+                    const seconds = Math.max(
+                      1,
+                      Math.min(300, Math.round(Number(e.target.value))),
+                    );
+                    if (!Number.isNaN(seconds)) {
+                      onChangeAutoDismissTimeoutMs(seconds * 1000);
+                    }
+                  }}
+                  style={{
+                    borderRadius: "8px",
+                    border: `1px solid ${PAGE_CSS.buttonBorder}`,
+                    background: "#FFFFFF",
+                    color: PAGE_CSS.buttonText,
+                    padding: "7px 10px",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    width: "80px",
+                  }}
+                />
+              </div>
+
+              {/* Show progress bar toggle */}
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  border: `1px solid ${PAGE_CSS.border}`,
+                  borderRadius: "10px",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  color: PAGE_CSS.text,
+                }}
+              >
+                <span>Show progress bar</span>
+                <input
+                  type="checkbox"
+                  checked={autoDismissShowProgressBar}
+                  disabled={loading}
+                  onChange={(e) =>
+                    onToggleAutoDismissShowProgressBar(e.target.checked)
+                  }
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    accentColor: "#FFFFFF",
+                  }}
+                />
+              </label>
+
+              {/* Cursor-out behaviour */}
+              <fieldset
+                style={{
+                  border: `1px solid ${PAGE_CSS.border}`,
+                  borderRadius: "10px",
+                  padding: "10px 12px",
+                  margin: 0,
+                }}
+              >
+                <legend
+                  style={{
+                    fontSize: "14px",
+                    color: PAGE_CSS.text,
+                    padding: "0 4px",
+                  }}
+                >
+                  After cursor leaves popup
+                </legend>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                    marginTop: "6px",
+                  }}
+                >
+                  {CURSOR_OUT_BEHAVIOR_OPTIONS.map((option) => (
+                    <label
+                      key={option.value}
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: "10px",
+                        cursor: loading ? "default" : "pointer",
+                        opacity: loading ? 0.75 : 1,
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="cursorOutBehavior"
+                        value={option.value}
+                        checked={autoDismissCursorOutBehavior === option.value}
+                        disabled={loading}
+                        onChange={() =>
+                          onChangeAutoDismissCursorOutBehavior(option.value)
+                        }
+                        style={{ marginTop: "2px", accentColor: "#FFFFFF" }}
+                      />
+                      <span>
+                        <span
+                          style={{
+                            fontSize: "14px",
+                            color: PAGE_CSS.text,
+                            display: "block",
+                          }}
+                        >
+                          {option.label}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "12px",
+                            color: PAGE_CSS.muted,
+                            display: "block",
+                          }}
+                        >
+                          {option.description}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            </div>
+          )}
         </section>
 
         <section

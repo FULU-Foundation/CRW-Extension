@@ -1,9 +1,13 @@
-import React from "react";
+import { useState } from "react";
 
-import type { PopupPosition } from "@/shared/constants";
+import type {
+  AutoDismissCursorOutBehavior,
+  PopupPosition,
+} from "@/shared/constants";
 import { CargoEntry } from "@/shared/types";
 import { MatchPopupCard } from "@/shared/ui/MatchPopupCard";
 import { getCurrentPopupPlacementStyle } from "@/content/popupPlacement";
+import { PopupDismissBar } from "@/content/PopupDismissBar";
 
 type InlinePopupProps = {
   matches: CargoEntry[];
@@ -12,6 +16,10 @@ type InlinePopupProps = {
   settingsIconUrl: string;
   closeIconUrl: string;
   position: PopupPosition;
+  autoDismissEnabled: boolean;
+  autoDismissTimeoutMs: number;
+  autoDismissShowProgressBar: boolean;
+  autoDismissCursorOutBehavior: AutoDismissCursorOutBehavior;
   onClose: () => void;
   onOpenSettings: () => void;
   onSuppressSite: () => void;
@@ -32,6 +40,10 @@ export const InlinePopup = (props: InlinePopupProps) => {
     settingsIconUrl,
     closeIconUrl,
     position,
+    autoDismissEnabled,
+    autoDismissTimeoutMs,
+    autoDismissShowProgressBar,
+    autoDismissCursorOutBehavior,
     onClose,
     onOpenSettings,
     onSuppressSite,
@@ -44,31 +56,47 @@ export const InlinePopup = (props: InlinePopupProps) => {
     disableWarningsLabel,
   } = props;
 
+  const [hovering, setHovering] = useState(false);
+
   const containerStyle = getCurrentPopupPlacementStyle(position);
 
   return (
-    <MatchPopupCard
-      matches={matches}
-      logoUrl={logoUrl}
-      externalIconUrl={externalIconUrl}
-      onClose={onClose}
-      onOpenSettings={onOpenSettings}
-      settingsIconUrl={settingsIconUrl}
-      closeIconUrl={closeIconUrl}
-      onSuppressSite={onSuppressSite}
-      onSnoozeUntilNewChanges={onSnoozeUntilNewChanges}
-      onDisableWarnings={onDisableWarnings}
-      snoozeUntilNewChangesLabel={snoozeUntilNewChangesLabel}
-      snoozeUntilNewChangesTooltip={snoozeUntilNewChangesTooltip}
-      suppressButtonLabel={suppressButtonLabel}
-      suppressButtonTooltip={suppressButtonTooltip}
-      disableWarningsLabel={disableWarningsLabel}
-      showCloseButton
-      hideRelatedButtonWhenEmpty
-      containerStyle={{
-        ...containerStyle,
-        maxHeight: "60vh",
-      }}
-    />
+    <div
+      style={{ ...containerStyle, maxHeight: "60vh" }}
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+    >
+      <MatchPopupCard
+        matches={matches}
+        logoUrl={logoUrl}
+        externalIconUrl={externalIconUrl}
+        onClose={onClose}
+        onOpenSettings={onOpenSettings}
+        settingsIconUrl={settingsIconUrl}
+        closeIconUrl={closeIconUrl}
+        onSuppressSite={onSuppressSite}
+        onSnoozeUntilNewChanges={onSnoozeUntilNewChanges}
+        onDisableWarnings={onDisableWarnings}
+        snoozeUntilNewChangesLabel={snoozeUntilNewChangesLabel}
+        snoozeUntilNewChangesTooltip={snoozeUntilNewChangesTooltip}
+        suppressButtonLabel={suppressButtonLabel}
+        suppressButtonTooltip={suppressButtonTooltip}
+        disableWarningsLabel={disableWarningsLabel}
+        showCloseButton
+        hideRelatedButtonWhenEmpty
+        containerStyle={{ maxHeight: "60vh" }}
+        bottomSlot={
+          autoDismissEnabled ? (
+            <PopupDismissBar
+              timeoutMs={autoDismissTimeoutMs}
+              showProgressBar={autoDismissShowProgressBar}
+              cursorOutBehavior={autoDismissCursorOutBehavior}
+              hovering={hovering}
+              onDismiss={onClose}
+            />
+          ) : undefined
+        }
+      />
+    </div>
   );
 };

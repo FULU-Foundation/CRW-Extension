@@ -32,6 +32,7 @@ type MatchPopupCardProps = {
   showCloseButton?: boolean;
   hideRelatedButtonWhenEmpty?: boolean;
   containerStyle?: React.CSSProperties;
+  bottomSlot?: React.ReactNode;
   suppressButtonLabel?: string;
   suppressButtonTooltip?: string;
   snoozeUntilNewChangesLabel?: string;
@@ -224,6 +225,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     onOpenSettings,
     settingsIconUrl,
     closeIconUrl,
+    bottomSlot,
   } = props;
 
   const [showRelatedPages, setShowRelatedPages] = useState(false);
@@ -284,6 +286,8 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
       style={{
         ...POPUP_LAYOUT.root,
         ...containerStyle,
+        position: "relative",
+        overflow: "hidden",
       }}
     >
       <MatchPopupHeader
@@ -345,6 +349,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
           </button>
         </div>
       )}
+      {bottomSlot}
     </div>
   );
 };

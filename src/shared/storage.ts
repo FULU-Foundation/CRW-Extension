@@ -1,7 +1,10 @@
 import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
-import type { PopupPosition } from "@/shared/constants";
+import type {
+  AutoDismissCursorOutBehavior,
+  PopupPosition,
+} from "@/shared/constants";
 import { canonicalizeSiteScopeList } from "@/shared/siteScope";
 import { ensureDataMigration } from "@/shared/dataMigrations";
 import { type CargoEntry, decodeCargoEntries } from "@/shared/types";
@@ -158,6 +161,75 @@ export const writePopupPosition = async (
   position: PopupPosition,
 ): Promise<void> => {
   await writeLocalValue(Constants.STORAGE.POPUP_POSITION, position);
+};
+
+const isAutoDismissTimeoutMs = (value: unknown): value is number => {
+  return (
+    typeof value === "number" &&
+    (Constants.AUTO_DISMISS_TIMEOUT_OPTIONS_MS as readonly number[]).includes(
+      value,
+    )
+  );
+};
+
+const isAutoDismissCursorOutBehavior = (
+  value: unknown,
+): value is AutoDismissCursorOutBehavior => {
+  return value === "continue" || value === "reset" || value === "remove";
+};
+
+export const readAutoDismissEnabled = async (): Promise<boolean> => {
+  const value = await readLocalValue(Constants.STORAGE.AUTO_DISMISS_ENABLED);
+  return asBoolean(value, Constants.DEFAULT_AUTO_DISMISS_ENABLED);
+};
+
+export const writeAutoDismissEnabled = async (
+  enabled: boolean,
+): Promise<void> => {
+  await writeLocalValue(Constants.STORAGE.AUTO_DISMISS_ENABLED, enabled);
+};
+
+export const readAutoDismissTimeoutMs = async (): Promise<number> => {
+  const value = await readLocalValue(Constants.STORAGE.AUTO_DISMISS_TIMEOUT_MS);
+  return isAutoDismissTimeoutMs(value)
+    ? value
+    : Constants.DEFAULT_AUTO_DISMISS_TIMEOUT_MS;
+};
+
+export const writeAutoDismissTimeoutMs = async (ms: number): Promise<void> => {
+  await writeLocalValue(Constants.STORAGE.AUTO_DISMISS_TIMEOUT_MS, ms);
+};
+
+export const readAutoDismissShowProgressBar = async (): Promise<boolean> => {
+  const value = await readLocalValue(
+    Constants.STORAGE.AUTO_DISMISS_SHOW_PROGRESS_BAR,
+  );
+  return asBoolean(value, Constants.DEFAULT_AUTO_DISMISS_SHOW_PROGRESS_BAR);
+};
+
+export const writeAutoDismissShowProgressBar = async (
+  show: boolean,
+): Promise<void> => {
+  await writeLocalValue(Constants.STORAGE.AUTO_DISMISS_SHOW_PROGRESS_BAR, show);
+};
+
+export const readAutoDismissCursorOutBehavior =
+  async (): Promise<AutoDismissCursorOutBehavior> => {
+    const value = await readLocalValue(
+      Constants.STORAGE.AUTO_DISMISS_CURSOR_OUT_BEHAVIOR,
+    );
+    return isAutoDismissCursorOutBehavior(value)
+      ? value
+      : Constants.DEFAULT_AUTO_DISMISS_CURSOR_OUT_BEHAVIOR;
+  };
+
+export const writeAutoDismissCursorOutBehavior = async (
+  behavior: AutoDismissCursorOutBehavior,
+): Promise<void> => {
+  await writeLocalValue(
+    Constants.STORAGE.AUTO_DISMISS_CURSOR_OUT_BEHAVIOR,
+    behavior,
+  );
 };
 
 export const readTabMatches = async (tabId: number): Promise<CargoEntry[]> => {
