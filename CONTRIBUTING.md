@@ -73,4 +73,4 @@ TBA
 
 ## Join The Project Team
 
-Join our [Discord](https://discord.com/v36XXARw9s) and request the **extension-dev** role.
+Join our [Discord](https://discord.gg/qCWkX9yUQ4) and request the **extension-dev** role.
