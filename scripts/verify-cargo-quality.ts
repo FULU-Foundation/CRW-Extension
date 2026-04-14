@@ -560,7 +560,7 @@ const formatTextReport = (result: ValidationResult, args: Args): string => {
 };
 
 const escapeWiki = (value: string): string => {
-  return value.replace(/\|/g, "{{!}}").replace(/\n/g, " ");
+  return value.replaceAll("|", "{{!}}").replaceAll("\n", " ");
 };
 
 const wikiPageLink = (entry: CargoEntry): string => {
