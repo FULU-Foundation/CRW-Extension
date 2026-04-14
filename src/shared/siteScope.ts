@@ -1,11 +1,5 @@
 import { getDomain } from "tldts";
-
-export const normalizeHostname = (hostname: string): string => {
-  return hostname
-    .trim()
-    .toLowerCase()
-    .replace(/^www\./, "");
-};
+import { normalizeHostname } from "./util.ts";
 
 export const getSiteScopeHostname = (hostname: string): string => {
   const normalized = normalizeHostname(hostname);
