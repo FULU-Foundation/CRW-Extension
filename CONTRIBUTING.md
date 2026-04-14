@@ -16,7 +16,7 @@ Thanks for contributing! ❤️
 
 Before opening an issue to ask a question:
 - Search [existing issues](https://github.com/FULU-Foundation/CRW-Extension/issues) first.
-- For quicker help, join our [Discord](https://discord.gg/qCWkX9yUQ4) and post in **#extension-dev**.
+- For quicker help, join our [Discord](https://discord.gg/qCWkX9yUQ4) and post in **#crw-extension**.
 
 ---
 
