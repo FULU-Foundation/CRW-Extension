@@ -11,7 +11,6 @@ export const DEFAULT_POPUP_POSITION: PopupPosition = "top-right";
 
 export type AutoDismissCursorOutBehavior = "continue" | "reset";
 
-
 export const DEFAULT_AUTO_DISMISS_ENABLED = true;
 export const DEFAULT_AUTO_DISMISS_TIMEOUT_MS = 5000;
 export const DEFAULT_AUTO_DISMISS_SHOW_PROGRESS_BAR = true;
