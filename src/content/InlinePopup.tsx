@@ -22,6 +22,7 @@ type InlinePopupProps = {
   autoDismissTimeoutMs: number;
   autoDismissShowProgressBar: boolean;
   autoDismissCursorOutBehavior: AutoDismissCursorOutBehavior;
+  autoDismissHoverCancelMs: number;
   manuallyOpened: boolean;
   onClose: () => void;
   onOpenSettings: () => void;
@@ -47,6 +48,7 @@ export const InlinePopup = (props: InlinePopupProps) => {
     autoDismissTimeoutMs,
     autoDismissShowProgressBar,
     autoDismissCursorOutBehavior,
+    autoDismissHoverCancelMs,
     manuallyOpened,
     onClose,
     onOpenSettings,
@@ -62,19 +64,31 @@ export const InlinePopup = (props: InlinePopupProps) => {
 
   const [hovering, setHovering] = useState(false);
   const [fading, setFading] = useState(false);
+  const [dismissKey, setDismissKey] = useState(0);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const graceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverCancelAllowedRef = useRef(false);
 
   const handleDismiss = () => {
     setFading(true);
+    hoverCancelAllowedRef.current = autoDismissHoverCancelMs > 0;
+    if (autoDismissHoverCancelMs > 0) {
+      graceTimerRef.current = setTimeout(() => {
+        hoverCancelAllowedRef.current = false;
+      }, autoDismissHoverCancelMs);
+    }
     fadeTimerRef.current = setTimeout(() => {
       onClose();
     }, FADE_DURATION_MS);
   };
 
   const handleMouseEnter = () => {
-    if (fading) {
+    if (fading && hoverCancelAllowedRef.current) {
       if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+      if (graceTimerRef.current) clearTimeout(graceTimerRef.current);
+      hoverCancelAllowedRef.current = false;
       setFading(false);
+      setDismissKey((k) => k + 1);
     }
     setHovering(true);
   };
@@ -117,6 +131,7 @@ export const InlinePopup = (props: InlinePopupProps) => {
         bottomSlot={
           showDismissBar ? (
             <PopupDismissBar
+              key={dismissKey}
               timeoutMs={barTimeoutMs}
               showProgressBar={autoDismissShowProgressBar}
               cursorOutBehavior={autoDismissCursorOutBehavior}

@@ -166,9 +166,9 @@ export const writePopupPosition = async (
 const isAutoDismissTimeoutMs = (value: unknown): value is number => {
   return (
     typeof value === "number" &&
-    (Constants.AUTO_DISMISS_TIMEOUT_OPTIONS_MS as readonly number[]).includes(
-      value,
-    )
+    Number.isInteger(value) &&
+    value >= 3000 &&
+    value <= 300000
   );
 };
 
@@ -230,6 +230,22 @@ export const writeAutoDismissCursorOutBehavior = async (
     Constants.STORAGE.AUTO_DISMISS_CURSOR_OUT_BEHAVIOR,
     behavior,
   );
+};
+
+export const readAutoDismissHoverCancelMs = async (): Promise<number> => {
+  const value = await readLocalValue(
+    Constants.STORAGE.AUTO_DISMISS_HOVER_CANCEL_MS,
+  );
+  if (typeof value === "number" && value >= 0 && value <= 60000) {
+    return Math.round(value);
+  }
+  return Constants.DEFAULT_AUTO_DISMISS_HOVER_CANCEL_MS;
+};
+
+export const writeAutoDismissHoverCancelMs = async (
+  ms: number,
+): Promise<void> => {
+  await writeLocalValue(Constants.STORAGE.AUTO_DISMISS_HOVER_CANCEL_MS, ms);
 };
 
 export const readTabMatches = async (tabId: number): Promise<CargoEntry[]> => {

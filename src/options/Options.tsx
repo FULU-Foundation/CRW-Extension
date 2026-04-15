@@ -7,6 +7,7 @@ import type {
   PopupPosition,
 } from "@/shared/constants";
 import {
+  DEFAULT_AUTO_DISMISS_HOVER_CANCEL_MS,
   DEFAULT_AUTO_DISMISS_CURSOR_OUT_BEHAVIOR,
   DEFAULT_AUTO_DISMISS_ENABLED,
   DEFAULT_AUTO_DISMISS_SHOW_PROGRESS_BAR,
@@ -18,6 +19,7 @@ import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
 import { normalizeHostname } from "@/shared/siteScope";
 import {
+  readAutoDismissHoverCancelMs,
   readAutoDismissCursorOutBehavior,
   readAutoDismissEnabled,
   readAutoDismissShowProgressBar,
@@ -30,6 +32,7 @@ import {
   readSnoozedSiteMap,
   readSuppressedDomains,
   readWarningsEnabled,
+  writeAutoDismissHoverCancelMs,
   writeAutoDismissCursorOutBehavior,
   writeAutoDismissEnabled,
   writeAutoDismissShowProgressBar,
@@ -85,6 +88,8 @@ const Options = () => {
     useState<AutoDismissCursorOutBehavior>(
       DEFAULT_AUTO_DISMISS_CURSOR_OUT_BEHAVIOR,
     );
+  const [autoDismissHoverCancelMs, setAutoDismissHoverCancelMs] =
+    useState<number>(DEFAULT_AUTO_DISMISS_HOVER_CANCEL_MS);
 
   useEffect(() => {
     void (async () => {
@@ -102,6 +107,7 @@ const Options = () => {
           dismissTimeoutMs,
           dismissShowBar,
           dismissCursorOut,
+          dismissHoverCancelMs,
         ] = await Promise.all([
           readWarningsEnabled(),
           readHideWhenNoIncidents(),
@@ -115,6 +121,7 @@ const Options = () => {
           readAutoDismissTimeoutMs(),
           readAutoDismissShowProgressBar(),
           readAutoDismissCursorOutBehavior(),
+          readAutoDismissHoverCancelMs(),
         ]);
         setWarningsEnabled(enabled);
         setHideWhenNoIncidents(hideWithoutIncidents);
@@ -128,6 +135,7 @@ const Options = () => {
         setAutoDismissTimeoutMs(dismissTimeoutMs);
         setAutoDismissShowProgressBar(dismissShowBar);
         setAutoDismissCursorOutBehavior(dismissCursorOut);
+        setAutoDismissHoverCancelMs(dismissHoverCancelMs);
       } finally {
         setLoading(false);
       }
@@ -180,6 +188,9 @@ const Options = () => {
         void readAutoDismissCursorOutBehavior().then(
           setAutoDismissCursorOutBehavior,
         );
+      }
+      if (changes[Constants.STORAGE.AUTO_DISMISS_HOVER_CANCEL_MS]) {
+        void readAutoDismissHoverCancelMs().then(setAutoDismissHoverCancelMs);
       }
     };
 
@@ -251,6 +262,11 @@ const Options = () => {
     await writeAutoDismissCursorOutBehavior(behavior);
   };
 
+  const onChangeAutoDismissHoverCancelMs = async (ms: number) => {
+    setAutoDismissHoverCancelMs(ms);
+    await writeAutoDismissHoverCancelMs(ms);
+  };
+
   const onChangeRefreshInterval = async (nextRefreshIntervalMs: number) => {
     setRefreshIntervalMs(nextRefreshIntervalMs);
     setRefreshError(null);
@@ -302,6 +318,7 @@ const Options = () => {
       autoDismissTimeoutMs={autoDismissTimeoutMs}
       autoDismissShowProgressBar={autoDismissShowProgressBar}
       autoDismissCursorOutBehavior={autoDismissCursorOutBehavior}
+      autoDismissHoverCancelMs={autoDismissHoverCancelMs}
       onToggleWarnings={(enabled) => void onToggleWarnings(enabled)}
       onToggleHideWhenNoIncidents={(enabled) =>
         void onToggleHideWhenNoIncidents(enabled)
@@ -322,6 +339,9 @@ const Options = () => {
       }
       onChangeAutoDismissCursorOutBehavior={(behavior) =>
         void onChangeAutoDismissCursorOutBehavior(behavior)
+      }
+      onChangeAutoDismissHoverCancelMs={(ms) =>
+        void onChangeAutoDismissHoverCancelMs(ms)
       }
     />
   );

@@ -11,6 +11,7 @@ import {
 } from "@/shared/siteScope";
 import { CargoEntry, PageContext } from "@/shared/types";
 import {
+  readAutoDismissHoverCancelMs,
   readAutoDismissCursorOutBehavior,
   readAutoDismissEnabled,
   readAutoDismissShowProgressBar,
@@ -54,6 +55,8 @@ let popupHost: HTMLDivElement | null = null;
 let popupShadowMount: HTMLDivElement | null = null;
 let popupRoot: Root | null = null;
 let forcePopupVisible = false;
+let currentPopupMatches: CargoEntry[] | null = null;
+let currentPopupIgnorePreferences = false;
 const SNOOZE_UNTIL_NEW_CHANGES_LABEL = "Hide until new incidents";
 
 const getSuppressedDomains = async (): Promise<string[]> => {
@@ -220,6 +223,8 @@ const ensurePopupRoot = (): Root => {
 
 const removeInlinePopup = () => {
   forcePopupVisible = false;
+  currentPopupMatches = null;
+  currentPopupIgnorePreferences = false;
   if (popupRoot) {
     popupRoot.unmount();
   }
@@ -278,11 +283,14 @@ const renderInlinePopup = async (
   }
 
   forcePopupVisible = ignorePreferences;
+  currentPopupMatches = visibleMatches;
+  currentPopupIgnorePreferences = ignorePreferences;
   const popupPosition: PopupPosition = await readPopupPosition();
   const autoDismissEnabled = await readAutoDismissEnabled();
   const autoDismissTimeoutMs = await readAutoDismissTimeoutMs();
   const autoDismissShowProgressBar = await readAutoDismissShowProgressBar();
   const autoDismissCursorOutBehavior = await readAutoDismissCursorOutBehavior();
+  const autoDismissHoverCancelMs = await readAutoDismissHoverCancelMs();
   const root = ensurePopupRoot();
   if (visibleMatches.length === 0) {
     root.render(
@@ -342,6 +350,7 @@ const renderInlinePopup = async (
       autoDismissTimeoutMs={autoDismissTimeoutMs}
       autoDismissShowProgressBar={autoDismissShowProgressBar}
       autoDismissCursorOutBehavior={autoDismissCursorOutBehavior}
+      autoDismissHoverCancelMs={autoDismissHoverCancelMs}
       manuallyOpened={ignorePreferences}
       onClose={removeInlinePopup}
       onOpenSettings={openOptions}
@@ -488,6 +497,21 @@ browser.storage.onChanged.addListener((changes, areaName) => {
       changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS]
     ) {
       void runContentScript();
+    }
+    if (
+      isInlinePopupOpen() &&
+      currentPopupMatches !== null &&
+      (changes[Constants.STORAGE.AUTO_DISMISS_ENABLED] ||
+        changes[Constants.STORAGE.AUTO_DISMISS_TIMEOUT_MS] ||
+        changes[Constants.STORAGE.AUTO_DISMISS_SHOW_PROGRESS_BAR] ||
+        changes[Constants.STORAGE.AUTO_DISMISS_CURSOR_OUT_BEHAVIOR] ||
+        changes[Constants.STORAGE.AUTO_DISMISS_HOVER_CANCEL_MS] ||
+        changes[Constants.STORAGE.POPUP_POSITION])
+    ) {
+      void renderInlinePopup(
+        currentPopupMatches,
+        currentPopupIgnorePreferences,
+      );
     }
   };
 

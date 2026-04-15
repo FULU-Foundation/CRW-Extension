@@ -46,7 +46,7 @@ const CURSOR_OUT_BEHAVIOR_OPTIONS: {
   {
     value: "reset",
     label: "Reset",
-    description: "Restart the countdown after cursor leaves",
+    description: "Restart the countdown after cursor enters",
   },
 ];
 
@@ -66,6 +66,7 @@ export type OptionsViewProps = {
   autoDismissTimeoutMs: number;
   autoDismissShowProgressBar: boolean;
   autoDismissCursorOutBehavior: AutoDismissCursorOutBehavior;
+  autoDismissHoverCancelMs: number;
   onToggleWarnings: (enabled: boolean) => void;
   onToggleHideWhenNoIncidents: (enabled: boolean) => void;
   onChangeRefreshInterval: (refreshIntervalMs: number) => void;
@@ -79,6 +80,7 @@ export type OptionsViewProps = {
   onChangeAutoDismissCursorOutBehavior: (
     behavior: AutoDismissCursorOutBehavior,
   ) => void;
+  onChangeAutoDismissHoverCancelMs: (ms: number) => void;
 };
 
 const formatLastRefreshed = (value: number | null): string => {
@@ -110,6 +112,7 @@ export const OptionsView = (props: OptionsViewProps) => {
     autoDismissTimeoutMs,
     autoDismissShowProgressBar,
     autoDismissCursorOutBehavior,
+    autoDismissHoverCancelMs,
     onToggleWarnings,
     onToggleHideWhenNoIncidents,
     onChangeRefreshInterval,
@@ -121,6 +124,7 @@ export const OptionsView = (props: OptionsViewProps) => {
     onChangeAutoDismissTimeoutMs,
     onToggleAutoDismissShowProgressBar,
     onChangeAutoDismissCursorOutBehavior,
+    onChangeAutoDismissHoverCancelMs,
   } = props;
 
   return (
@@ -511,14 +515,15 @@ export const OptionsView = (props: OptionsViewProps) => {
                 <input
                   id="auto-dismiss-timeout"
                   type="number"
-                  min={1}
+                  min={3}
                   max={300}
                   step={1}
                   value={autoDismissTimeoutMs / 1000}
                   disabled={loading}
                   onChange={(e) => {
+                    if (e.target.value === "") return;
                     const seconds = Math.max(
-                      1,
+                      3,
                       Math.min(300, Math.round(Number(e.target.value))),
                     );
                     if (!Number.isNaN(seconds)) {
@@ -639,6 +644,63 @@ export const OptionsView = (props: OptionsViewProps) => {
                   ))}
                 </div>
               </fieldset>
+
+              {/* Hover-cancel grace period */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px",
+                  border: `1px solid ${PAGE_CSS.border}`,
+                  borderRadius: "10px",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  color: PAGE_CSS.text,
+                }}
+              >
+                <label
+                  htmlFor="hover-cancel-ms"
+                  style={{ fontSize: "14px", color: PAGE_CSS.text }}
+                >
+                  Hovering cancels fade-out for (ms)
+                </label>
+                <span
+                  style={{
+                    fontSize: "12px",
+                    color: PAGE_CSS.muted,
+                  }}
+                >
+                  Set to 0 to disable. Default: 750
+                </span>
+                <input
+                  id="hover-cancel-ms"
+                  type="number"
+                  min={0}
+                  max={60000}
+                  step={50}
+                  value={autoDismissHoverCancelMs}
+                  disabled={loading}
+                  onChange={(e) => {
+                    const ms = Math.max(
+                      0,
+                      Math.min(60000, Math.round(Number(e.target.value))),
+                    );
+                    if (!Number.isNaN(ms)) {
+                      onChangeAutoDismissHoverCancelMs(ms);
+                    }
+                  }}
+                  style={{
+                    borderRadius: "8px",
+                    border: `1px solid ${PAGE_CSS.buttonBorder}`,
+                    background: "#FFFFFF",
+                    color: PAGE_CSS.buttonText,
+                    padding: "7px 10px",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    width: "100px",
+                  }}
+                />
+              </div>
             </div>
           )}
         </section>
