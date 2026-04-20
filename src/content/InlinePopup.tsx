@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type {
   AutoDismissCursorOutBehavior,
@@ -9,7 +9,7 @@ import { MatchPopupCard } from "@/shared/ui/MatchPopupCard";
 import { getCurrentPopupPlacementStyle } from "@/content/popupPlacement";
 import { PopupDismissBar } from "@/content/PopupDismissBar";
 
-const FADE_DURATION_MS = 2000;
+const FADE_DURATION_MS = 1500;
 
 type InlinePopupProps = {
   matches: CargoEntry[];
@@ -69,7 +69,15 @@ export const InlinePopup = (props: InlinePopupProps) => {
   const graceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hoverCancelAllowedRef = useRef(false);
 
+  useEffect(() => {
+    return () => {
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+      if (graceTimerRef.current) clearTimeout(graceTimerRef.current);
+    };
+  }, []);
+
   const handleDismiss = () => {
+    if (fading) return;
     setFading(true);
     hoverCancelAllowedRef.current = autoDismissHoverCancelMs > 0;
     if (autoDismissHoverCancelMs > 0) {

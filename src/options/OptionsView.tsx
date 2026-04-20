@@ -662,7 +662,7 @@ export const OptionsView = (props: OptionsViewProps) => {
                   htmlFor="hover-cancel-ms"
                   style={{ fontSize: "14px", color: PAGE_CSS.text }}
                 >
-                  Hovering cancels fade-out for (ms)
+                  Hover cancel grace period (ms)
                 </label>
                 <span
                   style={{
@@ -670,7 +670,7 @@ export const OptionsView = (props: OptionsViewProps) => {
                     color: PAGE_CSS.muted,
                   }}
                 >
-                  Set to 0 to disable. Default: 750
+                  Set to 0 to disable. Default: 500
                 </span>
                 <input
                   id="hover-cancel-ms"
@@ -681,6 +681,7 @@ export const OptionsView = (props: OptionsViewProps) => {
                   value={autoDismissHoverCancelMs}
                   disabled={loading}
                   onChange={(e) => {
+                    if (e.target.value === "") return;
                     const ms = Math.max(
                       0,
                       Math.min(60000, Math.round(Number(e.target.value))),

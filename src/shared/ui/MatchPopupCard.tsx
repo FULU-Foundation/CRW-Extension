@@ -289,7 +289,8 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
         position: "relative",
         overflow: "hidden",
         isolation: "isolate",
-        transform: "translateZ(0)",
+        willChange: "opacity",
+        // clipPath radius must match POPUP_LAYOUT.root.borderRadius (14px) — fixes Firefox progress bar overflow clipping
         clipPath: "inset(0 round 14px)",
       }}
     >

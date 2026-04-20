@@ -175,7 +175,7 @@ const isAutoDismissTimeoutMs = (value: unknown): value is number => {
 const isAutoDismissCursorOutBehavior = (
   value: unknown,
 ): value is AutoDismissCursorOutBehavior => {
-  return value === "continue" || value === "reset" || value === "remove";
+  return value === "continue" || value === "reset";
 };
 
 export const readAutoDismissEnabled = async (): Promise<boolean> => {
