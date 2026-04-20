@@ -9,6 +9,15 @@ export type PopupPosition =
   | "bottom-right";
 export const DEFAULT_POPUP_POSITION: PopupPosition = "top-right";
 
+export type AutoDismissCursorOutBehavior = "continue" | "reset";
+
+export const DEFAULT_AUTO_DISMISS_ENABLED = true;
+export const DEFAULT_AUTO_DISMISS_TIMEOUT_MS = 5000;
+export const DEFAULT_AUTO_DISMISS_SHOW_PROGRESS_BAR = true;
+export const DEFAULT_AUTO_DISMISS_CURSOR_OUT_BEHAVIOR: AutoDismissCursorOutBehavior =
+  "continue";
+export const DEFAULT_AUTO_DISMISS_HOVER_CANCEL_MS = 500;
+
 export const DATA_REMOTE_URL =
   "https://raw.githubusercontent.com/FULU-Foundation/CRW-Extension/refs/heads/export_cargo/all_cargo_combined.json";
 export const DEFAULT_DATA_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -39,4 +48,9 @@ export const STORAGE = {
   HIDE_WHEN_NO_INCIDENTS: "crw_hide_when_no_incidents",
   WARNINGS_ENABLED: "crw_warnings_enabled",
   POPUP_POSITION: "crw_popup_position",
+  AUTO_DISMISS_ENABLED: "crw_auto_dismiss_enabled",
+  AUTO_DISMISS_TIMEOUT_MS: "crw_auto_dismiss_timeout_ms",
+  AUTO_DISMISS_SHOW_PROGRESS_BAR: "crw_auto_dismiss_show_progress_bar",
+  AUTO_DISMISS_CURSOR_OUT_BEHAVIOR: "crw_auto_dismiss_cursor_out_behavior",
+  AUTO_DISMISS_HOVER_CANCEL_MS: "crw_auto_dismiss_hover_cancel_ms",
 } as const;
