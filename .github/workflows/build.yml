@@ -1,0 +1,55 @@
+name: Build extension
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Type check
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify build outputs
+        run: |
+          test -d dist/chrome
+          test -d dist/firefox
+
+      - name: Upload Chrome extension artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: chrome-extension
+          path: dist/chrome
+
+      - name: Upload Firefox extension artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: firefox-extension
+          path: dist/firefox
