@@ -4,6 +4,7 @@ import path from "node:path";
 import type { CargoEntry, CargoEntryType } from "../src/shared/types.ts";
 import { DATA_REMOTE_URL, DATASET_KEYS } from "../src/shared/constants.ts";
 import { decodeEntityStrings } from "../src/shared/html.ts";
+import { splitWebsiteField } from "../src/shared/util.ts";
 
 type RawDataset = Record<string, unknown>;
 
@@ -130,10 +131,9 @@ const FINDING_GROUP_DEFINITIONS: FindingGroupDefinition[] = [
 const normalizeText = (value: string): string => {
   return value
     .toLowerCase()
-    .replace(/&[a-z0-9#]+;/gi, " ")
+    .replace(/&[a-z0-9#]+;/g, " ")
     .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .replace(/\s+/g, " ");
+    .trim();
 };
 
 const flattenDataset = (raw: RawDataset): CargoEntry[] => {
@@ -161,45 +161,6 @@ const splitReferencePieces = (value: unknown): string[] => {
     .split(/[,;|]/)
     .map((piece) => piece.trim())
     .filter(Boolean);
-};
-
-const splitWebsiteField = (website: unknown): string[] => {
-  if (typeof website !== "string") return [];
-
-  const values: string[] = [];
-  const seen = new Set<string>();
-  const pushIfUnique = (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed || seen.has(trimmed)) return;
-    seen.add(trimmed);
-    values.push(trimmed);
-  };
-
-  const mediaWikiLinkPattern =
-    /\[((?:https?:\/\/|www\.)[^\s\]]+)(?:\s+([^\]]+))?\]/gi;
-
-  const remaining = website.replace(
-    mediaWikiLinkPattern,
-    (_match, target: string, label: string | undefined) => {
-      pushIfUnique(target);
-
-      const labelTrimmed = label?.trim() ?? "";
-      if (/^(?:https?:\/\/|www\.)/i.test(labelTrimmed)) {
-        pushIfUnique(labelTrimmed);
-      }
-
-      return " ";
-    },
-  );
-
-  for (const value of remaining
-    .split(/,(?=\s*(?:https?:\/\/|www\.))|\s+(?=(?:https?:\/\/|www\.))/i)
-    .map((part) => part.trim())
-    .filter(Boolean)) {
-    pushIfUnique(value);
-  }
-
-  return values;
 };
 
 const isParseableWebsiteUrl = (value: string): boolean => {
@@ -599,7 +560,7 @@ const formatTextReport = (result: ValidationResult, args: Args): string => {
 };
 
 const escapeWiki = (value: string): string => {
-  return value.replace(/\|/g, "{{!}}").replace(/\n/g, " ");
+  return value.replaceAll("|", "{{!}}").replaceAll("\n", " ");
 };
 
 const wikiPageLink = (entry: CargoEntry): string => {

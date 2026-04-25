@@ -10,6 +10,7 @@ import {
   resetMatchingConfig,
   setMatchingConfig,
 } from "../src/lib/matching/matchingConfig.ts";
+import { splitWebsiteField } from "../src/shared/util.ts";
 
 type RawDataset = Record<string, unknown>;
 
@@ -62,45 +63,6 @@ const flattenDataset = (raw: RawDataset): CargoEntry[] => {
   }
 
   return rows;
-};
-
-const splitWebsiteField = (website: unknown): string[] => {
-  if (typeof website !== "string") return [];
-
-  const values: string[] = [];
-  const seen = new Set<string>();
-  const pushIfUnique = (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed || seen.has(trimmed)) return;
-    seen.add(trimmed);
-    values.push(trimmed);
-  };
-
-  const mediaWikiLinkPattern =
-    /\[((?:https?:\/\/|www\.)[^\s\]]+)(?:\s+([^\]]+))?\]/gi;
-
-  const remaining = website.replace(
-    mediaWikiLinkPattern,
-    (_match, target: string, label: string | undefined) => {
-      pushIfUnique(target);
-
-      const labelTrimmed = label?.trim() ?? "";
-      if (/^(?:https?:\/\/|www\.)/i.test(labelTrimmed)) {
-        pushIfUnique(labelTrimmed);
-      }
-
-      return " ";
-    },
-  );
-
-  for (const value of remaining
-    .split(/,(?=\s*(?:https?:\/\/|www\.))|\s+(?=(?:https?:\/\/|www\.))/i)
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0)) {
-    pushIfUnique(value);
-  }
-
-  return values;
 };
 
 const getEntryKey = (entry: CargoEntry): string => {

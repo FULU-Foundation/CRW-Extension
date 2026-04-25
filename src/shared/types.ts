@@ -1,6 +1,10 @@
 /**
  * Cargo data types
  */
+
+/**
+ * enum
+ */
 export type CargoEntryType = "Company" | "Incident" | "Product" | "ProductLine";
 
 type CargoEntryCommon = {

@@ -8,6 +8,7 @@ import { getDomain, parse } from "tldts";
 import type { UrlEntryMatch, UrlMatchDetail, UrlMatchType } from "./types";
 import { getEcommerceFamily } from "./ecommerce.ts";
 import { matchingConfig } from "./matchingConfig.ts";
+import { normalizeHostname } from "../../shared/util.ts";
 
 const MATCH_PRIORITY: Record<UrlMatchType, number> = {
   exact: 3,
@@ -38,7 +39,7 @@ export const normalizePath = (pathname: string): string => {
 };
 
 export const getDomainRoot = (hostname: string): string => {
-  const normalized = hostname.toLowerCase().replace(/^www\./, "");
+  const normalized = normalizeHostname(hostname);
   const registrableDomain = getDomain(normalized, {
     allowPrivateDomains: true,
   });
@@ -50,7 +51,7 @@ export const getDomainRoot = (hostname: string): string => {
 };
 
 const getCrossTldAliasKey = (hostname: string): string | null => {
-  const normalized = hostname.toLowerCase().replace(/^www\./, "");
+  const normalized = normalizeHostname(hostname);
   const parsed = parse(normalized, { allowPrivateDomains: true });
   if (!parsed.domainWithoutSuffix || !parsed.publicSuffix) return null;
   return `${parsed.domainWithoutSuffix}|${parsed.publicSuffix}`;
@@ -94,16 +95,12 @@ const hasConfiguredCompoundCountrySuffix = (
     );
 };
 
-const normalizeMatchHostname = (hostname: string): string => {
-  return hostname.toLowerCase().replace(/^www\./, "");
-};
-
 export const classifyUrlMatch = (
   visitedUrl: URL,
   candidateUrl: URL,
 ): UrlMatchDetail | null => {
-  const visitedHost = normalizeMatchHostname(visitedUrl.hostname);
-  const candidateHost = normalizeMatchHostname(candidateUrl.hostname);
+  const visitedHost = normalizeHostname(visitedUrl.hostname);
+  const candidateHost = normalizeHostname(candidateUrl.hostname);
   const visitedPath = normalizePath(visitedUrl.pathname);
   const candidatePath = normalizePath(candidateUrl.pathname);
 
