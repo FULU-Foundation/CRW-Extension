@@ -1,4 +1,5 @@
 import React from "react";
+import type { PopupPosition } from "@/shared/constants";
 
 const PAGE_CSS = {
   bg: "#004080",
@@ -18,6 +19,17 @@ const REFRESH_INTERVAL_OPTIONS = [
   { value: 7 * 24 * 60 * 60 * 1000, label: "1 week" },
 ] as const;
 
+const POPUP_POSITION_OPTIONS: {
+  value: PopupPosition;
+  label: string;
+  corner: [boolean, boolean];
+}[] = [
+  { value: "top-left", label: "Top left", corner: [false, true] },
+  { value: "top-right", label: "Top right", corner: [false, false] },
+  { value: "bottom-left", label: "Bottom left", corner: [true, true] },
+  { value: "bottom-right", label: "Bottom right", corner: [true, false] },
+];
+
 export type OptionsViewProps = {
   warningsEnabled: boolean;
   hideWhenNoIncidents: boolean;
@@ -29,12 +41,14 @@ export type OptionsViewProps = {
   refreshError: string | null;
   lastRefreshError: string | null;
   loading: boolean;
+  popupPosition: PopupPosition;
   onToggleWarnings: (enabled: boolean) => void;
   onToggleHideWhenNoIncidents: (enabled: boolean) => void;
   onChangeRefreshInterval: (refreshIntervalMs: number) => void;
   onRefreshNow: () => void;
   onRemoveSuppressedDomain: (domain: string) => void;
   onRemoveSnoozedSite: (domain: string) => void;
+  onChangePopupPosition: (position: PopupPosition) => void;
 };
 
 const formatLastRefreshed = (value: number | null): string => {
@@ -61,12 +75,14 @@ export const OptionsView = (props: OptionsViewProps) => {
     refreshError,
     lastRefreshError,
     loading,
+    popupPosition,
     onToggleWarnings,
     onToggleHideWhenNoIncidents,
     onChangeRefreshInterval,
     onRefreshNow,
     onRemoveSuppressedDomain,
     onRemoveSnoozedSite,
+    onChangePopupPosition,
   } = props;
 
   return (
@@ -79,9 +95,10 @@ export const OptionsView = (props: OptionsViewProps) => {
       }}
     >
       <style>
-        {
-          "@keyframes crwOptionsSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }"
-        }
+        {`
+          body { margin: 0; }
+          @keyframes crwOptionsSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        `}
       </style>
       <div
         style={{
@@ -263,6 +280,110 @@ export const OptionsView = (props: OptionsViewProps) => {
               ? "Enabled: automatic popups are hidden unless incident matches are present."
               : "Disabled: automatic popups can show even without incident matches."}
           </p>
+        </section>
+
+        <section
+          style={{
+            border: `1px solid ${PAGE_CSS.border}`,
+            borderRadius: "12px",
+            padding: "14px",
+            background: PAGE_CSS.subtleBg,
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "16px",
+              lineHeight: 1.2,
+              fontWeight: 700,
+              color: PAGE_CSS.text,
+            }}
+          >
+            Popup Position
+          </h2>
+          <p
+            style={{
+              margin: "6px 0 10px 0",
+              fontSize: "13px",
+              color: PAGE_CSS.muted,
+            }}
+          >
+            Choose which corner of the screen the popup appears in. On mobile
+            devices it always appears at the bottom center.
+          </p>
+
+          <div
+            role="radiogroup"
+            aria-label="Popup position"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "8px",
+            }}
+          >
+            {POPUP_POSITION_OPTIONS.map((option) => {
+              const [isBottom, isLeft] = option.corner;
+              const selected = popupPosition === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  disabled={loading}
+                  onClick={() => onChangePopupPosition(option.value)}
+                  style={{
+                    border: `1px solid ${selected ? PAGE_CSS.text : PAGE_CSS.border}`,
+                    borderRadius: "10px",
+                    padding: "10px",
+                    background: selected
+                      ? "rgba(255,255,255,0.18)"
+                      : "transparent",
+                    color: PAGE_CSS.text,
+                    cursor: loading ? "default" : "pointer",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                    opacity: loading ? 0.75 : 1,
+                  }}
+                >
+                  <div
+                    style={{
+                      position: "relative",
+                      width: "100%",
+                      paddingBottom: "50%",
+                      border: `1px solid ${PAGE_CSS.border}`,
+                      borderRadius: "6px",
+                      background: "rgba(0,0,0,0.2)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: "absolute",
+                        width: "36%",
+                        height: "40%",
+                        background: selected
+                          ? PAGE_CSS.text
+                          : "rgba(255,255,255,0.5)",
+                        borderRadius: "3px",
+                        ...(isBottom ? { bottom: "6px" } : { top: "6px" }),
+                        ...(isLeft ? { left: "6px" } : { right: "6px" }),
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: selected ? 700 : 400,
+                      textAlign: "center",
+                    }}
+                  >
+                    {option.label}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </section>
 
         <section

@@ -2,29 +2,27 @@ import React, { useEffect, useState } from "react";
 import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
+import type { PopupPosition } from "@/shared/constants";
+import { DEFAULT_POPUP_POSITION } from "@/shared/constants";
 import { OptionsView } from "@/options/OptionsView";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
+import { normalizeHostname } from "@/shared/siteScope";
 import {
   readHideWhenNoIncidents,
   readLastRefreshedAt,
+  readPopupPosition,
   readRefreshErrorMessage,
   readRefreshIntervalMs,
   readSnoozedSiteMap,
   readSuppressedDomains,
   readWarningsEnabled,
   writeHideWhenNoIncidents,
+  writePopupPosition,
   writeSnoozedSiteMap,
   writeSuppressedDomains,
   writeWarningsEnabled,
 } from "@/shared/storage";
-
-const normalizeHostname = (hostname: string): string => {
-  return hostname
-    .trim()
-    .toLowerCase()
-    .replace(/^www\./, "");
-};
 
 const readSnoozedSites = async (): Promise<string[]> => {
   const value = await readSnoozedSiteMap();
@@ -55,6 +53,9 @@ const Options = () => {
   const [refreshingNow, setRefreshingNow] = useState<boolean>(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [popupPosition, setPopupPosition] = useState<PopupPosition>(
+    DEFAULT_POPUP_POSITION,
+  );
 
   useEffect(() => {
     void (async () => {
@@ -67,6 +68,7 @@ const Options = () => {
           intervalMs,
           refreshedAt,
           fetchError,
+          position,
         ] = await Promise.all([
           readWarningsEnabled(),
           readHideWhenNoIncidents(),
@@ -75,18 +77,16 @@ const Options = () => {
           readRefreshIntervalMs(),
           readLastRefreshedAt(),
           readLastRefreshError(),
+          readPopupPosition(),
         ]);
         setWarningsEnabled(enabled);
         setHideWhenNoIncidents(hideWithoutIncidents);
-        setSuppressedDomains(
-          domains
-            .map((domain) => normalizeHostname(domain))
-            .filter((domain) => domain.length > 0),
-        );
+        setSuppressedDomains(domains);
         setSnoozedSites(snoozedSiteDomains);
         setRefreshIntervalMs(intervalMs);
         setLastRefreshedAt(refreshedAt);
         setLastRefreshError(fetchError);
+        setPopupPosition(position);
       } finally {
         setLoading(false);
       }
@@ -122,16 +122,16 @@ const Options = () => {
 
       if (changes[Constants.STORAGE.SUPPRESSED_DOMAINS]) {
         void readSuppressedDomains().then((domains) => {
-          setSuppressedDomains(
-            domains
-              .map((domain) => normalizeHostname(domain))
-              .filter((domain) => domain.length > 0),
-          );
+          setSuppressedDomains(domains);
         });
       }
 
       if (changes[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE]) {
         void readSnoozedSites().then(setSnoozedSites);
+      }
+
+      if (changes[Constants.STORAGE.POPUP_POSITION]) {
+        void readPopupPosition().then(setPopupPosition);
       }
     };
 
@@ -163,16 +163,22 @@ const Options = () => {
     if (!normalized) return;
 
     const existing = await readSnoozedSiteMap();
-    if (!Object.prototype.hasOwnProperty.call(existing, normalized)) return;
+    if (!existing[normalized] || existing[normalized].length === 0) return;
     const next = { ...existing };
     delete next[normalized];
     setSnoozedSites(
       Object.keys(next)
+        .filter((key) => next[key] && next[key].length > 0)
         .map((value) => normalizeHostname(value))
         .filter((value) => value.length > 0)
         .sort((left, right) => left.localeCompare(right)),
     );
     await writeSnoozedSiteMap(next);
+  };
+
+  const onChangePopupPosition = async (position: PopupPosition) => {
+    setPopupPosition(position);
+    await writePopupPosition(position);
   };
 
   const onChangeRefreshInterval = async (nextRefreshIntervalMs: number) => {
@@ -221,6 +227,7 @@ const Options = () => {
       refreshError={refreshError}
       lastRefreshError={lastRefreshError}
       loading={loading}
+      popupPosition={popupPosition}
       onToggleWarnings={(enabled) => {
         void onToggleWarnings(enabled);
       }}
@@ -238,6 +245,9 @@ const Options = () => {
       }}
       onRemoveSnoozedSite={(domain) => {
         void onRemoveSnoozedSite(domain);
+      }}
+      onChangePopupPosition={(position) => {
+        void onChangePopupPosition(position);
       }}
     />
   );
