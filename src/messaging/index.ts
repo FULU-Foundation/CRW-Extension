@@ -19,6 +19,9 @@ const isMessageType = (value: unknown): value is MessageType => {
     value === MessageType.MATCH_RESULTS_UPDATED ||
     value === MessageType.FORCE_SHOW_INLINE_POPUP ||
     value === MessageType.TOGGLE_INLINE_POPUP ||
+    value === MessageType.HIDE_INLINE_POPUP ||
+    value === MessageType.TOGGLE_SNOOZE_CURRENT_SITE ||
+    value === MessageType.TOGGLE_SUPPRESS_CURRENT_SITE ||
     value === MessageType.OPEN_OPTIONS_PAGE ||
     value === MessageType.REFRESH_DATASET_NOW
   );

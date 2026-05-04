@@ -1,5 +1,6 @@
 import React from "react";
 import type { PopupPosition } from "@/shared/constants";
+import { type ShortcutCommandBinding } from "@/shared/shortcuts";
 
 const PAGE_CSS = {
   bg: "#004080",
@@ -40,12 +41,14 @@ export type OptionsViewProps = {
   refreshingNow: boolean;
   refreshError: string | null;
   lastRefreshError: string | null;
+  shortcutBindings: ShortcutCommandBinding[];
   loading: boolean;
   popupPosition: PopupPosition;
   onToggleWarnings: (enabled: boolean) => void;
   onToggleHideWhenNoIncidents: (enabled: boolean) => void;
   onChangeRefreshInterval: (refreshIntervalMs: number) => void;
   onRefreshNow: () => void;
+  onOpenShortcutSettings: () => void;
   onRemoveSuppressedDomain: (domain: string) => void;
   onRemoveSnoozedSite: (domain: string) => void;
   onChangePopupPosition: (position: PopupPosition) => void;
@@ -74,12 +77,14 @@ export const OptionsView = (props: OptionsViewProps) => {
     refreshingNow,
     refreshError,
     lastRefreshError,
+    shortcutBindings,
     loading,
     popupPosition,
     onToggleWarnings,
     onToggleHideWhenNoIncidents,
     onChangeRefreshInterval,
     onRefreshNow,
+    onOpenShortcutSettings,
     onRemoveSuppressedDomain,
     onRemoveSnoozedSite,
     onChangePopupPosition,
@@ -148,6 +153,97 @@ export const OptionsView = (props: OptionsViewProps) => {
             </div>
           </div>
         </div>
+
+        <section
+          style={{
+            border: `1px solid ${PAGE_CSS.border}`,
+            borderRadius: "12px",
+            padding: "14px",
+            background: PAGE_CSS.subtleBg,
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "16px",
+              lineHeight: 1.2,
+              fontWeight: 700,
+              color: PAGE_CSS.text,
+            }}
+          >
+            Keyboard Shortcuts
+          </h2>
+          <p
+            style={{
+              margin: "6px 0 10px 0",
+              fontSize: "13px",
+              color: PAGE_CSS.muted,
+            }}
+          >
+            Keyboard shortcuts are managed by your browser. Use the browser
+            shortcut settings page to add or change bindings for these actions.
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+            }}
+          >
+            {shortcutBindings.map((binding) => (
+              <div
+                key={binding.name}
+                style={{
+                  border: `1px solid ${PAGE_CSS.border}`,
+                  borderRadius: "10px",
+                  padding: "10px 12px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "4px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    color: PAGE_CSS.text,
+                  }}
+                >
+                  {binding.label}
+                </div>
+                <div style={{ fontSize: "12px", color: PAGE_CSS.muted }}>
+                  {binding.description}
+                </div>
+                <div style={{ fontSize: "12px", color: PAGE_CSS.text }}>
+                  Current: {binding.shortcut || "Not set"}
+                </div>
+                <div style={{ fontSize: "12px", color: PAGE_CSS.muted }}>
+                  Suggested: {binding.suggestedBinding}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: "10px" }}>
+            <button
+              type="button"
+              onClick={onOpenShortcutSettings}
+              style={{
+                border: `1px solid ${PAGE_CSS.buttonBorder}`,
+                background: PAGE_CSS.buttonBg,
+                color: PAGE_CSS.buttonText,
+                borderRadius: "8px",
+                padding: "6px 10px",
+                fontSize: "12px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Manage shortcuts
+            </button>
+          </div>
+        </section>
 
         <section
           style={{
