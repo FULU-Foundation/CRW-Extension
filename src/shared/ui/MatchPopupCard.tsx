@@ -48,8 +48,7 @@ const normalizeEntityToken = (value: string): string => {
   return value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .replace(/\s+/g, " ");
+    .trim();
 };
 
 const toNormalizedReferenceSet = (value: string | undefined): Set<string> => {

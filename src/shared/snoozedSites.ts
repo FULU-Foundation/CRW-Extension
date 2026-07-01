@@ -1,3 +1,5 @@
+import { normalizeHostname } from "./util.ts";
+
 export type SnoozedSiteState = {
   incidentSignature: string;
   snoozedAt: number;
@@ -22,13 +24,6 @@ const decodeSnoozedSiteState = (value: unknown): SnoozedSiteState | null => {
   };
 };
 
-const normalizeDomain = (domain: string): string => {
-  return domain
-    .trim()
-    .toLowerCase()
-    .replace(/^www\./, "");
-};
-
 export const normalizeSnoozedSiteMap = (value: unknown): SnoozedSiteMap => {
   if (!isObjectRecord(value)) return {};
 
@@ -36,7 +31,7 @@ export const normalizeSnoozedSiteMap = (value: unknown): SnoozedSiteMap => {
   const next: SnoozedSiteMap = {};
 
   for (const [domain, rawValue] of Object.entries(value)) {
-    const normalizedDomain = normalizeDomain(domain);
+    const normalizedDomain = normalizeHostname(domain);
     if (!normalizedDomain) continue;
 
     let entries: SnoozedSiteState[];
