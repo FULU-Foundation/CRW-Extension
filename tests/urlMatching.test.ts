@@ -104,6 +104,35 @@ test("classifies subdomain match without requiring path compatibility", () => {
   assert.equal(result.matchType, "subdomain");
 });
 
+test("prefers root website subdomain matches over path-specific entries", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-nvidia",
+      PageName: "Nvidia",
+      Website: "https://www.nvidia.com/",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-geforce-now",
+      PageName: "GeForce Now",
+      Company: "Nvidia",
+      Website: "https://www.nvidia.com/geforce-now/",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://developer.nvidia.com/",
+    10,
+  );
+
+  assert.equal(results.length, 2);
+  assert.equal(results[0]?.entry.PageID, "company-nvidia");
+  assert.equal(results[1]?.entry.PageID, "pl-geforce-now");
+  assert.equal(results[0]?.matchType, "subdomain");
+});
+
 test("does not classify subdomain match when subdomain matching is disabled", () => {
   setMatchingConfig({ enableSubdomainMatching: false });
   const visited = safeParseUrl("https://invest.ally.com/ola/");

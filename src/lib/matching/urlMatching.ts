@@ -111,6 +111,7 @@ export const classifyUrlMatch = (
         matchedPath: candidatePath,
         visitedHost,
         candidateHost,
+        candidatePath,
       };
     }
 
@@ -121,6 +122,7 @@ export const classifyUrlMatch = (
         matchedPath: candidatePath,
         visitedHost,
         candidateHost,
+        candidatePath,
       };
     }
   }
@@ -135,6 +137,7 @@ export const classifyUrlMatch = (
         matchedPath: null,
         visitedHost,
         candidateHost,
+        candidatePath,
       };
     }
   }
@@ -148,6 +151,7 @@ export const classifyUrlMatch = (
         matchedPath: null,
         visitedHost,
         candidateHost,
+        candidatePath,
         ecommerceFamilyAlias: true,
       };
     }
@@ -179,6 +183,7 @@ export const classifyUrlMatch = (
         matchedPath: null,
         visitedHost,
         candidateHost,
+        candidatePath,
         crossTldAlias: true,
       };
     }
@@ -235,6 +240,20 @@ const compareSubdomainDepth = (
   return leftDepth - rightDepth;
 };
 
+const compareSubdomainCandidatePath = (
+  left: UrlMatchDetail,
+  right: UrlMatchDetail,
+): number => {
+  if (left.matchType !== "subdomain" || right.matchType !== "subdomain") {
+    return 0;
+  }
+
+  const leftIsRootPath = left.candidatePath === "/";
+  const rightIsRootPath = right.candidatePath === "/";
+  if (leftIsRootPath === rightIsRootPath) return 0;
+  return leftIsRootPath ? -1 : 1;
+};
+
 const sortDetailedMatches = (
   left: DetailedUrlEntryMatch,
   right: DetailedUrlEntryMatch,
@@ -243,6 +262,12 @@ const sortDetailedMatches = (
 
   const byDepth = compareSubdomainDepth(left.detail, right.detail);
   if (byDepth !== 0) return byDepth;
+
+  const byCandidatePath = compareSubdomainCandidatePath(
+    left.detail,
+    right.detail,
+  );
+  if (byCandidatePath !== 0) return byCandidatePath;
 
   const byName = left.entry.PageName.localeCompare(right.entry.PageName);
   if (byName !== 0) return byName;
