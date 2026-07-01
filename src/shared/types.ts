@@ -44,10 +44,7 @@ export type ProductLineEntry = CargoEntryCommon & {
 };
 
 export type CargoEntry =
-  | CompanyEntry
-  | IncidentEntry
-  | ProductEntry
-  | ProductLineEntry;
+  CompanyEntry | IncidentEntry | ProductEntry | ProductLineEntry;
 
 export type RawCargoDataset = Record<CargoEntryType, unknown[]>;
 
