@@ -220,12 +220,13 @@ export const CompactBanner = (props: CompactBannerProps) => {
                 key={match.PageID}
                 role="button"
                 tabIndex={0}
-                onClick={() => window.open(url, "_blank")}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    window.open(url, "_blank");
-                  }
-                }}
+onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+onKeyDown={(e) => {
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+}}
                 style={{
                   display: "block",
                   width: "100%",
