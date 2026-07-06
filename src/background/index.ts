@@ -192,18 +192,28 @@ browser.storage.onChanged.addListener((changes, areaName) => {
   }
 
   if (changes[Constants.STORAGE.DISPLAY_MODE]) {
-    currentDisplayMode = changes[Constants.STORAGE.DISPLAY_MODE]
-      .newValue as DisplayMode;
+    const nextDisplayMode = changes[Constants.STORAGE.DISPLAY_MODE].newValue;
+    currentDisplayMode = Constants.DISPLAY_MODE_OPTIONS.includes(
+      nextDisplayMode as DisplayMode,
+    )
+      ? (nextDisplayMode as DisplayMode)
+      : "full-popup";
   }
 });
 
-browser.tabs.onActivated.addListener(async ({ tabId, tab }) => {
+browser.tabs.onActivated.addListener(async ({ tabId }) => {
   console.log(
     `${Constants.LOG_PREFIX} Active tab has been changed. TabId:${tabId}`,
   );
 
   const results = await readTabMatches(tabId);
-  const hostname = tab?.url ? new URL(tab.url).hostname : "";
+  let hostname = "";
+  try {
+    const tab = await browser.tabs.get(tabId);
+    hostname = tab.url ? new URL(tab.url).hostname : "";
+  } catch {
+    // Leave hostname empty when the active tab cannot be inspected.
+  }
   await updateBadge(tabId, results, hostname);
 });
 

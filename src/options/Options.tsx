@@ -36,6 +36,12 @@ const readSnoozedSites = async (): Promise<string[]> => {
 
 const readLastRefreshError = readRefreshErrorMessage;
 
+const normalizeDomainList = (domains: string[]): string[] => {
+  return domains
+    .map((domain) => normalizeHostname(domain))
+    .filter((domain) => domain.length > 0);
+};
+
 const decodeRefreshNowResponseFetchedAt = (value: unknown): number | null => {
   if (typeof value !== "object" || value === null) return null;
   const record = value as Record<string, unknown>;
@@ -87,11 +93,7 @@ const Options = () => {
         setWarningsEnabled(enabled);
         setHideWhenNoIncidents(hideWithoutIncidents);
         setDisplayMode(mode);
-        setSuppressedDomains(
-          domains
-            .map((domain) => normalizeHostname(domain))
-            .filter((domain) => domain.length > 0),
-        );
+        setSuppressedDomains(normalizeDomainList(domains));
         setSnoozedSites(snoozedSiteDomains);
         setRefreshIntervalMs(intervalMs);
         setLastRefreshedAt(refreshedAt);
@@ -136,7 +138,7 @@ const Options = () => {
 
       if (changes[Constants.STORAGE.SUPPRESSED_DOMAINS]) {
         void readSuppressedDomains().then((domains) => {
-          setSuppressedDomains(domains);
+          setSuppressedDomains(normalizeDomainList(domains));
         });
       }
 

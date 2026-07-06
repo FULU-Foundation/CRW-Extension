@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { CargoEntry, isIncidentEntry } from "@/shared/types";
 
@@ -24,40 +24,47 @@ const getBannerColor = (count: number): string => {
   return "#FF5722";
 };
 
-const getSiteName = (hostname: string): string => {
-  const parts = hostname.replace(/^www\./, "").split(".");
+const getDisplayLabel = (value: string): string => {
+  const parts = value.replace(/^www\./, "").split(".");
   if (parts.length >= 2) {
     return parts[0];
   }
-  return hostname;
+  return value;
 };
 
 export const CompactBanner = (props: CompactBannerProps) => {
   const { matches, logoUrl, onClose, onOpenSettings } = props;
   const [showPopup, setShowPopup] = useState(false);
-  const [hoverTimeout, setHoverTimeout] = useState<ReturnType<
-    typeof setTimeout
-  > | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleMouseLeave = () => {
-    const timeout = setTimeout(() => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
       setShowPopup(false);
     }, 300);
-    setHoverTimeout(timeout);
   };
 
   const handleMouseEnter = () => {
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
-      setHoverTimeout(null);
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
     }
     setShowPopup(true);
   };
 
   const incidentCount = getIncidentCount(matches);
   const totalCount = getTotalCount(matches);
-  const hostname = matches[0]?.PageName || "this site";
-  const siteName = getSiteName(hostname);
+  const siteLabel = getDisplayLabel(matches[0]?.PageName || "this site");
   const bannerColor = getBannerColor(incidentCount);
   const bannerOpacity = incidentCount > 0 ? 0.85 : 0.6;
   const incidents = matches.filter((m) => isIncidentEntry(m));
@@ -93,7 +100,7 @@ export const CompactBanner = (props: CompactBannerProps) => {
           alt=""
           style={{ width: "18px", height: "18px", borderRadius: "4px" }}
         />
-        <span style={{ fontWeight: 600 }}>{siteName}</span>
+        <span style={{ fontWeight: 600 }}>{siteLabel}</span>
         <span
           style={{
             display: "flex",
