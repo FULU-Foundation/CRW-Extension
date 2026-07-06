@@ -1,7 +1,9 @@
 import React from "react";
 
+import type { PopupPosition } from "@/shared/constants";
 import { CargoEntry } from "@/shared/types";
 import { MatchPopupCard } from "@/shared/ui/MatchPopupCard";
+import { getCurrentPopupPlacementStyle } from "@/content/popupPlacement";
 
 type InlinePopupProps = {
   matches: CargoEntry[];
@@ -9,6 +11,7 @@ type InlinePopupProps = {
   externalIconUrl: string;
   settingsIconUrl: string;
   closeIconUrl: string;
+  position: PopupPosition;
   onClose: () => void;
   onOpenSettings: () => void;
   onSuppressSite: () => void;
@@ -28,6 +31,7 @@ export const InlinePopup = (props: InlinePopupProps) => {
     externalIconUrl,
     settingsIconUrl,
     closeIconUrl,
+    position,
     onClose,
     onOpenSettings,
     onSuppressSite,
@@ -39,6 +43,8 @@ export const InlinePopup = (props: InlinePopupProps) => {
     suppressButtonTooltip,
     disableWarningsLabel,
   } = props;
+
+  const containerStyle = getCurrentPopupPlacementStyle(position);
 
   return (
     <MatchPopupCard
@@ -60,12 +66,7 @@ export const InlinePopup = (props: InlinePopupProps) => {
       showCloseButton
       hideRelatedButtonWhenEmpty
       containerStyle={{
-        position: "fixed",
-        right: "16px",
-        top: "16px",
-        width: "460px",
-        maxWidth: "calc(100vw - 32px)",
-        zIndex: 2147483647,
+        ...containerStyle,
         maxHeight: "60vh",
       }}
     />

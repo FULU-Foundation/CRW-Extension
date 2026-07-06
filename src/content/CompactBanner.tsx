@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import browser from "webextension-polyfill";
 
 import { CargoEntry, isIncidentEntry } from "@/shared/types";
 
