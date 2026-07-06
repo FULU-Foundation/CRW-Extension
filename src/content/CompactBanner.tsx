@@ -91,8 +91,15 @@ export const CompactBanner = (props: CompactBannerProps) => {
         borderRadius: "8px",
         boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
       }}
+      tabIndex={0}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onFocusCapture={handleMouseEnter}
+      onBlurCapture={(e) => {
+        const nextTarget = e.relatedTarget as Node | null;
+        if (nextTarget && e.currentTarget.contains(nextTarget)) return;
+        handleMouseLeave();
+      }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <img
