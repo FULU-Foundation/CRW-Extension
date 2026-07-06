@@ -14,6 +14,8 @@ import {
   writeSuppressedDomains,
   readDisplayMode,
 } from "@/shared/storage";
+import * as Messaging from "@/messaging";
+import { MessageType } from "@/messaging/type";
 
 const POPUP_BG = "#004080";
 const POPUP_TEXT = "#FFFFFF";
@@ -68,6 +70,18 @@ const Popup = () => {
 
         const displayMode = await readDisplayMode();
         if (displayMode === "compact-badge" && results.length > 0) {
+          try {
+            await browser.tabs.sendMessage(
+              tabId,
+              Messaging.createMessage(
+                MessageType.TOGGLE_INLINE_POPUP,
+                "popup",
+                results,
+              ),
+            );
+          } catch {
+            // Content scripts are not available on every active tab.
+          }
           window.close();
           return;
         }

@@ -100,6 +100,22 @@ const updateBadge = async (
   }
 };
 
+const refreshActiveTabBadge = async (): Promise<void> => {
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  const tabId = tab?.id;
+  if (!tabId) return;
+
+  const matches = await readTabMatches(tabId);
+  let hostname = "";
+  try {
+    hostname = tab.url ? new URL(tab.url).hostname : "";
+  } catch {
+    // Leave hostname empty when the active tab URL cannot be parsed.
+  }
+
+  await updateBadge(tabId, matches, hostname);
+};
+
 const sendMatchUpdateToTab = async (
   tabId: number,
   matches: CargoEntry[],
@@ -198,6 +214,7 @@ browser.storage.onChanged.addListener((changes, areaName) => {
     )
       ? (nextDisplayMode as DisplayMode)
       : "full-popup";
+    void refreshActiveTabBadge();
   }
 });
 

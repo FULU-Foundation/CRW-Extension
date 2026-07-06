@@ -4,14 +4,16 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { OptionsView } from "../src/options/OptionsView.tsx";
+import type { DisplayMode } from "../src/shared/constants.ts";
 
 const noop = () => {};
 
-test("OptionsView shows enabled state and empty ignored-sites list", () => {
-  const html = renderToStaticMarkup(
+const renderOptionsView = (overrides: Partial<Parameters<typeof OptionsView>[0]>) => {
+  return renderToStaticMarkup(
     React.createElement(OptionsView, {
       warningsEnabled: true,
       hideWhenNoIncidents: true,
+      displayMode: "full-popup",
       suppressedDomains: [],
       snoozedSites: [],
       refreshIntervalMs: 24 * 60 * 60 * 1000,
@@ -20,14 +22,22 @@ test("OptionsView shows enabled state and empty ignored-sites list", () => {
       refreshError: null,
       lastRefreshError: null,
       loading: false,
+      popupPosition: "top-right",
       onToggleWarnings: noop,
       onToggleHideWhenNoIncidents: noop,
+      onChangeDisplayMode: noop,
       onChangeRefreshInterval: noop,
       onRefreshNow: noop,
       onRemoveSuppressedDomain: noop,
       onRemoveSnoozedSite: noop,
+      onChangePopupPosition: noop,
+      ...overrides,
     }),
   );
+};
+
+test("OptionsView shows enabled state and empty ignored-sites list", () => {
+  const html = renderOptionsView({});
 
   assert.ok(html.includes("Show On Page Load"));
   assert.ok(html.includes("Enabled: matching popups can show automatically."));
@@ -48,10 +58,10 @@ test("OptionsView shows enabled state and empty ignored-sites list", () => {
 });
 
 test("OptionsView shows disabled state and removable ignored-site entries", () => {
-  const html = renderToStaticMarkup(
-    React.createElement(OptionsView, {
+  const html = renderOptionsView({
       warningsEnabled: false,
       hideWhenNoIncidents: false,
+      displayMode: "badge-only",
       suppressedDomains: ["example.com"],
       snoozedSites: ["shop.example"],
       refreshIntervalMs: 60 * 60 * 1000,
@@ -60,14 +70,7 @@ test("OptionsView shows disabled state and removable ignored-site entries", () =
       refreshError: "Refresh failed. Please try again.",
       lastRefreshError: "Failed to fetch dataset (500)",
       loading: true,
-      onToggleWarnings: noop,
-      onToggleHideWhenNoIncidents: noop,
-      onChangeRefreshInterval: noop,
-      onRefreshNow: noop,
-      onRemoveSuppressedDomain: noop,
-      onRemoveSnoozedSite: noop,
-    }),
-  );
+  });
 
   assert.ok(html.includes("Disabled: popups will not auto-show on page load."));
   assert.ok(html.includes("example.com"));
@@ -82,4 +85,27 @@ test("OptionsView shows disabled state and removable ignored-site entries", () =
   assert.ok(html.includes("Refresh failed. Please try again."));
   assert.ok(html.includes("Last fetch error: Failed to fetch dataset (500)"));
   assert.ok(html.includes("disabled"));
+});
+
+test("OptionsView renders display mode choices and selected-mode help text", () => {
+  const descriptions: Record<DisplayMode, string> = {
+    "full-popup": "Full popup: Shows full popup on page with site info and incidents.",
+    "badge-only": "Badge only: Shows number badge on extension icon.",
+    "compact-badge": "Compact badge: Shows small badge with site name and count.",
+  };
+
+  for (const [displayMode, description] of Object.entries(descriptions)) {
+    const html = renderOptionsView({ displayMode: displayMode as DisplayMode });
+
+    assert.ok(html.includes("Display Mode"));
+    assert.ok(
+      html.includes(
+        "Choose how matches are displayed on the page and extension icon.",
+      ),
+    );
+    assert.ok(html.includes("Full popup"));
+    assert.ok(html.includes("Badge only"));
+    assert.ok(html.includes("Compact badge"));
+    assert.ok(html.includes(description));
+  }
 });

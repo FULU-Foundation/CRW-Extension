@@ -129,7 +129,9 @@ export const CompactBanner = (props: CompactBannerProps) => {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
         <button
+          type="button"
           onClick={onOpenSettings}
+          aria-label="Open extension settings"
           style={{
             background: "transparent",
             border: "none",
@@ -147,7 +149,9 @@ export const CompactBanner = (props: CompactBannerProps) => {
           </svg>
         </button>
         <button
+          type="button"
           onClick={onClose}
+          aria-label="Close compact banner"
           style={{
             background: "transparent",
             border: "none",
@@ -220,13 +224,13 @@ export const CompactBanner = (props: CompactBannerProps) => {
                 key={match.PageID}
                 role="button"
                 tabIndex={0}
-onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
-onKeyDown={(e) => {
-  if (e.key === "Enter" || e.key === " ") {
-    e.preventDefault();
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-}}
+                onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    window.open(url, "_blank", "noopener,noreferrer");
+                  }
+                }}
                 style={{
                   display: "block",
                   width: "100%",

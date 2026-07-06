@@ -1,5 +1,9 @@
 import React from "react";
-import type { DisplayMode, PopupPosition } from "@/shared/constants";
+import {
+  DISPLAY_MODE_OPTIONS,
+  type DisplayMode,
+  type PopupPosition,
+} from "@/shared/constants";
 
 const PAGE_CSS = {
   bg: "#004080",
@@ -252,7 +256,7 @@ export const OptionsView = (props: OptionsViewProps) => {
               color: PAGE_CSS.muted,
             }}
           >
-            Choose how matches are displayed in the browser toolbar.
+            Choose how matches are displayed on the page and extension icon.
           </p>
 
           <div
@@ -267,9 +271,7 @@ export const OptionsView = (props: OptionsViewProps) => {
               color: PAGE_CSS.text,
             }}
           >
-            {(
-              ["full-popup", "badge-only", "compact-badge"] as DisplayMode[]
-            ).map((mode) => (
+            {DISPLAY_MODE_OPTIONS.map((mode) => (
               <label
                 key={mode}
                 style={{
