@@ -4,9 +4,9 @@ import browser from "webextension-polyfill";
 import {
   getSiteScopeHostname,
   isHostnameInSiteScopeList,
-  normalizeHostname,
   removeMatchingSiteScopes,
 } from "@/shared/siteScope";
+import { normalizeHostname } from "@/shared/util";
 import { CargoEntry } from "@/shared/types";
 import {
   readSuppressedDomains,
