@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import type {
   AutoDismissCursorOutBehavior,
   PopupPosition,
@@ -49,6 +49,91 @@ const CURSOR_OUT_BEHAVIOR_OPTIONS: {
     description: "Restart the countdown after cursor enters",
   },
 ];
+
+type BoundedNumberInputProps = {
+  id: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  disabled: boolean;
+  width: string;
+  onChange: (value: number) => void;
+};
+
+const BoundedNumberInput = ({
+  id,
+  value,
+  min,
+  max,
+  step,
+  disabled,
+  width,
+  onChange,
+}: BoundedNumberInputProps) => {
+  const [draft, setDraft] = useState(String(value));
+
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  const commitDraft = () => {
+    const parsed = Number(draft);
+    if (!draft.trim() || !Number.isFinite(parsed)) {
+      setDraft(String(value));
+      return;
+    }
+
+    const next = Math.max(min, Math.min(max, Math.round(parsed)));
+    setDraft(String(next));
+    if (next !== value) onChange(next);
+  };
+
+  return (
+    <input
+      id={id}
+      type="number"
+      min={min}
+      max={max}
+      step={step}
+      value={draft}
+      disabled={disabled}
+      onChange={(event) => {
+        const nextDraft = event.target.value;
+        setDraft(nextDraft);
+
+        const parsed = Number(nextDraft);
+        if (
+          nextDraft.trim() &&
+          Number.isFinite(parsed) &&
+          Number.isInteger(parsed) &&
+          parsed >= min &&
+          parsed <= max &&
+          parsed !== value
+        ) {
+          onChange(parsed);
+        }
+      }}
+      onBlur={commitDraft}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") event.currentTarget.blur();
+        if (event.key === "Escape") {
+          setDraft(String(value));
+        }
+      }}
+      style={{
+        borderRadius: "8px",
+        border: `1px solid ${PAGE_CSS.buttonBorder}`,
+        background: "#FFFFFF",
+        color: PAGE_CSS.buttonText,
+        padding: "7px 10px",
+        fontSize: "13px",
+        fontWeight: 600,
+        width,
+      }}
+    />
+  );
+};
 
 export type OptionsViewProps = {
   warningsEnabled: boolean;
@@ -512,34 +597,17 @@ export const OptionsView = (props: OptionsViewProps) => {
                 >
                   Dismiss after (seconds)
                 </label>
-                <input
+                <BoundedNumberInput
                   id="auto-dismiss-timeout"
-                  type="number"
                   min={3}
                   max={300}
                   step={1}
                   value={autoDismissTimeoutMs / 1000}
                   disabled={loading}
-                  onChange={(e) => {
-                    if (e.target.value === "") return;
-                    const seconds = Math.max(
-                      3,
-                      Math.min(300, Math.round(Number(e.target.value))),
-                    );
-                    if (!Number.isNaN(seconds)) {
-                      onChangeAutoDismissTimeoutMs(seconds * 1000);
-                    }
-                  }}
-                  style={{
-                    borderRadius: "8px",
-                    border: `1px solid ${PAGE_CSS.buttonBorder}`,
-                    background: "#FFFFFF",
-                    color: PAGE_CSS.buttonText,
-                    padding: "7px 10px",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    width: "80px",
-                  }}
+                  width="80px"
+                  onChange={(seconds) =>
+                    onChangeAutoDismissTimeoutMs(seconds * 1000)
+                  }
                 />
               </div>
 
@@ -672,34 +740,15 @@ export const OptionsView = (props: OptionsViewProps) => {
                 >
                   Set to 0 to disable. Default: 500
                 </span>
-                <input
+                <BoundedNumberInput
                   id="hover-cancel-ms"
-                  type="number"
                   min={0}
                   max={60000}
                   step={50}
                   value={autoDismissHoverCancelMs}
                   disabled={loading}
-                  onChange={(e) => {
-                    if (e.target.value === "") return;
-                    const ms = Math.max(
-                      0,
-                      Math.min(60000, Math.round(Number(e.target.value))),
-                    );
-                    if (!Number.isNaN(ms)) {
-                      onChangeAutoDismissHoverCancelMs(ms);
-                    }
-                  }}
-                  style={{
-                    borderRadius: "8px",
-                    border: `1px solid ${PAGE_CSS.buttonBorder}`,
-                    background: "#FFFFFF",
-                    color: PAGE_CSS.buttonText,
-                    padding: "7px 10px",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    width: "100px",
-                  }}
+                  width="100px"
+                  onChange={onChangeAutoDismissHoverCancelMs}
                 />
               </div>
             </div>

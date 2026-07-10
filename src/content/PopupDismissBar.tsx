@@ -98,11 +98,13 @@ export const PopupDismissBar = ({
       aria-valuemax={timeoutMs}
       style={{
         position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
+        // Keep the bar inside the card's border instead of clipping the whole
+        // card, which would also clip tooltips that intentionally overflow it.
+        bottom: "1px",
+        left: "1px",
+        right: "1px",
         height: "3px",
-        borderRadius: "0 0 14px 14px",
+        borderRadius: "0 0 12px 12px",
         overflow: "hidden",
         background: "rgba(255,255,255,0.12)",
       }}
