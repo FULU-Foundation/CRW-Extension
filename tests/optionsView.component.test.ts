@@ -4,6 +4,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { OptionsView } from "../src/options/OptionsView.tsx";
+import { getDefaultShortcutBindings } from "../src/shared/shortcuts.ts";
 
 const noop = () => {};
 
@@ -19,11 +20,13 @@ test("OptionsView shows enabled state and empty ignored-sites list", () => {
       refreshingNow: false,
       refreshError: null,
       lastRefreshError: null,
+      shortcutBindings: getDefaultShortcutBindings(),
       loading: false,
       onToggleWarnings: noop,
       onToggleHideWhenNoIncidents: noop,
       onChangeRefreshInterval: noop,
       onRefreshNow: noop,
+      onOpenShortcutSettings: noop,
       onRemoveSuppressedDomain: noop,
       onRemoveSnoozedSite: noop,
     }),
@@ -32,6 +35,10 @@ test("OptionsView shows enabled state and empty ignored-sites list", () => {
   assert.ok(html.includes("Show On Page Load"));
   assert.ok(html.includes("Enabled: matching popups can show automatically."));
   assert.ok(html.includes("Data Refresh"));
+  assert.ok(html.includes("Keyboard Shortcuts"));
+  assert.ok(html.includes("Manage shortcuts"));
+  assert.ok(html.includes("Current: Not set"));
+  assert.ok(html.includes("Suggested: Alt+Shift+P"));
   assert.ok(html.includes("1 hour"));
   assert.ok(html.includes("12 hours"));
   assert.ok(html.includes("24 hours"));
@@ -59,11 +66,18 @@ test("OptionsView shows disabled state and removable ignored-site entries", () =
       refreshingNow: true,
       refreshError: "Refresh failed. Please try again.",
       lastRefreshError: "Failed to fetch dataset (500)",
+      shortcutBindings: [
+        {
+          ...getDefaultShortcutBindings()[0],
+          shortcut: "Alt+Shift+D",
+        },
+      ],
       loading: true,
       onToggleWarnings: noop,
       onToggleHideWhenNoIncidents: noop,
       onChangeRefreshInterval: noop,
       onRefreshNow: noop,
+      onOpenShortcutSettings: noop,
       onRemoveSuppressedDomain: noop,
       onRemoveSnoozedSite: noop,
     }),
@@ -78,6 +92,7 @@ test("OptionsView shows disabled state and removable ignored-site entries", () =
     ),
   );
   assert.ok(html.includes("Remove"));
+  assert.ok(html.includes("Current: Alt+Shift+D"));
   assert.ok(html.includes("Refreshing..."));
   assert.ok(html.includes("Refresh failed. Please try again."));
   assert.ok(html.includes("Last fetch error: Failed to fetch dataset (500)"));
