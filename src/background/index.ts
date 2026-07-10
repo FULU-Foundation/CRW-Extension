@@ -139,15 +139,26 @@ const loadDatasetCache = async (options?: {
   }
 };
 
+const clearStoredTabMatches = async (): Promise<void> => {
+  const stored = await browser.storage.local.get(null);
+  const staleKeys = Object.keys(stored).filter((key) =>
+    key.startsWith(Constants.STORAGE.MATCHES_PREFIX),
+  );
+  if (staleKeys.length === 0) return;
+  await browser.storage.local.remove(staleKeys);
+};
+
 browser.runtime.onInstalled.addListener(async () => {
   console.log(
     `${Constants.LOG_PREFIX} Extension installed/updated. Loading dataset...`,
   );
 
+  await clearStoredTabMatches();
   await loadDatasetCache();
 });
 
 browser.runtime.onStartup.addListener(async () => {
+  await clearStoredTabMatches();
   await loadDatasetCache();
 });
 
@@ -171,6 +182,10 @@ browser.tabs.onActivated.addListener(async ({ tabId }) => {
     text: getBadgeText(results.length),
   });
   browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
+});
+
+browser.tabs.onRemoved.addListener((tabId) => {
+  void browser.storage.local.remove(Constants.STORAGE.MATCHES(tabId));
 });
 
 browser.action.onClicked.addListener(async (tab) => {

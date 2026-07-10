@@ -25,9 +25,12 @@ export const DATASET_KEYS: CargoEntryType[] = [
   "ProductLine",
 ];
 
+const MATCHES_KEY_PREFIX = "crw_matched_";
+
 export const STORAGE = {
+  MATCHES_PREFIX: MATCHES_KEY_PREFIX,
   MATCHES: (tabId: number) => {
-    return `crw_matched_${tabId}`;
+    return `${MATCHES_KEY_PREFIX}${tabId}`;
   },
   DATASET_CACHE: "crw_dataset_cache",
   DATA_REFRESH_INTERVAL_MS: "crw_data_refresh_interval_ms",
