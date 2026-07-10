@@ -79,11 +79,11 @@ const Popup = () => {
                 results,
               ),
             );
+            window.close();
+            return;
           } catch {
-            // Content scripts are not available on every active tab.
+            // Keep this toolbar popup open when the content script is unavailable.
           }
-          window.close();
-          return;
         }
       } catch {
         setDomain("unknown");

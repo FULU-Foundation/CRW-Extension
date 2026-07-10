@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 
+import type { PopupPosition } from "@/shared/constants";
 import { CargoEntry, isIncidentEntry } from "@/shared/types";
+import { getCurrentPopupPlacementStyle } from "@/content/popupPlacement";
 
 type CompactBannerProps = {
   matches: CargoEntry[];
   logoUrl: string;
+  position: PopupPosition;
   onClose: () => void;
   onOpenSettings: () => void;
 };
@@ -33,7 +36,7 @@ const getDisplayLabel = (value: string): string => {
 };
 
 export const CompactBanner = (props: CompactBannerProps) => {
-  const { matches, logoUrl, onClose, onOpenSettings } = props;
+  const { matches, logoUrl, position, onClose, onOpenSettings } = props;
   const [showPopup, setShowPopup] = useState(false);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -68,13 +71,12 @@ export const CompactBanner = (props: CompactBannerProps) => {
   const bannerColor = getBannerColor(incidentCount);
   const bannerOpacity = incidentCount > 0 ? 0.85 : 0.6;
   const incidents = matches.filter((m) => isIncidentEntry(m));
+  const placementStyle = getCurrentPopupPlacementStyle(position);
 
   return (
     <div
       style={{
-        position: "fixed",
-        top: "56px",
-        right: "16px",
+        ...placementStyle,
         width: "auto",
         maxWidth: "300px",
         height: "36px",

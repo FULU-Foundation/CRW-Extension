@@ -333,6 +333,7 @@ const renderInlinePopup = async (
       <CompactBanner
         matches={visibleMatches}
         logoUrl={ASSET_URLS.logo}
+        position={popupPosition}
         onClose={removeInlinePopup}
         onOpenSettings={openOptions}
       />,
@@ -538,6 +539,17 @@ browser.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local") return;
 
   const syncPopupStateWithStorage = async () => {
+    if (changes[Constants.STORAGE.DISPLAY_MODE]) {
+      const displayMode = await readDisplayMode();
+      if (displayMode === "badge-only") {
+        removeInlinePopup();
+        return;
+      }
+
+      void runContentScript();
+      return;
+    }
+
     if (
       changes[Constants.STORAGE.WARNINGS_ENABLED] &&
       !(await isWarningsEnabled())
