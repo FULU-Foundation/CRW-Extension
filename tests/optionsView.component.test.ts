@@ -4,6 +4,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { OptionsView } from "../src/options/OptionsView.tsx";
+import { getDefaultShortcutBindings } from "../src/shared/shortcuts.ts";
 
 const noop = () => {};
 
@@ -19,19 +20,39 @@ test("OptionsView shows enabled state and empty ignored-sites list", () => {
       refreshingNow: false,
       refreshError: null,
       lastRefreshError: null,
+      shortcutBindings: getDefaultShortcutBindings(),
       loading: false,
+      popupPosition: "top-right",
+      autoDismissEnabled: true,
+      autoDismissTimeoutMs: 5000,
+      autoDismissShowProgressBar: true,
+      autoDismissCursorOutBehavior: "continue",
+      autoDismissHoverCancelMs: 500,
       onToggleWarnings: noop,
       onToggleHideWhenNoIncidents: noop,
       onChangeRefreshInterval: noop,
       onRefreshNow: noop,
+      onOpenShortcutSettings: noop,
       onRemoveSuppressedDomain: noop,
       onRemoveSnoozedSite: noop,
+      onChangePopupPosition: noop,
+      onToggleAutoDismiss: noop,
+      onChangeAutoDismissTimeoutMs: noop,
+      onToggleAutoDismissShowProgressBar: noop,
+      onChangeAutoDismissCursorOutBehavior: noop,
+      onChangeAutoDismissHoverCancelMs: noop,
     }),
   );
 
   assert.ok(html.includes("Show On Page Load"));
   assert.ok(html.includes("Enabled: matching popups can show automatically."));
   assert.ok(html.includes("Data Refresh"));
+  assert.ok(html.includes("Keyboard Shortcuts"));
+  assert.ok(html.includes("Auto-Dismiss"));
+  assert.ok(html.includes("Dismiss after (seconds)"));
+  assert.ok(html.includes("Manage shortcuts"));
+  assert.ok(html.includes("Current: Not set"));
+  assert.ok(html.includes("Suggested: Alt+Shift+P"));
   assert.ok(html.includes("1 hour"));
   assert.ok(html.includes("12 hours"));
   assert.ok(html.includes("24 hours"));
@@ -59,13 +80,32 @@ test("OptionsView shows disabled state and removable ignored-site entries", () =
       refreshingNow: true,
       refreshError: "Refresh failed. Please try again.",
       lastRefreshError: "Failed to fetch dataset (500)",
+      shortcutBindings: [
+        {
+          ...getDefaultShortcutBindings()[0],
+          shortcut: "Alt+Shift+D",
+        },
+      ],
       loading: true,
+      popupPosition: "bottom-left",
+      autoDismissEnabled: false,
+      autoDismissTimeoutMs: 10000,
+      autoDismissShowProgressBar: false,
+      autoDismissCursorOutBehavior: "reset",
+      autoDismissHoverCancelMs: 0,
       onToggleWarnings: noop,
       onToggleHideWhenNoIncidents: noop,
       onChangeRefreshInterval: noop,
       onRefreshNow: noop,
+      onOpenShortcutSettings: noop,
       onRemoveSuppressedDomain: noop,
       onRemoveSnoozedSite: noop,
+      onChangePopupPosition: noop,
+      onToggleAutoDismiss: noop,
+      onChangeAutoDismissTimeoutMs: noop,
+      onToggleAutoDismissShowProgressBar: noop,
+      onChangeAutoDismissCursorOutBehavior: noop,
+      onChangeAutoDismissHoverCancelMs: noop,
     }),
   );
 
@@ -78,6 +118,8 @@ test("OptionsView shows disabled state and removable ignored-site entries", () =
     ),
   );
   assert.ok(html.includes("Remove"));
+  assert.ok(html.includes("Current: Alt+Shift+D"));
+  assert.ok(html.includes("Auto-Dismiss"));
   assert.ok(html.includes("Refreshing..."));
   assert.ok(html.includes("Refresh failed. Please try again."));
   assert.ok(html.includes("Last fetch error: Failed to fetch dataset (500)"));
