@@ -8,6 +8,7 @@ export type UrlMatchDetail = {
   visitedHost: string;
   candidateHost: string;
   candidatePath: string;
+  candidatePathMatchesVisitedPath: boolean;
   ecommerceFamilyAlias?: boolean;
   crossTldAlias?: boolean;
 };

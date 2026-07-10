@@ -133,6 +133,99 @@ test("prefers root website subdomain matches over path-specific entries", () => 
   assert.equal(results[0]?.matchType, "subdomain");
 });
 
+test("prefers a path-specific subdomain match when the visited path matches", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-apple",
+      PageName: "Apple",
+      Website: "https://www.apple.com/",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-airpods",
+      PageName: "AirPods",
+      Company: "Apple",
+      Website: "https://www.apple.com/airpods/",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://support.apple.com/airpods/",
+    10,
+  );
+
+  assert.equal(results.length, 2);
+  assert.equal(results[0]?.entry.PageID, "pl-airpods");
+  assert.equal(results[1]?.entry.PageID, "company-apple");
+  assert.equal(results[0]?.matchType, "subdomain");
+});
+
+test("prefers the longest matching candidate path for subdomain matches", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-example",
+      PageName: "Example",
+      Website: "https://www.example.com/",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-example-support",
+      PageName: "Example Support",
+      Company: "Example",
+      Website: "https://www.example.com/support/",
+    }),
+    entry({
+      _type: "Product",
+      PageID: "product-example-repair",
+      PageName: "Example Repair",
+      Company: "Example",
+      Website: "https://www.example.com/support/repair/",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://help.example.com/support/repair/status/",
+    10,
+  );
+
+  assert.equal(results.length, 3);
+  assert.equal(results[0]?.entry.PageID, "product-example-repair");
+  assert.equal(results[1]?.entry.PageID, "pl-example-support");
+  assert.equal(results[2]?.entry.PageID, "company-example");
+});
+
+test("prefers a matching candidate path over a shallower candidate host", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-example",
+      PageName: "Example",
+      Website: "https://www.example.com/",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-example-widget",
+      PageName: "Example Widget",
+      Company: "Example",
+      Website: "https://products.example.com/widget/",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://support.example.com/widget/",
+    10,
+  );
+
+  assert.equal(results.length, 2);
+  assert.equal(results[0]?.entry.PageID, "pl-example-widget");
+  assert.equal(results[1]?.entry.PageID, "company-example");
+});
+
 test("does not classify subdomain match when subdomain matching is disabled", () => {
   setMatchingConfig({ enableSubdomainMatching: false });
   const visited = safeParseUrl("https://invest.ally.com/ola/");

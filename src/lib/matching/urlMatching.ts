@@ -103,6 +103,11 @@ export const classifyUrlMatch = (
   const candidateHost = normalizeHostname(candidateUrl.hostname);
   const visitedPath = normalizePath(visitedUrl.pathname);
   const candidatePath = normalizePath(candidateUrl.pathname);
+  const candidatePathMatchesVisitedPath =
+    visitedPath === candidatePath ||
+    visitedPath.startsWith(
+      candidatePath === "/" ? candidatePath : `${candidatePath}/`,
+    );
 
   if (visitedHost === candidateHost) {
     if (visitedPath === candidatePath) {
@@ -112,6 +117,7 @@ export const classifyUrlMatch = (
         visitedHost,
         candidateHost,
         candidatePath,
+        candidatePathMatchesVisitedPath,
       };
     }
 
@@ -123,6 +129,7 @@ export const classifyUrlMatch = (
         visitedHost,
         candidateHost,
         candidatePath,
+        candidatePathMatchesVisitedPath,
       };
     }
   }
@@ -138,6 +145,7 @@ export const classifyUrlMatch = (
         visitedHost,
         candidateHost,
         candidatePath,
+        candidatePathMatchesVisitedPath,
       };
     }
   }
@@ -152,6 +160,7 @@ export const classifyUrlMatch = (
         visitedHost,
         candidateHost,
         candidatePath,
+        candidatePathMatchesVisitedPath,
         ecommerceFamilyAlias: true,
       };
     }
@@ -184,6 +193,7 @@ export const classifyUrlMatch = (
         visitedHost,
         candidateHost,
         candidatePath,
+        candidatePathMatchesVisitedPath,
         crossTldAlias: true,
       };
     }
@@ -248,6 +258,21 @@ const compareSubdomainCandidatePath = (
     return 0;
   }
 
+  if (
+    left.candidatePathMatchesVisitedPath !==
+    right.candidatePathMatchesVisitedPath
+  ) {
+    return left.candidatePathMatchesVisitedPath ? -1 : 1;
+  }
+
+  if (
+    left.candidatePathMatchesVisitedPath &&
+    right.candidatePathMatchesVisitedPath
+  ) {
+    const byPathLength = right.candidatePath.length - left.candidatePath.length;
+    if (byPathLength !== 0) return byPathLength;
+  }
+
   const leftIsRootPath = left.candidatePath === "/";
   const rightIsRootPath = right.candidatePath === "/";
   if (leftIsRootPath === rightIsRootPath) return 0;
@@ -260,14 +285,14 @@ const sortDetailedMatches = (
 ): number => {
   if (right.score !== left.score) return right.score - left.score;
 
-  const byDepth = compareSubdomainDepth(left.detail, right.detail);
-  if (byDepth !== 0) return byDepth;
-
   const byCandidatePath = compareSubdomainCandidatePath(
     left.detail,
     right.detail,
   );
   if (byCandidatePath !== 0) return byCandidatePath;
+
+  const byDepth = compareSubdomainDepth(left.detail, right.detail);
+  if (byDepth !== 0) return byDepth;
 
   const byName = left.entry.PageName.localeCompare(right.entry.PageName);
   if (byName !== 0) return byName;
