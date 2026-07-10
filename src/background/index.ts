@@ -134,8 +134,10 @@ const loadDatasetCache = async (options?: {
     return await datasetLoadPromise;
   } catch (error) {
     console.log(`${Constants.LOG_PREFIX} Dataset load failed`, error);
-    datasetCache = [];
     nextDatasetRefreshCheckAt = 0;
+    if (forceRefresh) throw error;
+
+    datasetCache = [];
     return datasetCache;
   } finally {
     datasetLoadPromise = null;
