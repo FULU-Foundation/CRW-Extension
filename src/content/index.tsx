@@ -33,6 +33,7 @@ import {
   extractAmazonMarketplaceProperties,
   extractEbayJsonLdProductProperties,
 } from "@/lib/matching/ecommerce";
+import { createUrlChangeDetector } from "@/content/urlChangeDetector";
 
 console.log(
   `${Constants.LOG_PREFIX} Content script loaded on:`,
@@ -481,5 +482,32 @@ browser.storage.onChanged.addListener((changes, areaName) => {
 
   void syncPopupStateWithStorage();
 });
+
+const hasUrlChanged = createUrlChangeDetector(location.href);
+let pendingPageContextRefresh: number | null = null;
+
+const schedulePageContextRefresh = () => {
+  if (!hasUrlChanged(location.href)) return;
+
+  if (pendingPageContextRefresh !== null) {
+    window.clearTimeout(pendingPageContextRefresh);
+  }
+
+  pendingPageContextRefresh = window.setTimeout(() => {
+    pendingPageContextRefresh = null;
+    void runContentScript();
+  }, 300);
+};
+
+window.addEventListener("popstate", schedulePageContextRefresh);
+window.addEventListener("hashchange", schedulePageContextRefresh);
+
+const navigationObserver = new MutationObserver(schedulePageContextRefresh);
+navigationObserver.observe(document.documentElement, {
+  childList: true,
+  subtree: true,
+});
+
+window.setInterval(schedulePageContextRefresh, 1000);
 
 void runContentScript();
