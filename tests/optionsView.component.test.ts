@@ -22,6 +22,12 @@ test("OptionsView shows enabled state and empty ignored-sites list", () => {
       lastRefreshError: null,
       shortcutBindings: getDefaultShortcutBindings(),
       loading: false,
+      popupPosition: "top-right",
+      autoDismissEnabled: true,
+      autoDismissTimeoutMs: 5000,
+      autoDismissShowProgressBar: true,
+      autoDismissCursorOutBehavior: "continue",
+      autoDismissHoverCancelMs: 500,
       onToggleWarnings: noop,
       onToggleHideWhenNoIncidents: noop,
       onChangeRefreshInterval: noop,
@@ -29,6 +35,12 @@ test("OptionsView shows enabled state and empty ignored-sites list", () => {
       onOpenShortcutSettings: noop,
       onRemoveSuppressedDomain: noop,
       onRemoveSnoozedSite: noop,
+      onChangePopupPosition: noop,
+      onToggleAutoDismiss: noop,
+      onChangeAutoDismissTimeoutMs: noop,
+      onToggleAutoDismissShowProgressBar: noop,
+      onChangeAutoDismissCursorOutBehavior: noop,
+      onChangeAutoDismissHoverCancelMs: noop,
     }),
   );
 
@@ -36,6 +48,8 @@ test("OptionsView shows enabled state and empty ignored-sites list", () => {
   assert.ok(html.includes("Enabled: matching popups can show automatically."));
   assert.ok(html.includes("Data Refresh"));
   assert.ok(html.includes("Keyboard Shortcuts"));
+  assert.ok(html.includes("Auto-Dismiss"));
+  assert.ok(html.includes("Dismiss after (seconds)"));
   assert.ok(html.includes("Manage shortcuts"));
   assert.ok(html.includes("Current: Not set"));
   assert.ok(html.includes("Suggested: Alt+Shift+P"));
@@ -73,6 +87,12 @@ test("OptionsView shows disabled state and removable ignored-site entries", () =
         },
       ],
       loading: true,
+      popupPosition: "bottom-left",
+      autoDismissEnabled: false,
+      autoDismissTimeoutMs: 10000,
+      autoDismissShowProgressBar: false,
+      autoDismissCursorOutBehavior: "reset",
+      autoDismissHoverCancelMs: 0,
       onToggleWarnings: noop,
       onToggleHideWhenNoIncidents: noop,
       onChangeRefreshInterval: noop,
@@ -80,6 +100,12 @@ test("OptionsView shows disabled state and removable ignored-site entries", () =
       onOpenShortcutSettings: noop,
       onRemoveSuppressedDomain: noop,
       onRemoveSnoozedSite: noop,
+      onChangePopupPosition: noop,
+      onToggleAutoDismiss: noop,
+      onChangeAutoDismissTimeoutMs: noop,
+      onToggleAutoDismissShowProgressBar: noop,
+      onChangeAutoDismissCursorOutBehavior: noop,
+      onChangeAutoDismissHoverCancelMs: noop,
     }),
   );
 
@@ -93,6 +119,7 @@ test("OptionsView shows disabled state and removable ignored-site entries", () =
   );
   assert.ok(html.includes("Remove"));
   assert.ok(html.includes("Current: Alt+Shift+D"));
+  assert.ok(html.includes("Auto-Dismiss"));
   assert.ok(html.includes("Refreshing..."));
   assert.ok(html.includes("Refresh failed. Please try again."));
   assert.ok(html.includes("Last fetch error: Failed to fetch dataset (500)"));
