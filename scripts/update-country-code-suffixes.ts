@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import countries from "i18n-iso-countries";
+import { stripPrefix } from "../src/shared/util.ts";
 
 const COUNTRY_CODES_OUTPUT_PATH = path.resolve(
   import.meta.dirname,
@@ -62,7 +63,7 @@ const writeFileIfChanged = async (
 };
 
 const normalizePslRule = (rule: string): string => {
-  return rule.replace(/^!/, "").replace(/^\*\./, "");
+  return stripPrefix(stripPrefix(rule, "!"), "*.");
 };
 
 const fetchPslRules = async (): Promise<string[]> => {

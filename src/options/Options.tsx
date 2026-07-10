@@ -17,7 +17,7 @@ import {
 import { OptionsView } from "@/options/OptionsView";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
-import { normalizeHostname } from "@/shared/siteScope";
+import { normalizeHostname } from "@/shared/util";
 import {
   readAutoDismissHoverCancelMs,
   readAutoDismissCursorOutBehavior,
