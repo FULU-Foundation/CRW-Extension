@@ -12,7 +12,10 @@ import {
   readSuppressedDomains,
   readTabMatches,
   writeSuppressedDomains,
+  readDisplayMode,
 } from "@/shared/storage";
+import * as Messaging from "@/messaging";
+import { MessageType } from "@/messaging/type";
 
 const POPUP_BG = "#004080";
 const POPUP_TEXT = "#FFFFFF";
@@ -64,6 +67,24 @@ const Popup = () => {
 
         const results = await readTabMatches(tabId);
         setArticles(results);
+
+        const displayMode = await readDisplayMode();
+        if (displayMode === "compact-badge" && results.length > 0) {
+          try {
+            await browser.tabs.sendMessage(
+              tabId,
+              Messaging.createMessage(
+                MessageType.TOGGLE_INLINE_POPUP,
+                "popup",
+                results,
+              ),
+            );
+            window.close();
+            return;
+          } catch {
+            // Keep this toolbar popup open when the content script is unavailable.
+          }
+        }
       } catch {
         setDomain("unknown");
         setSuppressed(false);

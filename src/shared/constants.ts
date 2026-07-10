@@ -34,6 +34,14 @@ export const DATASET_KEYS: CargoEntryType[] = [
   "ProductLine",
 ];
 
+export type DisplayMode = "full-popup" | "badge-only" | "compact-badge";
+
+export const DISPLAY_MODE_OPTIONS: DisplayMode[] = [
+  "full-popup",
+  "badge-only",
+  "compact-badge",
+];
+
 const MATCHES_KEY_PREFIX = "crw_matched_";
 
 export const STORAGE = {
@@ -50,6 +58,7 @@ export const STORAGE = {
     "crw_snoozed_sites_until_incident_change",
   HIDE_WHEN_NO_INCIDENTS: "crw_hide_when_no_incidents",
   WARNINGS_ENABLED: "crw_warnings_enabled",
+  DISPLAY_MODE: "crw_display_mode",
   POPUP_POSITION: "crw_popup_position",
   AUTO_DISMISS_ENABLED: "crw_auto_dismiss_enabled",
   AUTO_DISMISS_TIMEOUT_MS: "crw_auto_dismiss_timeout_ms",

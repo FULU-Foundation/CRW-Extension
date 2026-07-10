@@ -21,6 +21,7 @@ import {
   readSnoozedSiteMap,
   readSuppressedDomains,
   readWarningsEnabled,
+  readDisplayMode,
   writeSnoozedSiteMap,
   writeSuppressedDomains,
   writeWarningsEnabled,
@@ -28,6 +29,7 @@ import {
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
 import { InlinePopup } from "@/content/InlinePopup";
+import { CompactBanner } from "@/content/CompactBanner";
 import { InlineEmptyState } from "@/content/InlineEmptyState";
 import {
   getInlinePopupInstruction,
@@ -272,6 +274,7 @@ const renderInlinePopup = async (
   ignorePreferences = false,
 ) => {
   const visibleMatches = matches;
+  const displayMode = await readDisplayMode();
 
   const currentlyWarningsEnabled = await isWarningsEnabled();
 
@@ -320,6 +323,24 @@ const renderInlinePopup = async (
   const autoDismissCursorOutBehavior = await readAutoDismissCursorOutBehavior();
   const autoDismissHoverCancelMs = await readAutoDismissHoverCancelMs();
   const root = ensurePopupRoot();
+
+  if (displayMode === "compact-badge") {
+    if (visibleMatches.length === 0) {
+      removeInlinePopup();
+      return;
+    }
+    root.render(
+      <CompactBanner
+        matches={visibleMatches}
+        logoUrl={ASSET_URLS.logo}
+        position={popupPosition}
+        onClose={removeInlinePopup}
+        onOpenSettings={openOptions}
+      />,
+    );
+    return;
+  }
+
   if (visibleMatches.length === 0) {
     root.render(
       <InlineEmptyState
@@ -518,6 +539,17 @@ browser.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local") return;
 
   const syncPopupStateWithStorage = async () => {
+    if (changes[Constants.STORAGE.DISPLAY_MODE]) {
+      const displayMode = await readDisplayMode();
+      if (displayMode === "badge-only") {
+        removeInlinePopup();
+        return;
+      }
+
+      void runContentScript();
+      return;
+    }
+
     if (
       changes[Constants.STORAGE.WARNINGS_ENABLED] &&
       !(await isWarningsEnabled())

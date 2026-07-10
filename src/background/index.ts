@@ -6,7 +6,12 @@ import * as Dataset from "@/lib/dataset";
 import * as Messaging from "@/messaging";
 import { type AnyCRWMessage, MessageType } from "@/messaging/type";
 import { CargoEntry } from "@/shared/types";
-import { readDatasetCacheRefreshInfo, readTabMatches } from "@/shared/storage";
+import {
+  readDatasetCacheRefreshInfo,
+  readDisplayMode,
+  readTabMatches,
+} from "@/shared/storage";
+import type { DisplayMode } from "@/shared/constants";
 import {
   isShortcutCommandName,
   type ShortcutCommandName,
@@ -15,11 +20,104 @@ import {
 let datasetCache: CargoEntry[] = [];
 let datasetLoadPromise: Promise<CargoEntry[]> | null = null;
 let nextDatasetRefreshCheckAt = 0;
+let currentDisplayMode: DisplayMode = "full-popup";
 
-const getBadgeText = (count: number): string => {
-  if (count <= 0) return "";
-  if (count > 3) return "3+";
-  return String(count);
+const getBadgeColor = (count: number): string => {
+  if (count <= 0) return "#9E9E9E";
+  if (count <= 1) return "#4CAF50";
+  if (count <= 3) return "#FF9800";
+  return "#FF5722";
+};
+
+const getBadgeTextColor = (): string => {
+  return "#FFFFFF";
+};
+
+const getIncidentCount = (matches: CargoEntry[]): number => {
+  return matches.filter((m) => m._type === "Incident").length;
+};
+
+const getSiteName = (hostname: string): string => {
+  const parts = hostname.replace(/^www\./, "").split(".");
+  if (parts.length >= 2) {
+    return parts[0];
+  }
+  return hostname;
+};
+
+const updateBadge = async (
+  tabId: number,
+  matches: CargoEntry[],
+  hostname: string,
+): Promise<void> => {
+  const displayMode = await readDisplayMode();
+  currentDisplayMode = displayMode;
+
+  const incidentCount = getIncidentCount(matches);
+  const siteName = getSiteName(hostname);
+
+  if (displayMode === "badge-only" || displayMode === "compact-badge") {
+    const badgeText =
+      incidentCount <= 0
+        ? ""
+        : incidentCount > 3
+          ? "3+"
+          : String(incidentCount);
+
+    browser.action.setBadgeText({
+      tabId,
+      text: badgeText,
+    });
+    browser.action.setBadgeBackgroundColor({
+      tabId,
+      color: getBadgeColor(incidentCount),
+    });
+    browser.action.setBadgeTextColor({
+      tabId,
+      color: getBadgeTextColor(),
+    });
+
+    if (displayMode === "compact-badge") {
+      const tooltipText =
+        incidentCount <= 0
+          ? `${siteName}: No incidents`
+          : `${siteName}: ${incidentCount} incident${incidentCount === 1 ? "" : "s"}`;
+      browser.action.setTitle({
+        tabId,
+        title: tooltipText,
+      });
+    } else {
+      browser.action.setTitle({
+        tabId,
+        title: `Consumer Rights Wiki\n${siteName}: ${incidentCount} incident${incidentCount === 1 ? "" : "s"}`,
+      });
+    }
+  } else {
+    browser.action.setBadgeText({
+      tabId,
+      text: "",
+    });
+    browser.action.setTitle({
+      tabId,
+      title: `Consumer Rights Wiki\n${siteName}: ${incidentCount} incident${incidentCount === 1 ? "" : "s"}`,
+    });
+  }
+};
+
+const refreshActiveTabBadge = async (): Promise<void> => {
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  const tabId = tab?.id;
+  if (!tabId) return;
+
+  const matches = await readTabMatches(tabId);
+  let hostname = "";
+  try {
+    hostname = tab.url ? new URL(tab.url).hostname : "";
+  } catch {
+    // Leave hostname empty when the active tab URL cannot be parsed.
+  }
+
+  await updateBadge(tabId, matches, hostname);
 };
 
 const sendMessageToTab = async (
@@ -27,6 +125,10 @@ const sendMessageToTab = async (
   message: AnyCRWMessage,
   attempt = 0,
 ): Promise<void> => {
+  if (currentDisplayMode === "badge-only") {
+    return;
+  }
+
   try {
     await browser.tabs.sendMessage(tabId, message);
   } catch {
@@ -171,6 +273,16 @@ browser.storage.onChanged.addListener((changes, areaName) => {
   if (changes[Constants.STORAGE.DATA_REFRESH_INTERVAL_MS]) {
     nextDatasetRefreshCheckAt = 0;
   }
+
+  if (changes[Constants.STORAGE.DISPLAY_MODE]) {
+    const nextDisplayMode = changes[Constants.STORAGE.DISPLAY_MODE].newValue;
+    currentDisplayMode = Constants.DISPLAY_MODE_OPTIONS.includes(
+      nextDisplayMode as DisplayMode,
+    )
+      ? (nextDisplayMode as DisplayMode)
+      : "full-popup";
+    void refreshActiveTabBadge();
+  }
 });
 
 browser.tabs.onActivated.addListener(async ({ tabId }) => {
@@ -179,12 +291,14 @@ browser.tabs.onActivated.addListener(async ({ tabId }) => {
   );
 
   const results = await readTabMatches(tabId);
-
-  browser.action.setBadgeText({
-    tabId,
-    text: getBadgeText(results.length),
-  });
-  browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
+  let hostname = "";
+  try {
+    const tab = await browser.tabs.get(tabId);
+    hostname = tab.url ? new URL(tab.url).hostname : "";
+  } catch {
+    // Leave hostname empty when the active tab cannot be inspected.
+  }
+  await updateBadge(tabId, results, hostname);
 });
 
 browser.tabs.onRemoved.addListener((tabId) => {
@@ -223,6 +337,7 @@ Messaging.createBackgroundMessageHandler({
   async onPageContextUpdated(payload, sender) {
     const tabId = sender.tab?.id;
     if (!tabId) return;
+    const hostname = sender.tab?.url ? new URL(sender.tab.url).hostname : "";
     const dataset = await loadDatasetCache();
     const storageKey = Constants.STORAGE.MATCHES(tabId);
 
@@ -232,12 +347,7 @@ Messaging.createBackgroundMessageHandler({
       [storageKey]: matches,
     });
 
-    browser.action.setBadgeText({
-      tabId,
-      text: getBadgeText(matches.length),
-    });
-    browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
-
+    await updateBadge(tabId, matches, hostname);
     void sendMessageToTab(
       tabId,
       Messaging.createMessage(

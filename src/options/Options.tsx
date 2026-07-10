@@ -4,6 +4,7 @@ import browser from "webextension-polyfill";
 import * as Constants from "@/shared/constants";
 import type {
   AutoDismissCursorOutBehavior,
+  DisplayMode,
   PopupPosition,
 } from "@/shared/constants";
 import {
@@ -32,6 +33,7 @@ import {
   readSnoozedSiteMap,
   readSuppressedDomains,
   readWarningsEnabled,
+  readDisplayMode,
   writeAutoDismissHoverCancelMs,
   writeAutoDismissCursorOutBehavior,
   writeAutoDismissEnabled,
@@ -42,6 +44,7 @@ import {
   writeSnoozedSiteMap,
   writeSuppressedDomains,
   writeWarningsEnabled,
+  writeDisplayMode,
 } from "@/shared/storage";
 import {
   getDefaultShortcutBindings,
@@ -58,6 +61,12 @@ const readSnoozedSites = async (): Promise<string[]> => {
 };
 
 const readLastRefreshError = readRefreshErrorMessage;
+
+const normalizeDomainList = (domains: string[]): string[] => {
+  return domains
+    .map((domain) => normalizeHostname(domain))
+    .filter((domain) => domain.length > 0);
+};
 
 type BrowserShortcutCommand = {
   name?: string;
@@ -113,6 +122,7 @@ const decodeRefreshNowResponseFetchedAt = (value: unknown): number | null => {
 const Options = () => {
   const [warningsEnabled, setWarningsEnabled] = useState<boolean>(true);
   const [hideWhenNoIncidents, setHideWhenNoIncidents] = useState<boolean>(true);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>("full-popup");
   const [suppressedDomains, setSuppressedDomains] = useState<string[]>([]);
   const [snoozedSites, setSnoozedSites] = useState<string[]>([]);
   const [refreshIntervalMs, setRefreshIntervalMs] = useState<number>(
@@ -150,6 +160,7 @@ const Options = () => {
         const [
           enabled,
           hideWithoutIncidents,
+          mode,
           domains,
           snoozedSiteDomains,
           intervalMs,
@@ -165,6 +176,7 @@ const Options = () => {
         ] = await Promise.all([
           readWarningsEnabled(),
           readHideWhenNoIncidents(),
+          readDisplayMode(),
           readSuppressedDomains(),
           readSnoozedSites(),
           readRefreshIntervalMs(),
@@ -180,7 +192,8 @@ const Options = () => {
         ]);
         setWarningsEnabled(enabled);
         setHideWhenNoIncidents(hideWithoutIncidents);
-        setSuppressedDomains(domains);
+        setDisplayMode(mode);
+        setSuppressedDomains(normalizeDomainList(domains));
         setSnoozedSites(snoozedSiteDomains);
         setRefreshIntervalMs(intervalMs);
         setLastRefreshedAt(refreshedAt);
@@ -231,8 +244,14 @@ const Options = () => {
       if (changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS]) {
         void readHideWhenNoIncidents().then(setHideWhenNoIncidents);
       }
+      if (changes[Constants.STORAGE.DISPLAY_MODE]) {
+        void readDisplayMode().then(setDisplayMode);
+      }
+
       if (changes[Constants.STORAGE.SUPPRESSED_DOMAINS]) {
-        void readSuppressedDomains().then(setSuppressedDomains);
+        void readSuppressedDomains().then((domains) => {
+          setSuppressedDomains(normalizeDomainList(domains));
+        });
       }
       if (changes[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE]) {
         void readSnoozedSites().then(setSnoozedSites);
@@ -282,6 +301,11 @@ const Options = () => {
   const onToggleHideWhenNoIncidents = async (enabled: boolean) => {
     setHideWhenNoIncidents(enabled);
     await writeHideWhenNoIncidents(enabled);
+  };
+
+  const onChangeDisplayMode = async (mode: DisplayMode) => {
+    setDisplayMode(mode);
+    await writeDisplayMode(mode);
   };
 
   const onRemoveSnoozedSite = async (domain: string) => {
@@ -390,6 +414,7 @@ const Options = () => {
     <OptionsView
       warningsEnabled={warningsEnabled}
       hideWhenNoIncidents={hideWhenNoIncidents}
+      displayMode={displayMode}
       suppressedDomains={suppressedDomains}
       snoozedSites={snoozedSites}
       refreshIntervalMs={refreshIntervalMs}
@@ -409,6 +434,7 @@ const Options = () => {
       onToggleHideWhenNoIncidents={(enabled) =>
         void onToggleHideWhenNoIncidents(enabled)
       }
+      onChangeDisplayMode={(mode) => void onChangeDisplayMode(mode)}
       onChangeRefreshInterval={(ms) => void onChangeRefreshInterval(ms)}
       onRefreshNow={() => void onRefreshNow()}
       onOpenShortcutSettings={() => void onOpenShortcutSettings()}

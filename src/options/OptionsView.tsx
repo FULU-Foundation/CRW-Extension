@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
-import type {
-  AutoDismissCursorOutBehavior,
-  PopupPosition,
+import {
+  DISPLAY_MODE_OPTIONS,
+  type AutoDismissCursorOutBehavior,
+  type DisplayMode,
+  type PopupPosition,
 } from "@/shared/constants";
 import { type ShortcutCommandBinding } from "@/shared/shortcuts";
 
@@ -22,6 +24,12 @@ const REFRESH_INTERVAL_OPTIONS = [
   { value: 24 * 60 * 60 * 1000, label: "24 hours" },
   { value: 7 * 24 * 60 * 60 * 1000, label: "1 week" },
 ] as const;
+
+const DISPLAY_MODE_LABELS: Record<DisplayMode, string> = {
+  "full-popup": "Full popup",
+  "badge-only": "Badge only",
+  "compact-badge": "Compact badge",
+};
 
 const POPUP_POSITION_OPTIONS: {
   value: PopupPosition;
@@ -139,6 +147,7 @@ const BoundedNumberInput = ({
 export type OptionsViewProps = {
   warningsEnabled: boolean;
   hideWhenNoIncidents: boolean;
+  displayMode: DisplayMode;
   suppressedDomains: string[];
   snoozedSites: string[];
   refreshIntervalMs: number;
@@ -156,6 +165,7 @@ export type OptionsViewProps = {
   autoDismissHoverCancelMs: number;
   onToggleWarnings: (enabled: boolean) => void;
   onToggleHideWhenNoIncidents: (enabled: boolean) => void;
+  onChangeDisplayMode: (mode: DisplayMode) => void;
   onChangeRefreshInterval: (refreshIntervalMs: number) => void;
   onRefreshNow: () => void;
   onOpenShortcutSettings: () => void;
@@ -187,6 +197,7 @@ export const OptionsView = (props: OptionsViewProps) => {
   const {
     warningsEnabled,
     hideWhenNoIncidents,
+    displayMode,
     suppressedDomains,
     snoozedSites,
     refreshIntervalMs,
@@ -204,6 +215,7 @@ export const OptionsView = (props: OptionsViewProps) => {
     autoDismissHoverCancelMs,
     onToggleWarnings,
     onToggleHideWhenNoIncidents,
+    onChangeDisplayMode,
     onChangeRefreshInterval,
     onRefreshNow,
     onOpenShortcutSettings,
@@ -436,6 +448,91 @@ export const OptionsView = (props: OptionsViewProps) => {
             {warningsEnabled
               ? "Enabled: matching popups can show automatically."
               : "Disabled: popups will not auto-show on page load."}
+          </p>
+        </section>
+
+        <section
+          style={{
+            border: `1px solid ${PAGE_CSS.border}`,
+            borderRadius: "12px",
+            padding: "14px",
+            background: PAGE_CSS.subtleBg,
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "16px",
+              lineHeight: 1.2,
+              fontWeight: 700,
+              color: PAGE_CSS.text,
+            }}
+          >
+            Display Mode
+          </h2>
+          <p
+            style={{
+              margin: "6px 0 10px 0",
+              fontSize: "13px",
+              color: PAGE_CSS.muted,
+            }}
+          >
+            Choose how matches are displayed on the page and extension icon.
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+              border: `1px solid ${PAGE_CSS.border}`,
+              borderRadius: "10px",
+              padding: "10px 12px",
+              fontSize: "13px",
+              color: PAGE_CSS.text,
+            }}
+          >
+            {DISPLAY_MODE_OPTIONS.map((mode) => (
+              <label
+                key={mode}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="displayMode"
+                  checked={displayMode === mode}
+                  disabled={loading}
+                  onChange={() => {
+                    onChangeDisplayMode(mode);
+                  }}
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    accentColor: "#FFFFFF",
+                  }}
+                />
+                <span>{DISPLAY_MODE_LABELS[mode]}</span>
+              </label>
+            ))}
+          </div>
+
+          <p
+            style={{
+              margin: "8px 0 0 0",
+              fontSize: "12px",
+              color: PAGE_CSS.muted,
+            }}
+          >
+            {displayMode === "full-popup"
+              ? "Full popup: Shows full popup on page with site info and incidents."
+              : displayMode === "badge-only"
+                ? "Badge only: Shows number badge on extension icon."
+                : "Compact badge: Shows small badge with site name and count."}
           </p>
         </section>
 
