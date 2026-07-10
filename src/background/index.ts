@@ -131,6 +131,13 @@ browser.tabs.onActivated.addListener(async ({ tabId }) => {
   browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
 });
 
+browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status !== "loading") return;
+
+  void browser.storage.local.remove(Constants.STORAGE.MATCHES(tabId));
+  void browser.action.setBadgeText({ tabId, text: "" });
+});
+
 browser.tabs.onRemoved.addListener((tabId) => {
   void browser.storage.local.remove(Constants.STORAGE.MATCHES(tabId));
 });
