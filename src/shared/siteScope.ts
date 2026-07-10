@@ -1,7 +1,7 @@
 import { getDomain } from "tldts";
 import { normalizeHostname } from "./util.ts";
 
-export { normalizeHostname } from "./util.ts";
+export { normalizeHostname };
 
 export const getSiteScopeHostname = (hostname: string): string => {
   const normalized = normalizeHostname(hostname);
