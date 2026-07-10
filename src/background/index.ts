@@ -7,7 +7,10 @@ import * as Messaging from "@/messaging";
 import { type AnyCRWMessage, MessageType } from "@/messaging/type";
 import { CargoEntry } from "@/shared/types";
 import { readDatasetCacheRefreshInfo, readTabMatches } from "@/shared/storage";
-import { isShortcutCommandName } from "@/shared/shortcuts";
+import {
+  isShortcutCommandName,
+  type ShortcutCommandName,
+} from "@/shared/shortcuts";
 
 let datasetCache: CargoEntry[] = [];
 let datasetLoadPromise: Promise<CargoEntry[]> | null = null;
@@ -44,9 +47,9 @@ const readActiveTabId = async (): Promise<number | null> => {
   return tabs[0]?.id ?? null;
 };
 
-const handleShortcutCommand = async (command: string): Promise<void> => {
-  if (!isShortcutCommandName(command)) return;
-
+const handleShortcutCommand = async (
+  command: ShortcutCommandName,
+): Promise<void> => {
   const tabId = await readActiveTabId();
   if (!tabId) return;
 
@@ -205,6 +208,7 @@ browser.action.onClicked.addListener(async (tab) => {
 });
 
 browser.commands.onCommand.addListener((command) => {
+  if (!isShortcutCommandName(command)) return;
   void handleShortcutCommand(command);
 });
 
