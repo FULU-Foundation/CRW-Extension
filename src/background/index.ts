@@ -11,10 +11,17 @@ import {
   isShortcutCommandName,
   type ShortcutCommandName,
 } from "@/shared/shortcuts";
+import { isCurrentPageUrl, TabNavigationState } from "./tabNavigationState";
 
 let datasetCache: CargoEntry[] = [];
 let datasetLoadPromise: Promise<CargoEntry[]> | null = null;
 let nextDatasetRefreshCheckAt = 0;
+const tabNavigationState = new TabNavigationState();
+const navigationCleanups = new Map<number, Promise<void>>();
+
+const waitForNavigationCleanup = async (tabId: number): Promise<void> => {
+  await navigationCleanups.get(tabId);
+};
 
 const getBadgeText = (count: number): string => {
   if (count <= 0) return "";
@@ -61,7 +68,12 @@ const handleShortcutCommand = async (
     return;
   }
 
+  const navigationGeneration = tabNavigationState.capture(tabId);
+  await waitForNavigationCleanup(tabId);
+  if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
+
   const matches = await readTabMatches(tabId);
+  if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
 
   switch (command) {
     case "show-inline-popup":
@@ -180,7 +192,12 @@ browser.tabs.onActivated.addListener(async ({ tabId }) => {
     `${Constants.LOG_PREFIX} Active tab has been changed. TabId:${tabId}`,
   );
 
+  const navigationGeneration = tabNavigationState.capture(tabId);
+  await waitForNavigationCleanup(tabId);
+  if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
+
   const results = await readTabMatches(tabId);
+  if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
 
   browser.action.setBadgeText({
     tabId,
@@ -189,7 +206,32 @@ browser.tabs.onActivated.addListener(async ({ tabId }) => {
   browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
 });
 
+browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status !== "loading") return;
+
+  tabNavigationState.beginNavigation(tabId);
+  const cleanup = Promise.all([
+    browser.storage.local.remove(Constants.STORAGE.MATCHES(tabId)),
+    browser.action.setBadgeText({ tabId, text: "" }),
+  ])
+    .then(() => undefined)
+    .catch((error) => {
+      console.warn(
+        `${Constants.LOG_PREFIX} Failed to clear matches during navigation`,
+        error,
+      );
+    })
+    .finally(() => {
+      if (navigationCleanups.get(tabId) === cleanup) {
+        navigationCleanups.delete(tabId);
+      }
+    });
+  navigationCleanups.set(tabId, cleanup);
+});
+
 browser.tabs.onRemoved.addListener((tabId) => {
+  tabNavigationState.forget(tabId);
+  navigationCleanups.delete(tabId);
   void browser.storage.local.remove(Constants.STORAGE.MATCHES(tabId));
 });
 
@@ -197,7 +239,12 @@ browser.action.onClicked.addListener(async (tab) => {
   const tabId = tab.id;
   if (!tabId) return;
 
+  const navigationGeneration = tabNavigationState.capture(tabId);
+  await waitForNavigationCleanup(tabId);
+  if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
+
   const matches = await readTabMatches(tabId);
+  if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
 
   void sendMessageToTab(
     tabId,
@@ -225,7 +272,26 @@ Messaging.createBackgroundMessageHandler({
   async onPageContextUpdated(payload, sender) {
     const tabId = sender.tab?.id;
     if (!tabId) return;
-    const dataset = await loadDatasetCache();
+    const navigationGeneration = tabNavigationState.capture(tabId);
+    const [dataset] = await Promise.all([
+      loadDatasetCache(),
+      waitForNavigationCleanup(tabId),
+    ]);
+    if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
+
+    let currentTab: browser.Tabs.Tab;
+    try {
+      currentTab = await browser.tabs.get(tabId);
+    } catch {
+      return;
+    }
+    if (
+      !tabNavigationState.isCurrent(tabId, navigationGeneration) ||
+      !isCurrentPageUrl(payload.url, currentTab.url)
+    ) {
+      return;
+    }
+
     const storageKey = Constants.STORAGE.MATCHES(tabId);
 
     const matches = Matching.matchByPageContext(dataset, payload);
@@ -233,6 +299,7 @@ Messaging.createBackgroundMessageHandler({
     await browser.storage.local.set({
       [storageKey]: matches,
     });
+    if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
 
     browser.action.setBadgeText({
       tabId,
