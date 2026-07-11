@@ -11,10 +11,7 @@ import {
   isShortcutCommandName,
   type ShortcutCommandName,
 } from "@/shared/shortcuts";
-import {
-  isCurrentPageUrl,
-  TabNavigationState,
-} from "./tabNavigationState";
+import { isCurrentPageUrl, TabNavigationState } from "./tabNavigationState";
 
 let datasetCache: CargoEntry[] = [];
 let datasetLoadPromise: Promise<CargoEntry[]> | null = null;
