@@ -2,13 +2,28 @@ import React, { useEffect, useState } from "react";
 import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
-import type { PopupPosition } from "@/shared/constants";
-import { DEFAULT_POPUP_POSITION } from "@/shared/constants";
+import type {
+  AutoDismissCursorOutBehavior,
+  PopupPosition,
+} from "@/shared/constants";
+import {
+  DEFAULT_AUTO_DISMISS_HOVER_CANCEL_MS,
+  DEFAULT_AUTO_DISMISS_CURSOR_OUT_BEHAVIOR,
+  DEFAULT_AUTO_DISMISS_ENABLED,
+  DEFAULT_AUTO_DISMISS_SHOW_PROGRESS_BAR,
+  DEFAULT_AUTO_DISMISS_TIMEOUT_MS,
+  DEFAULT_POPUP_POSITION,
+} from "@/shared/constants";
 import { OptionsView } from "@/options/OptionsView";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
 import { normalizeHostname } from "@/shared/util";
 import {
+  readAutoDismissHoverCancelMs,
+  readAutoDismissCursorOutBehavior,
+  readAutoDismissEnabled,
+  readAutoDismissShowProgressBar,
+  readAutoDismissTimeoutMs,
   readHideWhenNoIncidents,
   readLastRefreshedAt,
   readPopupPosition,
@@ -17,12 +32,22 @@ import {
   readSnoozedSiteMap,
   readSuppressedDomains,
   readWarningsEnabled,
+  writeAutoDismissHoverCancelMs,
+  writeAutoDismissCursorOutBehavior,
+  writeAutoDismissEnabled,
+  writeAutoDismissShowProgressBar,
+  writeAutoDismissTimeoutMs,
   writeHideWhenNoIncidents,
   writePopupPosition,
   writeSnoozedSiteMap,
   writeSuppressedDomains,
   writeWarningsEnabled,
 } from "@/shared/storage";
+import {
+  getDefaultShortcutBindings,
+  SHORTCUT_SETTINGS_FALLBACK_URL,
+  type ShortcutCommandBinding,
+} from "@/shared/shortcuts";
 
 const readSnoozedSites = async (): Promise<string[]> => {
   const value = await readSnoozedSiteMap();
@@ -33,6 +58,51 @@ const readSnoozedSites = async (): Promise<string[]> => {
 };
 
 const readLastRefreshError = readRefreshErrorMessage;
+
+type BrowserShortcutCommand = {
+  name?: string;
+  shortcut?: string;
+};
+
+type BrowserCommandsApi = {
+  getAll?: () => Promise<BrowserShortcutCommand[]>;
+  openShortcutSettings?: () => Promise<void>;
+};
+
+const getCommandsApi = (): BrowserCommandsApi | null => {
+  const extendedBrowser = browser as typeof browser & {
+    commands?: BrowserCommandsApi;
+  };
+  return extendedBrowser.commands ?? null;
+};
+
+const readShortcutBindings = async (): Promise<ShortcutCommandBinding[]> => {
+  const fallback = getDefaultShortcutBindings();
+  const commandsApi = getCommandsApi();
+  if (!commandsApi?.getAll) return fallback;
+
+  try {
+    const commands = await commandsApi.getAll();
+
+    return fallback.map((binding) => {
+      const matchedCommand = commands.find(
+        (command) => command.name === binding.name,
+      );
+      const shortcut = matchedCommand?.shortcut?.trim() || null;
+
+      return {
+        ...binding,
+        shortcut,
+      };
+    });
+  } catch (error) {
+    console.error(
+      `${Constants.LOG_PREFIX} Failed to read shortcut bindings`,
+      error,
+    );
+    return fallback;
+  }
+};
 
 const decodeRefreshNowResponseFetchedAt = (value: unknown): number | null => {
   if (typeof value !== "object" || value === null) return null;
@@ -52,10 +122,27 @@ const Options = () => {
   const [lastRefreshError, setLastRefreshError] = useState<string | null>(null);
   const [refreshingNow, setRefreshingNow] = useState<boolean>(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [shortcutBindings, setShortcutBindings] = useState<
+    ShortcutCommandBinding[]
+  >(getDefaultShortcutBindings());
   const [loading, setLoading] = useState<boolean>(true);
   const [popupPosition, setPopupPosition] = useState<PopupPosition>(
     DEFAULT_POPUP_POSITION,
   );
+  const [autoDismissEnabled, setAutoDismissEnabled] = useState<boolean>(
+    DEFAULT_AUTO_DISMISS_ENABLED,
+  );
+  const [autoDismissTimeoutMs, setAutoDismissTimeoutMs] = useState<number>(
+    DEFAULT_AUTO_DISMISS_TIMEOUT_MS,
+  );
+  const [autoDismissShowProgressBar, setAutoDismissShowProgressBar] =
+    useState<boolean>(DEFAULT_AUTO_DISMISS_SHOW_PROGRESS_BAR);
+  const [autoDismissCursorOutBehavior, setAutoDismissCursorOutBehavior] =
+    useState<AutoDismissCursorOutBehavior>(
+      DEFAULT_AUTO_DISMISS_CURSOR_OUT_BEHAVIOR,
+    );
+  const [autoDismissHoverCancelMs, setAutoDismissHoverCancelMs] =
+    useState<number>(DEFAULT_AUTO_DISMISS_HOVER_CANCEL_MS);
 
   useEffect(() => {
     void (async () => {
@@ -69,6 +156,12 @@ const Options = () => {
           refreshedAt,
           fetchError,
           position,
+          dismissEnabled,
+          dismissTimeoutMs,
+          dismissShowBar,
+          dismissCursorOut,
+          dismissHoverCancelMs,
+          shortcuts,
         ] = await Promise.all([
           readWarningsEnabled(),
           readHideWhenNoIncidents(),
@@ -78,6 +171,12 @@ const Options = () => {
           readLastRefreshedAt(),
           readLastRefreshError(),
           readPopupPosition(),
+          readAutoDismissEnabled(),
+          readAutoDismissTimeoutMs(),
+          readAutoDismissShowProgressBar(),
+          readAutoDismissCursorOutBehavior(),
+          readAutoDismissHoverCancelMs(),
+          readShortcutBindings(),
         ]);
         setWarningsEnabled(enabled);
         setHideWhenNoIncidents(hideWithoutIncidents);
@@ -87,10 +186,27 @@ const Options = () => {
         setLastRefreshedAt(refreshedAt);
         setLastRefreshError(fetchError);
         setPopupPosition(position);
+        setAutoDismissEnabled(dismissEnabled);
+        setAutoDismissTimeoutMs(dismissTimeoutMs);
+        setAutoDismissShowProgressBar(dismissShowBar);
+        setAutoDismissCursorOutBehavior(dismissCursorOut);
+        setAutoDismissHoverCancelMs(dismissHoverCancelMs);
+        setShortcutBindings(shortcuts);
       } finally {
         setLoading(false);
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    const syncShortcutBindings = () => {
+      void readShortcutBindings().then(setShortcutBindings);
+    };
+
+    window.addEventListener("focus", syncShortcutBindings);
+    return () => {
+      window.removeEventListener("focus", syncShortcutBindings);
+    };
   }, []);
 
   useEffect(() => {
@@ -103,35 +219,45 @@ const Options = () => {
       if (changes[Constants.STORAGE.DATA_REFRESH_INTERVAL_MS]) {
         void readRefreshIntervalMs().then(setRefreshIntervalMs);
       }
-
       if (changes[Constants.STORAGE.DATASET_CACHE]) {
         void readLastRefreshedAt().then(setLastRefreshedAt);
       }
-
       if (changes[Constants.STORAGE.DATA_REFRESH_ERROR]) {
         void readLastRefreshError().then(setLastRefreshError);
       }
-
       if (changes[Constants.STORAGE.WARNINGS_ENABLED]) {
         void readWarningsEnabled().then(setWarningsEnabled);
       }
-
       if (changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS]) {
         void readHideWhenNoIncidents().then(setHideWhenNoIncidents);
       }
-
       if (changes[Constants.STORAGE.SUPPRESSED_DOMAINS]) {
-        void readSuppressedDomains().then((domains) => {
-          setSuppressedDomains(domains);
-        });
+        void readSuppressedDomains().then(setSuppressedDomains);
       }
-
       if (changes[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE]) {
         void readSnoozedSites().then(setSnoozedSites);
       }
-
       if (changes[Constants.STORAGE.POPUP_POSITION]) {
         void readPopupPosition().then(setPopupPosition);
+      }
+      if (changes[Constants.STORAGE.AUTO_DISMISS_ENABLED]) {
+        void readAutoDismissEnabled().then(setAutoDismissEnabled);
+      }
+      if (changes[Constants.STORAGE.AUTO_DISMISS_TIMEOUT_MS]) {
+        void readAutoDismissTimeoutMs().then(setAutoDismissTimeoutMs);
+      }
+      if (changes[Constants.STORAGE.AUTO_DISMISS_SHOW_PROGRESS_BAR]) {
+        void readAutoDismissShowProgressBar().then(
+          setAutoDismissShowProgressBar,
+        );
+      }
+      if (changes[Constants.STORAGE.AUTO_DISMISS_CURSOR_OUT_BEHAVIOR]) {
+        void readAutoDismissCursorOutBehavior().then(
+          setAutoDismissCursorOutBehavior,
+        );
+      }
+      if (changes[Constants.STORAGE.AUTO_DISMISS_HOVER_CANCEL_MS]) {
+        void readAutoDismissHoverCancelMs().then(setAutoDismissHoverCancelMs);
       }
     };
 
@@ -181,6 +307,33 @@ const Options = () => {
     await writePopupPosition(position);
   };
 
+  const onToggleAutoDismiss = async (enabled: boolean) => {
+    setAutoDismissEnabled(enabled);
+    await writeAutoDismissEnabled(enabled);
+  };
+
+  const onChangeAutoDismissTimeoutMs = async (ms: number) => {
+    setAutoDismissTimeoutMs(ms);
+    await writeAutoDismissTimeoutMs(ms);
+  };
+
+  const onToggleAutoDismissShowProgressBar = async (show: boolean) => {
+    setAutoDismissShowProgressBar(show);
+    await writeAutoDismissShowProgressBar(show);
+  };
+
+  const onChangeAutoDismissCursorOutBehavior = async (
+    behavior: AutoDismissCursorOutBehavior,
+  ) => {
+    setAutoDismissCursorOutBehavior(behavior);
+    await writeAutoDismissCursorOutBehavior(behavior);
+  };
+
+  const onChangeAutoDismissHoverCancelMs = async (ms: number) => {
+    setAutoDismissHoverCancelMs(ms);
+    await writeAutoDismissHoverCancelMs(ms);
+  };
+
   const onChangeRefreshInterval = async (nextRefreshIntervalMs: number) => {
     setRefreshIntervalMs(nextRefreshIntervalMs);
     setRefreshError(null);
@@ -215,6 +368,24 @@ const Options = () => {
     }
   };
 
+  const onOpenShortcutSettings = async () => {
+    const commandsApi = getCommandsApi();
+
+    try {
+      if (commandsApi?.openShortcutSettings) {
+        await commandsApi.openShortcutSettings();
+        return;
+      }
+
+      await browser.tabs.create({ url: SHORTCUT_SETTINGS_FALLBACK_URL });
+    } catch (error) {
+      console.error(
+        `${Constants.LOG_PREFIX} Failed to open browser shortcut settings`,
+        error,
+      );
+    }
+  };
+
   return (
     <OptionsView
       warningsEnabled={warningsEnabled}
@@ -226,29 +397,39 @@ const Options = () => {
       refreshingNow={refreshingNow}
       refreshError={refreshError}
       lastRefreshError={lastRefreshError}
+      shortcutBindings={shortcutBindings}
       loading={loading}
       popupPosition={popupPosition}
-      onToggleWarnings={(enabled) => {
-        void onToggleWarnings(enabled);
-      }}
-      onToggleHideWhenNoIncidents={(enabled) => {
-        void onToggleHideWhenNoIncidents(enabled);
-      }}
-      onChangeRefreshInterval={(nextRefreshIntervalMs) => {
-        void onChangeRefreshInterval(nextRefreshIntervalMs);
-      }}
-      onRefreshNow={() => {
-        void onRefreshNow();
-      }}
-      onRemoveSuppressedDomain={(domain) => {
-        void onRemoveSuppressedDomain(domain);
-      }}
-      onRemoveSnoozedSite={(domain) => {
-        void onRemoveSnoozedSite(domain);
-      }}
-      onChangePopupPosition={(position) => {
-        void onChangePopupPosition(position);
-      }}
+      autoDismissEnabled={autoDismissEnabled}
+      autoDismissTimeoutMs={autoDismissTimeoutMs}
+      autoDismissShowProgressBar={autoDismissShowProgressBar}
+      autoDismissCursorOutBehavior={autoDismissCursorOutBehavior}
+      autoDismissHoverCancelMs={autoDismissHoverCancelMs}
+      onToggleWarnings={(enabled) => void onToggleWarnings(enabled)}
+      onToggleHideWhenNoIncidents={(enabled) =>
+        void onToggleHideWhenNoIncidents(enabled)
+      }
+      onChangeRefreshInterval={(ms) => void onChangeRefreshInterval(ms)}
+      onRefreshNow={() => void onRefreshNow()}
+      onOpenShortcutSettings={() => void onOpenShortcutSettings()}
+      onRemoveSuppressedDomain={(domain) =>
+        void onRemoveSuppressedDomain(domain)
+      }
+      onRemoveSnoozedSite={(domain) => void onRemoveSnoozedSite(domain)}
+      onChangePopupPosition={(position) => void onChangePopupPosition(position)}
+      onToggleAutoDismiss={(enabled) => void onToggleAutoDismiss(enabled)}
+      onChangeAutoDismissTimeoutMs={(ms) =>
+        void onChangeAutoDismissTimeoutMs(ms)
+      }
+      onToggleAutoDismissShowProgressBar={(show) =>
+        void onToggleAutoDismissShowProgressBar(show)
+      }
+      onChangeAutoDismissCursorOutBehavior={(behavior) =>
+        void onChangeAutoDismissCursorOutBehavior(behavior)
+      }
+      onChangeAutoDismissHoverCancelMs={(ms) =>
+        void onChangeAutoDismissHoverCancelMs(ms)
+      }
     />
   );
 };

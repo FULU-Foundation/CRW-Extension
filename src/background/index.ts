@@ -4,9 +4,13 @@ import * as Constants from "@/shared/constants";
 import * as Matching from "@/lib/matching/matching";
 import * as Dataset from "@/lib/dataset";
 import * as Messaging from "@/messaging";
-import { MessageType } from "@/messaging/type";
+import { type AnyCRWMessage, MessageType } from "@/messaging/type";
 import { CargoEntry } from "@/shared/types";
 import { readDatasetCacheRefreshInfo, readTabMatches } from "@/shared/storage";
+import {
+  isShortcutCommandName,
+  type ShortcutCommandName,
+} from "@/shared/shortcuts";
 import {
   isCurrentPageUrl,
   TabNavigationState,
@@ -28,26 +32,83 @@ const getBadgeText = (count: number): string => {
   return String(count);
 };
 
-const sendMatchUpdateToTab = async (
+const sendMessageToTab = async (
   tabId: number,
-  matches: CargoEntry[],
-  type:
-    | MessageType.MATCH_RESULTS_UPDATED
-    | MessageType.FORCE_SHOW_INLINE_POPUP
-    | MessageType.TOGGLE_INLINE_POPUP = MessageType.MATCH_RESULTS_UPDATED,
+  message: AnyCRWMessage,
   attempt = 0,
 ): Promise<void> => {
   try {
-    await browser.tabs.sendMessage(
-      tabId,
-      Messaging.createMessage(type, "background", matches),
-    );
+    await browser.tabs.sendMessage(tabId, message);
   } catch {
     if (attempt >= 2) return;
     const delayMs = 250 * (attempt + 1);
     setTimeout(() => {
-      void sendMatchUpdateToTab(tabId, matches, type, attempt + 1);
+      void sendMessageToTab(tabId, message, attempt + 1);
     }, delayMs);
+  }
+};
+
+const readActiveTabId = async (): Promise<number | null> => {
+  const tabs = await browser.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+
+  return tabs[0]?.id ?? null;
+};
+
+const handleShortcutCommand = async (
+  command: ShortcutCommandName,
+): Promise<void> => {
+  const tabId = await readActiveTabId();
+  if (!tabId) return;
+
+  if (command === "hide-inline-popup") {
+    void sendMessageToTab(
+      tabId,
+      Messaging.createMessage(MessageType.HIDE_INLINE_POPUP, "background"),
+    );
+    return;
+  }
+
+  const navigationGeneration = tabNavigationState.capture(tabId);
+  await waitForNavigationCleanup(tabId);
+  if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
+
+  const matches = await readTabMatches(tabId);
+  if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
+
+  switch (command) {
+    case "show-inline-popup":
+      void sendMessageToTab(
+        tabId,
+        Messaging.createMessage(
+          MessageType.FORCE_SHOW_INLINE_POPUP,
+          "background",
+          matches,
+        ),
+      );
+      break;
+    case "toggle-site-snooze":
+      void sendMessageToTab(
+        tabId,
+        Messaging.createMessage(
+          MessageType.TOGGLE_SNOOZE_CURRENT_SITE,
+          "background",
+          matches,
+        ),
+      );
+      break;
+    case "toggle-site-ignore":
+      void sendMessageToTab(
+        tabId,
+        Messaging.createMessage(
+          MessageType.TOGGLE_SUPPRESS_CURRENT_SITE,
+          "background",
+          matches,
+        ),
+      );
+      break;
   }
 };
 
@@ -88,8 +149,10 @@ const loadDatasetCache = async (options?: {
     return await datasetLoadPromise;
   } catch (error) {
     console.log(`${Constants.LOG_PREFIX} Dataset load failed`, error);
-    datasetCache = [];
     nextDatasetRefreshCheckAt = 0;
+    if (forceRefresh) throw error;
+
+    datasetCache = [];
     return datasetCache;
   } finally {
     datasetLoadPromise = null;
@@ -186,7 +249,19 @@ browser.action.onClicked.addListener(async (tab) => {
   const matches = await readTabMatches(tabId);
   if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
 
-  void sendMatchUpdateToTab(tabId, matches, MessageType.TOGGLE_INLINE_POPUP);
+  void sendMessageToTab(
+    tabId,
+    Messaging.createMessage(
+      MessageType.TOGGLE_INLINE_POPUP,
+      "background",
+      matches,
+    ),
+  );
+});
+
+browser.commands.onCommand.addListener((command) => {
+  if (!isShortcutCommandName(command)) return;
+  void handleShortcutCommand(command);
 });
 
 Messaging.createBackgroundMessageHandler({
@@ -235,7 +310,14 @@ Messaging.createBackgroundMessageHandler({
     });
     browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
 
-    void sendMatchUpdateToTab(tabId, matches);
+    void sendMessageToTab(
+      tabId,
+      Messaging.createMessage(
+        MessageType.MATCH_RESULTS_UPDATED,
+        "background",
+        matches,
+      ),
+    );
   },
 });
 
