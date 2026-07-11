@@ -98,25 +98,36 @@ export const PopupDismissBar = ({
       aria-valuemax={timeoutMs}
       style={{
         position: "absolute",
-        // Keep the bar inside the card's border instead of clipping the whole
-        // card, which would also clip tooltips that intentionally overflow it.
-        bottom: "1px",
-        left: "1px",
-        right: "1px",
-        height: "3px",
-        borderRadius: "0 0 12px 12px",
+        // Use a corner-height clipping wrapper: applying a 14px radius directly
+        // to the 3px track would cause CSS to clamp the radius to 1.5px.
+        bottom: "-1px",
+        left: "-1px",
+        right: "-1px",
+        height: "14px",
+        borderRadius: "0 0 14px 14px",
         overflow: "hidden",
-        background: "rgba(255,255,255,0.12)",
+        pointerEvents: "none",
       }}
     >
       <div
         style={{
-          height: "100%",
-          width: `${remaining * 100}%`,
-          background: POPUP_CSS.text,
-          opacity: 0.5,
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: "3px",
+          background: "rgba(255,255,255,0.12)",
         }}
-      />
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${remaining * 100}%`,
+            background: POPUP_CSS.text,
+            opacity: 0.5,
+          }}
+        />
+      </div>
     </div>
   );
 };
