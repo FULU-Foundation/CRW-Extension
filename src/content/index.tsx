@@ -37,6 +37,7 @@ import {
   extractAmazonMarketplaceProperties,
   extractEbayJsonLdProductProperties,
 } from "@/lib/matching/ecommerce";
+import { createUrlChangeDebouncer } from "@/content/urlChangeDetector";
 
 console.log(
   `${Constants.LOG_PREFIX} Content script loaded on:`,
@@ -556,5 +557,28 @@ browser.storage.onChanged.addListener((changes, areaName) => {
 
   void syncPopupStateWithStorage();
 });
+
+const schedulePageContextRefreshForUrl = createUrlChangeDebouncer({
+  initialUrl: location.href,
+  delayMs: 300,
+  onRefresh: () => void runContentScript(),
+  setTimer: (callback, delayMs) => window.setTimeout(callback, delayMs),
+  clearTimer: (timer) => window.clearTimeout(timer),
+});
+
+const schedulePageContextRefresh = () => {
+  schedulePageContextRefreshForUrl(location.href);
+};
+
+window.addEventListener("popstate", schedulePageContextRefresh);
+window.addEventListener("hashchange", schedulePageContextRefresh);
+
+const navigationObserver = new MutationObserver(schedulePageContextRefresh);
+navigationObserver.observe(document.documentElement, {
+  childList: true,
+  subtree: true,
+});
+
+window.setInterval(schedulePageContextRefresh, 1000);
 
 void runContentScript();
