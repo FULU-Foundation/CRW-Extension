@@ -103,6 +103,11 @@ export const classifyUrlMatch = (
   const candidateHost = normalizeHostname(candidateUrl.hostname);
   const visitedPath = normalizePath(visitedUrl.pathname);
   const candidatePath = normalizePath(candidateUrl.pathname);
+  const candidatePathMatchesVisitedPath =
+    visitedPath === candidatePath ||
+    visitedPath.startsWith(
+      candidatePath === "/" ? candidatePath : `${candidatePath}/`,
+    );
 
   if (visitedHost === candidateHost) {
     if (visitedPath === candidatePath) {
@@ -111,6 +116,8 @@ export const classifyUrlMatch = (
         matchedPath: candidatePath,
         visitedHost,
         candidateHost,
+        candidatePath,
+        candidatePathMatchesVisitedPath,
       };
     }
 
@@ -121,6 +128,8 @@ export const classifyUrlMatch = (
         matchedPath: candidatePath,
         visitedHost,
         candidateHost,
+        candidatePath,
+        candidatePathMatchesVisitedPath,
       };
     }
   }
@@ -135,6 +144,8 @@ export const classifyUrlMatch = (
         matchedPath: null,
         visitedHost,
         candidateHost,
+        candidatePath,
+        candidatePathMatchesVisitedPath,
       };
     }
   }
@@ -148,6 +159,8 @@ export const classifyUrlMatch = (
         matchedPath: null,
         visitedHost,
         candidateHost,
+        candidatePath,
+        candidatePathMatchesVisitedPath,
         ecommerceFamilyAlias: true,
       };
     }
@@ -179,6 +192,8 @@ export const classifyUrlMatch = (
         matchedPath: null,
         visitedHost,
         candidateHost,
+        candidatePath,
+        candidatePathMatchesVisitedPath,
         crossTldAlias: true,
       };
     }
@@ -235,11 +250,46 @@ const compareSubdomainDepth = (
   return leftDepth - rightDepth;
 };
 
+const compareSubdomainCandidatePath = (
+  left: UrlMatchDetail,
+  right: UrlMatchDetail,
+): number => {
+  if (left.matchType !== "subdomain" || right.matchType !== "subdomain") {
+    return 0;
+  }
+
+  if (
+    left.candidatePathMatchesVisitedPath !==
+    right.candidatePathMatchesVisitedPath
+  ) {
+    return left.candidatePathMatchesVisitedPath ? -1 : 1;
+  }
+
+  if (
+    left.candidatePathMatchesVisitedPath &&
+    right.candidatePathMatchesVisitedPath
+  ) {
+    const byPathLength = right.candidatePath.length - left.candidatePath.length;
+    if (byPathLength !== 0) return byPathLength;
+  }
+
+  const leftIsRootPath = left.candidatePath === "/";
+  const rightIsRootPath = right.candidatePath === "/";
+  if (leftIsRootPath === rightIsRootPath) return 0;
+  return leftIsRootPath ? -1 : 1;
+};
+
 const sortDetailedMatches = (
   left: DetailedUrlEntryMatch,
   right: DetailedUrlEntryMatch,
 ): number => {
   if (right.score !== left.score) return right.score - left.score;
+
+  const byCandidatePath = compareSubdomainCandidatePath(
+    left.detail,
+    right.detail,
+  );
+  if (byCandidatePath !== 0) return byCandidatePath;
 
   const byDepth = compareSubdomainDepth(left.detail, right.detail);
   if (byDepth !== 0) return byDepth;
