@@ -39,10 +39,12 @@ import {
 } from "@/lib/matching/ecommerce";
 import { createUrlChangeDebouncer } from "@/content/urlChangeDetector";
 
-console.log(
-  `${Constants.LOG_PREFIX} Content script loaded on:`,
-  window.location.href,
-);
+if (import.meta.env.DEV) {
+  console.log(
+    `${Constants.LOG_PREFIX} Content script loaded on:`,
+    window.location.href,
+  );
+}
 
 const POPUP_ID = "crw-inline-alert";
 const ASSET_URLS = {
