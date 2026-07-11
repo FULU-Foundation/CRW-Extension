@@ -51,7 +51,6 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "assets/data.json",
         "crw_logo.png",
         "open-in-new.svg",
         "settings.svg",
