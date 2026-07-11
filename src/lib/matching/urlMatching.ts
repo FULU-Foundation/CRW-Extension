@@ -39,7 +39,7 @@ export const normalizePath = (pathname: string): string => {
 };
 
 const isRegionalPathPrefix = (value: string): boolean => {
-  const normalized = value.toLowerCase().replaceAll("_", "-");
+  const normalized = value.toLowerCase().replace(/_/g, "-");
   if (matchingConfig.crossTldCountryCodeSuffixes.includes(normalized)) {
     return true;
   }
