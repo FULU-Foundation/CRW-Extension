@@ -38,6 +38,35 @@ export const normalizePath = (pathname: string): string => {
   return clean.replace(/\/+$/, "");
 };
 
+const isRegionalPathPrefix = (value: string): boolean => {
+  const normalized = value.toLowerCase().replaceAll("_", "-");
+  if (matchingConfig.crossTldCountryCodeSuffixes.includes(normalized)) {
+    return true;
+  }
+
+  try {
+    return Boolean(new Intl.Locale(normalized).region);
+  } catch {
+    return false;
+  }
+};
+
+const getVisitedPathVariants = (pathname: string): string[] => {
+  const variants = [pathname];
+  const segments = pathname.split("/").filter(Boolean);
+  const leadingSegment = segments[0];
+
+  if (
+    segments.length > 1 &&
+    leadingSegment &&
+    isRegionalPathPrefix(leadingSegment)
+  ) {
+    variants.push(`/${segments.slice(1).join("/")}`);
+  }
+
+  return variants;
+};
+
 export const getDomainRoot = (hostname: string): string => {
   const normalized = normalizeHostname(hostname);
   const registrableDomain = getDomain(normalized, {
@@ -103,14 +132,18 @@ export const classifyUrlMatch = (
   const candidateHost = normalizeHostname(candidateUrl.hostname);
   const visitedPath = normalizePath(visitedUrl.pathname);
   const candidatePath = normalizePath(candidateUrl.pathname);
-  const candidatePathMatchesVisitedPath =
-    visitedPath === candidatePath ||
-    visitedPath.startsWith(
-      candidatePath === "/" ? candidatePath : `${candidatePath}/`,
-    );
+  const visitedPathVariants = getVisitedPathVariants(visitedPath);
+  const exactPathMatch = visitedPathVariants.some(
+    (path) => path === candidatePath,
+  );
+  const candidatePathMatchesVisitedPath = visitedPathVariants.some(
+    (path) =>
+      path === candidatePath ||
+      path.startsWith(candidatePath === "/" ? "/" : `${candidatePath}/`),
+  );
 
   if (visitedHost === candidateHost) {
-    if (visitedPath === candidatePath) {
+    if (exactPathMatch) {
       return {
         matchType: "exact",
         matchedPath: candidatePath,
@@ -122,7 +155,7 @@ export const classifyUrlMatch = (
     }
 
     const prefix = candidatePath === "/" ? "/" : `${candidatePath}/`;
-    if (visitedPath.startsWith(prefix)) {
+    if (visitedPathVariants.some((path) => path.startsWith(prefix))) {
       return {
         matchType: "partial",
         matchedPath: candidatePath,
