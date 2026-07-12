@@ -34,6 +34,21 @@ const POPUP_POSITION_OPTIONS: {
   { value: "bottom-right", label: "Bottom right", corner: [true, false] },
 ];
 
+const ABOUT_LINKS = [
+  {
+    href: "https://github.com/FULU-Foundation/CRW-Extension",
+    label: "Source code on GitHub",
+  },
+  {
+    href: "https://github.com/FULU-Foundation/CRW-Extension/issues",
+    label: "Report a bug or request a feature",
+  },
+  {
+    href: "https://consumerrights.wiki",
+    label: "Visit the Consumer Rights Wiki",
+  },
+] as const;
+
 const CURSOR_OUT_BEHAVIOR_OPTIONS: {
   value: AutoDismissCursorOutBehavior;
   label: string;
@@ -1177,6 +1192,65 @@ export const OptionsView = (props: OptionsViewProps) => {
                 Last fetch error: {lastRefreshError}
               </div>
             )}
+          </div>
+        </section>
+
+        <section
+          style={{
+            border: `1px solid ${PAGE_CSS.border}`,
+            borderRadius: "12px",
+            padding: "14px",
+            background: PAGE_CSS.subtleBg,
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "16px",
+              lineHeight: 1.2,
+              fontWeight: 700,
+              color: PAGE_CSS.text,
+            }}
+          >
+            About &amp; Feedback
+          </h2>
+          <p
+            style={{
+              margin: "6px 0 10px 0",
+              fontSize: "13px",
+              color: PAGE_CSS.muted,
+            }}
+          >
+            This extension is open source and maintained by the FULU
+            Foundation. Found a bug or have a suggestion? Let us know.
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              border: `1px solid ${PAGE_CSS.border}`,
+              borderRadius: "10px",
+              padding: "10px 12px",
+              fontSize: "13px",
+            }}
+          >
+            {ABOUT_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: PAGE_CSS.text,
+                  textDecoration: "underline",
+                  textUnderlineOffset: "2px",
+                }}
+              >
+                {link.label}
+              </a>
+            ))}
           </div>
         </section>
       </div>
