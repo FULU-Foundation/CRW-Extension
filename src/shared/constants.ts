@@ -45,6 +45,8 @@ export const STORAGE = {
   SUPPRESSED_DOMAINS: "crw_suppressed_domains",
   SNOOZED_SITES_UNTIL_INCIDENT_CHANGE:
     "crw_snoozed_sites_until_incident_change",
+  SNOOZED_VENDORS_UNTIL_INCIDENT_CHANGE:
+    "crw_snoozed_vendors_until_incident_change",
   HIDE_WHEN_NO_INCIDENTS: "crw_hide_when_no_incidents",
   WARNINGS_ENABLED: "crw_warnings_enabled",
   POPUP_POSITION: "crw_popup_position",

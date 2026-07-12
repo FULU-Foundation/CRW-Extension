@@ -12,6 +12,10 @@ import {
   type SnoozedSiteMap,
   normalizeSnoozedSiteMap,
 } from "@/shared/snoozedSites";
+import {
+  type SnoozedVendorMap,
+  normalizeSnoozedVendorMap,
+} from "@/shared/snoozedVendors";
 
 const readLocalValue = async (key: string): Promise<unknown> => {
   const stored = await browser.storage.local.get(key);
@@ -110,6 +114,22 @@ export const writeSnoozedSiteMap = async (
 ): Promise<void> => {
   await writeLocalValue(
     Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE,
+    value,
+  );
+};
+
+export const readSnoozedVendorMap = async (): Promise<SnoozedVendorMap> => {
+  const value = await readLocalValue(
+    Constants.STORAGE.SNOOZED_VENDORS_UNTIL_INCIDENT_CHANGE,
+  );
+  return normalizeSnoozedVendorMap(value);
+};
+
+export const writeSnoozedVendorMap = async (
+  value: SnoozedVendorMap,
+): Promise<void> => {
+  await writeLocalValue(
+    Constants.STORAGE.SNOOZED_VENDORS_UNTIL_INCIDENT_CHANGE,
     value,
   );
 };
