@@ -46,6 +46,7 @@ export const STORAGE = {
   SNOOZED_SITES_UNTIL_INCIDENT_CHANGE:
     "crw_snoozed_sites_until_incident_change",
   HIDE_WHEN_NO_INCIDENTS: "crw_hide_when_no_incidents",
+  DISABLED_INCIDENT_CATEGORIES: "crw_disabled_incident_categories",
   WARNINGS_ENABLED: "crw_warnings_enabled",
   POPUP_POSITION: "crw_popup_position",
   AUTO_DISMISS_ENABLED: "crw_auto_dismiss_enabled",

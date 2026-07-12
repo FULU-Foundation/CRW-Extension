@@ -3,6 +3,7 @@ import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
 import type { PopupPosition } from "@/shared/constants";
+import { shouldCategoriesHideAutoPopup } from "@/shared/incidentCategories";
 import { buildIncidentSignature } from "@/shared/incidentSignature";
 import {
   getSiteScopeHostname,
@@ -16,6 +17,7 @@ import {
   readAutoDismissEnabled,
   readAutoDismissShowProgressBar,
   readAutoDismissTimeoutMs,
+  readDisabledIncidentCategories,
   readHideWhenNoIncidents,
   readPopupPosition,
   readSnoozedSiteMap,
@@ -300,6 +302,14 @@ const renderInlinePopup = async (
     return;
   }
 
+  if (!ignorePreferences && hasIncidents) {
+    const disabledCategories = await readDisabledIncidentCategories();
+    if (shouldCategoriesHideAutoPopup(visibleMatches, disabledCategories)) {
+      removeInlinePopup();
+      return;
+    }
+  }
+
   const currentlySnoozed = currentlySuppressed
     ? false
     : await isCurrentSiteSnoozedUntilIncidentChanges(incidentSignature);
@@ -536,7 +546,8 @@ browser.storage.onChanged.addListener((changes, areaName) => {
     }
     if (
       changes[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE] ||
-      changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS]
+      changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS] ||
+      changes[Constants.STORAGE.DISABLED_INCIDENT_CATEGORIES]
     ) {
       void runContentScript();
     }

@@ -19,11 +19,17 @@ import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
 import { normalizeHostname } from "@/shared/util";
 import {
+  getCategoryLabelsFromTypeValues,
+  normalizeCategoryKey,
+} from "@/shared/incidentCategories";
+import {
   readAutoDismissHoverCancelMs,
   readAutoDismissCursorOutBehavior,
   readAutoDismissEnabled,
   readAutoDismissShowProgressBar,
   readAutoDismissTimeoutMs,
+  readCachedIncidentTypeValues,
+  readDisabledIncidentCategories,
   readHideWhenNoIncidents,
   readLastRefreshedAt,
   readPopupPosition,
@@ -37,6 +43,7 @@ import {
   writeAutoDismissEnabled,
   writeAutoDismissShowProgressBar,
   writeAutoDismissTimeoutMs,
+  writeDisabledIncidentCategories,
   writeHideWhenNoIncidents,
   writePopupPosition,
   writeSnoozedSiteMap,
@@ -58,6 +65,35 @@ const readSnoozedSites = async (): Promise<string[]> => {
 };
 
 const readLastRefreshError = readRefreshErrorMessage;
+
+export type IncidentCategoryPreference = {
+  label: string;
+  enabled: boolean;
+};
+
+const readIncidentCategoryPreferences = async (): Promise<
+  IncidentCategoryPreference[]
+> => {
+  const [typeValues, disabledLabels] = await Promise.all([
+    readCachedIncidentTypeValues(),
+    readDisabledIncidentCategories(),
+  ]);
+
+  const labels = getCategoryLabelsFromTypeValues([
+    ...typeValues,
+    // Keep disabled categories visible even when they disappear from the
+    // dataset, so users can always re-enable them.
+    ...disabledLabels,
+  ]);
+  const disabledKeys = new Set(
+    disabledLabels.map((label) => normalizeCategoryKey(label)),
+  );
+
+  return labels.map((label) => ({
+    label,
+    enabled: !disabledKeys.has(normalizeCategoryKey(label)),
+  }));
+};
 
 type BrowserShortcutCommand = {
   name?: string;
@@ -115,6 +151,9 @@ const Options = () => {
   const [hideWhenNoIncidents, setHideWhenNoIncidents] = useState<boolean>(true);
   const [suppressedDomains, setSuppressedDomains] = useState<string[]>([]);
   const [snoozedSites, setSnoozedSites] = useState<string[]>([]);
+  const [incidentCategories, setIncidentCategories] = useState<
+    IncidentCategoryPreference[]
+  >([]);
   const [refreshIntervalMs, setRefreshIntervalMs] = useState<number>(
     Constants.DEFAULT_DATA_REFRESH_INTERVAL_MS,
   );
@@ -152,6 +191,7 @@ const Options = () => {
           hideWithoutIncidents,
           domains,
           snoozedSiteDomains,
+          categoryPreferences,
           intervalMs,
           refreshedAt,
           fetchError,
@@ -167,6 +207,7 @@ const Options = () => {
           readHideWhenNoIncidents(),
           readSuppressedDomains(),
           readSnoozedSites(),
+          readIncidentCategoryPreferences(),
           readRefreshIntervalMs(),
           readLastRefreshedAt(),
           readLastRefreshError(),
@@ -182,6 +223,7 @@ const Options = () => {
         setHideWhenNoIncidents(hideWithoutIncidents);
         setSuppressedDomains(domains);
         setSnoozedSites(snoozedSiteDomains);
+        setIncidentCategories(categoryPreferences);
         setRefreshIntervalMs(intervalMs);
         setLastRefreshedAt(refreshedAt);
         setLastRefreshError(fetchError);
@@ -221,6 +263,10 @@ const Options = () => {
       }
       if (changes[Constants.STORAGE.DATASET_CACHE]) {
         void readLastRefreshedAt().then(setLastRefreshedAt);
+        void readIncidentCategoryPreferences().then(setIncidentCategories);
+      }
+      if (changes[Constants.STORAGE.DISABLED_INCIDENT_CATEGORIES]) {
+        void readIncidentCategoryPreferences().then(setIncidentCategories);
       }
       if (changes[Constants.STORAGE.DATA_REFRESH_ERROR]) {
         void readLastRefreshError().then(setLastRefreshError);
@@ -300,6 +346,26 @@ const Options = () => {
         .sort((left, right) => left.localeCompare(right)),
     );
     await writeSnoozedSiteMap(next);
+  };
+
+  const onToggleIncidentCategory = async (label: string, enabled: boolean) => {
+    const categoryKey = normalizeCategoryKey(label);
+    if (!categoryKey) return;
+
+    setIncidentCategories((previous) =>
+      previous.map((preference) =>
+        normalizeCategoryKey(preference.label) === categoryKey
+          ? { ...preference, enabled }
+          : preference,
+      ),
+    );
+
+    const disabledLabels = await readDisabledIncidentCategories();
+    const withoutLabel = disabledLabels.filter(
+      (value) => normalizeCategoryKey(value) !== categoryKey,
+    );
+    const next = enabled ? withoutLabel : [...withoutLabel, label];
+    await writeDisabledIncidentCategories(next);
   };
 
   const onChangePopupPosition = async (position: PopupPosition) => {
@@ -392,6 +458,7 @@ const Options = () => {
       hideWhenNoIncidents={hideWhenNoIncidents}
       suppressedDomains={suppressedDomains}
       snoozedSites={snoozedSites}
+      incidentCategories={incidentCategories}
       refreshIntervalMs={refreshIntervalMs}
       lastRefreshedAt={lastRefreshedAt}
       refreshingNow={refreshingNow}
@@ -416,6 +483,9 @@ const Options = () => {
         void onRemoveSuppressedDomain(domain)
       }
       onRemoveSnoozedSite={(domain) => void onRemoveSnoozedSite(domain)}
+      onToggleIncidentCategory={(label, enabled) =>
+        void onToggleIncidentCategory(label, enabled)
+      }
       onChangePopupPosition={(position) => void onChangePopupPosition(position)}
       onToggleAutoDismiss={(enabled) => void onToggleAutoDismiss(enabled)}
       onChangeAutoDismissTimeoutMs={(ms) =>

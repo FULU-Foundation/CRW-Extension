@@ -98,6 +98,43 @@ export const writeSuppressedDomains = async (
   );
 };
 
+export const readDisabledIncidentCategories = async (): Promise<string[]> => {
+  const value = await readLocalValue(
+    Constants.STORAGE.DISABLED_INCIDENT_CATEGORIES,
+  );
+  return asStringArray(value);
+};
+
+export const writeDisabledIncidentCategories = async (
+  labels: string[],
+): Promise<void> => {
+  await writeLocalValue(
+    Constants.STORAGE.DISABLED_INCIDENT_CATEGORIES,
+    labels,
+  );
+};
+
+export const readCachedIncidentTypeValues = async (): Promise<string[]> => {
+  const value = await readLocalValue(Constants.STORAGE.DATASET_CACHE);
+  if (typeof value !== "object" || value === null) return [];
+
+  const raw = (value as Record<string, unknown>).raw;
+  if (typeof raw !== "object" || raw === null) return [];
+
+  const incidents = (raw as Record<string, unknown>).Incident;
+  if (!Array.isArray(incidents)) return [];
+
+  const types: string[] = [];
+  for (const incident of incidents) {
+    if (typeof incident !== "object" || incident === null) continue;
+    const type = (incident as Record<string, unknown>).Type;
+    if (typeof type === "string" && type.trim().length > 0) {
+      types.push(type);
+    }
+  }
+  return types;
+};
+
 export const readSnoozedSiteMap = async (): Promise<SnoozedSiteMap> => {
   const value = await readLocalValue(
     Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE,
