@@ -1221,8 +1221,8 @@ export const OptionsView = (props: OptionsViewProps) => {
               color: PAGE_CSS.muted,
             }}
           >
-            This extension is open source and maintained by the FULU
-            Foundation. Found a bug or have a suggestion? Let us know.
+            This extension is open source and maintained by the FULU Foundation.
+            Found a bug or have a suggestion? Let us know.
           </p>
 
           <div
