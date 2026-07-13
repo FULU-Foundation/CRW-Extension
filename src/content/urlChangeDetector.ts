@@ -13,6 +13,7 @@ export const createUrlChangeDetector = (
 interface UrlChangeDebouncerOptions {
   initialUrl: string;
   delayMs: number;
+  onUrlChange?: () => void;
   onRefresh: () => void;
   setTimer: (callback: () => void, delayMs: number) => number;
   clearTimer: (timer: number) => void;
@@ -21,6 +22,7 @@ interface UrlChangeDebouncerOptions {
 export const createUrlChangeDebouncer = ({
   initialUrl,
   delayMs,
+  onUrlChange,
   onRefresh,
   setTimer,
   clearTimer,
@@ -31,6 +33,7 @@ export const createUrlChangeDebouncer = ({
   return (currentUrl: string): void => {
     const urlChanged = hasUrlChanged(currentUrl);
     if (!urlChanged && pendingRefresh === null) return;
+    if (urlChanged) onUrlChange?.();
 
     if (pendingRefresh !== null) {
       clearTimer(pendingRefresh);

@@ -45,6 +45,25 @@ const sendMessageToTab = async (
   }
 };
 
+const sendMatchResultsToTab = async (
+  tabId: number,
+  matches: CargoEntry[],
+): Promise<void> => {
+  try {
+    await browser.tabs.sendMessage(
+      tabId,
+      Messaging.createMessage(
+        MessageType.MATCH_RESULTS_UPDATED,
+        "background",
+        matches,
+      ),
+    );
+  } catch {
+    // A failed match update means the page is no longer available. Its next
+    // content-script context update will calculate and deliver fresh matches.
+  }
+};
+
 const readActiveTabId = async (): Promise<number | null> => {
   const tabs = await browser.tabs.query({
     active: true,
@@ -277,7 +296,6 @@ Messaging.createBackgroundMessageHandler({
       loadDatasetCache(),
       waitForNavigationCleanup(tabId),
     ]);
-    if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
 
     let currentTab: browser.Tabs.Tab;
     try {
@@ -301,20 +319,20 @@ Messaging.createBackgroundMessageHandler({
     });
     if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
 
+    try {
+      currentTab = await browser.tabs.get(tabId);
+    } catch {
+      return;
+    }
+    if (!isCurrentPageUrl(payload.url, currentTab.url)) return;
+
     browser.action.setBadgeText({
       tabId,
       text: getBadgeText(matches.length),
     });
     browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
 
-    void sendMessageToTab(
-      tabId,
-      Messaging.createMessage(
-        MessageType.MATCH_RESULTS_UPDATED,
-        "background",
-        matches,
-      ),
-    );
+    void sendMatchResultsToTab(tabId, matches);
   },
 });
 
