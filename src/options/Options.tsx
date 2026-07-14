@@ -18,6 +18,7 @@ import { OptionsView } from "@/options/OptionsView";
 import * as Messaging from "@/messaging";
 import { MessageType } from "@/messaging/type";
 import { normalizeHostname } from "@/shared/util";
+import { normalizeVendorKey } from "@/shared/snoozedVendors";
 import {
   readAutoDismissHoverCancelMs,
   readAutoDismissCursorOutBehavior,
@@ -30,6 +31,7 @@ import {
   readRefreshErrorMessage,
   readRefreshIntervalMs,
   readSnoozedSiteMap,
+  readSnoozedVendorMap,
   readSuppressedDomains,
   readWarningsEnabled,
   writeAutoDismissHoverCancelMs,
@@ -40,6 +42,7 @@ import {
   writeHideWhenNoIncidents,
   writePopupPosition,
   writeSnoozedSiteMap,
+  writeSnoozedVendorMap,
   writeSuppressedDomains,
   writeWarningsEnabled,
 } from "@/shared/storage";
@@ -54,6 +57,14 @@ const readSnoozedSites = async (): Promise<string[]> => {
   return Object.keys(value)
     .map((domain) => normalizeHostname(domain))
     .filter((domain) => domain.length > 0)
+    .sort((left, right) => left.localeCompare(right));
+};
+
+const readSnoozedVendors = async (): Promise<string[]> => {
+  const value = await readSnoozedVendorMap();
+  return Object.values(value)
+    .map((entries) => entries[0]?.companyName || "")
+    .filter((name) => name.length > 0)
     .sort((left, right) => left.localeCompare(right));
 };
 
@@ -115,6 +126,7 @@ const Options = () => {
   const [hideWhenNoIncidents, setHideWhenNoIncidents] = useState<boolean>(true);
   const [suppressedDomains, setSuppressedDomains] = useState<string[]>([]);
   const [snoozedSites, setSnoozedSites] = useState<string[]>([]);
+  const [snoozedVendors, setSnoozedVendors] = useState<string[]>([]);
   const [refreshIntervalMs, setRefreshIntervalMs] = useState<number>(
     Constants.DEFAULT_DATA_REFRESH_INTERVAL_MS,
   );
@@ -152,6 +164,7 @@ const Options = () => {
           hideWithoutIncidents,
           domains,
           snoozedSiteDomains,
+          snoozedVendorNames,
           intervalMs,
           refreshedAt,
           fetchError,
@@ -167,6 +180,7 @@ const Options = () => {
           readHideWhenNoIncidents(),
           readSuppressedDomains(),
           readSnoozedSites(),
+          readSnoozedVendors(),
           readRefreshIntervalMs(),
           readLastRefreshedAt(),
           readLastRefreshError(),
@@ -182,6 +196,7 @@ const Options = () => {
         setHideWhenNoIncidents(hideWithoutIncidents);
         setSuppressedDomains(domains);
         setSnoozedSites(snoozedSiteDomains);
+        setSnoozedVendors(snoozedVendorNames);
         setRefreshIntervalMs(intervalMs);
         setLastRefreshedAt(refreshedAt);
         setLastRefreshError(fetchError);
@@ -236,6 +251,9 @@ const Options = () => {
       }
       if (changes[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE]) {
         void readSnoozedSites().then(setSnoozedSites);
+      }
+      if (changes[Constants.STORAGE.SNOOZED_VENDORS_UNTIL_INCIDENT_CHANGE]) {
+        void readSnoozedVendors().then(setSnoozedVendors);
       }
       if (changes[Constants.STORAGE.POPUP_POSITION]) {
         void readPopupPosition().then(setPopupPosition);
@@ -300,6 +318,23 @@ const Options = () => {
         .sort((left, right) => left.localeCompare(right)),
     );
     await writeSnoozedSiteMap(next);
+  };
+
+  const onRemoveSnoozedVendor = async (companyName: string) => {
+    const vendorKey = normalizeVendorKey(companyName);
+    if (!vendorKey) return;
+
+    const existing = await readSnoozedVendorMap();
+    if (!existing[vendorKey] || existing[vendorKey].length === 0) return;
+    const next = { ...existing };
+    delete next[vendorKey];
+    setSnoozedVendors(
+      Object.values(next)
+        .map((entries) => entries[0]?.companyName || "")
+        .filter((name) => name.length > 0)
+        .sort((left, right) => left.localeCompare(right)),
+    );
+    await writeSnoozedVendorMap(next);
   };
 
   const onChangePopupPosition = async (position: PopupPosition) => {
@@ -392,6 +427,7 @@ const Options = () => {
       hideWhenNoIncidents={hideWhenNoIncidents}
       suppressedDomains={suppressedDomains}
       snoozedSites={snoozedSites}
+      snoozedVendors={snoozedVendors}
       refreshIntervalMs={refreshIntervalMs}
       lastRefreshedAt={lastRefreshedAt}
       refreshingNow={refreshingNow}
@@ -416,6 +452,9 @@ const Options = () => {
         void onRemoveSuppressedDomain(domain)
       }
       onRemoveSnoozedSite={(domain) => void onRemoveSnoozedSite(domain)}
+      onRemoveSnoozedVendor={(companyName) =>
+        void onRemoveSnoozedVendor(companyName)
+      }
       onChangePopupPosition={(position) => void onChangePopupPosition(position)}
       onToggleAutoDismiss={(enabled) => void onToggleAutoDismiss(enabled)}
       onChangeAutoDismissTimeoutMs={(ms) =>

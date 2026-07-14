@@ -156,6 +156,7 @@ export type OptionsViewProps = {
   hideWhenNoIncidents: boolean;
   suppressedDomains: string[];
   snoozedSites: string[];
+  snoozedVendors: string[];
   refreshIntervalMs: number;
   lastRefreshedAt: number | null;
   refreshingNow: boolean;
@@ -176,6 +177,7 @@ export type OptionsViewProps = {
   onOpenShortcutSettings: () => void;
   onRemoveSuppressedDomain: (domain: string) => void;
   onRemoveSnoozedSite: (domain: string) => void;
+  onRemoveSnoozedVendor: (companyName: string) => void;
   onChangePopupPosition: (position: PopupPosition) => void;
   onToggleAutoDismiss: (enabled: boolean) => void;
   onChangeAutoDismissTimeoutMs: (ms: number) => void;
@@ -204,6 +206,7 @@ export const OptionsView = (props: OptionsViewProps) => {
     hideWhenNoIncidents,
     suppressedDomains,
     snoozedSites,
+    snoozedVendors,
     refreshIntervalMs,
     lastRefreshedAt,
     refreshingNow,
@@ -224,6 +227,7 @@ export const OptionsView = (props: OptionsViewProps) => {
     onOpenShortcutSettings,
     onRemoveSuppressedDomain,
     onRemoveSnoozedSite,
+    onRemoveSnoozedVendor,
     onChangePopupPosition,
     onToggleAutoDismiss,
     onChangeAutoDismissTimeoutMs,
@@ -1039,6 +1043,104 @@ export const OptionsView = (props: OptionsViewProps) => {
                     type="button"
                     onClick={() => {
                       onRemoveSnoozedSite(domain);
+                    }}
+                    style={{
+                      border: `1px solid ${PAGE_CSS.buttonBorder}`,
+                      background: PAGE_CSS.buttonBg,
+                      color: PAGE_CSS.buttonText,
+                      borderRadius: "8px",
+                      padding: "4px 10px",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section
+          style={{
+            border: `1px solid ${PAGE_CSS.border}`,
+            borderRadius: "12px",
+            padding: "14px",
+            background: PAGE_CSS.subtleBg,
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "16px",
+              lineHeight: 1.2,
+              fontWeight: 700,
+              color: PAGE_CSS.text,
+            }}
+          >
+            Snoozed Companies
+          </h2>
+          <p
+            style={{
+              margin: "6px 0 10px 0",
+              fontSize: "13px",
+              color: PAGE_CSS.muted,
+            }}
+          >
+            These companies are snoozed on all of their sites until incident
+            matches change.
+          </p>
+
+          {snoozedVendors.length === 0 && (
+            <div
+              style={{
+                border: `1px solid ${PAGE_CSS.border}`,
+                borderRadius: "10px",
+                padding: "10px 12px",
+                fontSize: "13px",
+                color: PAGE_CSS.muted,
+              }}
+            >
+              No snoozed companies.
+            </div>
+          )}
+
+          {snoozedVendors.length > 0 && (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            >
+              {snoozedVendors.map((companyName) => (
+                <div
+                  key={companyName}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "8px",
+                    border: `1px solid ${PAGE_CSS.border}`,
+                    borderRadius: "10px",
+                    padding: "8px 10px",
+                    fontSize: "13px",
+                    color: PAGE_CSS.text,
+                  }}
+                >
+                  <span
+                    style={{
+                      minWidth: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {companyName}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onRemoveSnoozedVendor(companyName);
                     }}
                     style={{
                       border: `1px solid ${PAGE_CSS.buttonBorder}`,

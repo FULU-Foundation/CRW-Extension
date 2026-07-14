@@ -11,6 +11,12 @@ import {
 } from "@/shared/siteScope";
 import { CargoEntry, PageContext } from "@/shared/types";
 import {
+  addVendorSnoozeEntries,
+  getVendorNamesFromMatches,
+  hasVendorSnoozeEntry,
+  removeVendorSnoozeEntries,
+} from "@/shared/snoozedVendors";
+import {
   readAutoDismissHoverCancelMs,
   readAutoDismissCursorOutBehavior,
   readAutoDismissEnabled,
@@ -19,9 +25,11 @@ import {
   readHideWhenNoIncidents,
   readPopupPosition,
   readSnoozedSiteMap,
+  readSnoozedVendorMap,
   readSuppressedDomains,
   readWarningsEnabled,
   writeSnoozedSiteMap,
+  writeSnoozedVendorMap,
   writeSuppressedDomains,
   writeWarningsEnabled,
 } from "@/shared/storage";
@@ -132,6 +140,83 @@ const isCurrentSiteSnoozedUntilIncidentChanges = async (
   if (!entries || entries.length === 0) return false;
 
   return entries.some((entry) => entry.incidentSignature === incidentSignature);
+};
+
+const snoozeMatchedVendorsUntilNewIncidentChanges = async (
+  matches: CargoEntry[],
+  incidentSignature: string,
+): Promise<void> => {
+  const vendorNames = getVendorNamesFromMatches(matches);
+  if (vendorNames.length === 0) return;
+
+  const snoozedVendorMap = await readSnoozedVendorMap();
+  await writeSnoozedVendorMap(
+    addVendorSnoozeEntries(
+      snoozedVendorMap,
+      vendorNames,
+      incidentSignature,
+      Date.now(),
+    ),
+  );
+};
+
+const unsnoozeMatchedVendorsUntilNewIncidentChanges = async (
+  matches: CargoEntry[],
+  incidentSignature?: string,
+): Promise<void> => {
+  const vendorNames = getVendorNamesFromMatches(matches);
+  if (vendorNames.length === 0) return;
+
+  const snoozedVendorMap = await readSnoozedVendorMap();
+  const { map, changed } = removeVendorSnoozeEntries(
+    snoozedVendorMap,
+    vendorNames,
+    incidentSignature,
+  );
+  if (changed) await writeSnoozedVendorMap(map);
+};
+
+const areMatchedVendorsSnoozedUntilIncidentChanges = async (
+  matches: CargoEntry[],
+  incidentSignature: string,
+): Promise<boolean> => {
+  const vendorNames = getVendorNamesFromMatches(matches);
+  if (vendorNames.length === 0) return false;
+
+  const snoozedVendorMap = await readSnoozedVendorMap();
+  return hasVendorSnoozeEntry(snoozedVendorMap, vendorNames, incidentSignature);
+};
+
+const snoozeCurrentMatchesUntilNewIncidentChanges = async (
+  matches: CargoEntry[],
+  incidentSignature: string,
+): Promise<void> => {
+  await snoozeCurrentSiteUntilNewIncidentChanges(incidentSignature);
+  await snoozeMatchedVendorsUntilNewIncidentChanges(matches, incidentSignature);
+};
+
+const unsnoozeCurrentMatchesUntilNewIncidentChanges = async (
+  matches: CargoEntry[],
+  incidentSignature?: string,
+): Promise<void> => {
+  await unsnoozeCurrentSiteUntilNewIncidentChanges(incidentSignature);
+  await unsnoozeMatchedVendorsUntilNewIncidentChanges(
+    matches,
+    incidentSignature,
+  );
+};
+
+const areCurrentMatchesSnoozedUntilIncidentChanges = async (
+  matches: CargoEntry[],
+  incidentSignature: string,
+): Promise<boolean> => {
+  if (await isCurrentSiteSnoozedUntilIncidentChanges(incidentSignature)) {
+    return true;
+  }
+  return areMatchedVendorsSnoozedUntilIncidentChanges(
+    matches,
+    incidentSignature,
+  );
 };
 
 const isWarningsEnabled = readWarningsEnabled;
@@ -260,13 +345,21 @@ const toggleCurrentSiteSnooze = async (
 ): Promise<void> => {
   const incidentSignature = buildIncidentSignature(matches);
 
-  if (await isCurrentSiteSnoozedUntilIncidentChanges(incidentSignature)) {
-    await unsnoozeCurrentSiteUntilNewIncidentChanges(incidentSignature);
+  if (
+    await areCurrentMatchesSnoozedUntilIncidentChanges(
+      matches,
+      incidentSignature,
+    )
+  ) {
+    await unsnoozeCurrentMatchesUntilNewIncidentChanges(
+      matches,
+      incidentSignature,
+    );
     void renderInlinePopup(matches, true);
     return;
   }
 
-  await snoozeCurrentSiteUntilNewIncidentChanges(incidentSignature);
+  await snoozeCurrentMatchesUntilNewIncidentChanges(matches, incidentSignature);
   removeInlinePopup();
 };
 
@@ -302,7 +395,10 @@ const renderInlinePopup = async (
 
   const currentlySnoozed = currentlySuppressed
     ? false
-    : await isCurrentSiteSnoozedUntilIncidentChanges(incidentSignature);
+    : await areCurrentMatchesSnoozedUntilIncidentChanges(
+        visibleMatches,
+        incidentSignature,
+      );
   if (!ignorePreferences && currentlySnoozed) {
     removeInlinePopup();
     return;
@@ -360,12 +456,18 @@ const renderInlinePopup = async (
 
   const handleSnoozeUntilNewChangesClick = async () => {
     if (currentlySnoozed) {
-      await unsnoozeCurrentSiteUntilNewIncidentChanges(incidentSignature);
+      await unsnoozeCurrentMatchesUntilNewIncidentChanges(
+        matches,
+        incidentSignature,
+      );
       void renderInlinePopup(matches, true);
       return;
     }
 
-    await snoozeCurrentSiteUntilNewIncidentChanges(incidentSignature);
+    await snoozeCurrentMatchesUntilNewIncidentChanges(
+      matches,
+      incidentSignature,
+    );
     removeInlinePopup();
   };
 
@@ -536,6 +638,7 @@ browser.storage.onChanged.addListener((changes, areaName) => {
     }
     if (
       changes[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE] ||
+      changes[Constants.STORAGE.SNOOZED_VENDORS_UNTIL_INCIDENT_CHANGE] ||
       changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS]
     ) {
       void runContentScript();
