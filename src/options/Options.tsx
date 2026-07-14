@@ -140,6 +140,20 @@ const readShortcutBindings = async (): Promise<ShortcutCommandBinding[]> => {
   }
 };
 
+// Serializes read-modify-write cycles on the disabled-categories list so
+// rapid toggles cannot overwrite each other's updates.
+let disabledCategoriesWriteQueue: Promise<void> = Promise.resolve();
+
+const enqueueDisabledCategoriesWrite = (
+  update: (disabledLabels: string[]) => string[],
+): Promise<void> => {
+  disabledCategoriesWriteQueue = disabledCategoriesWriteQueue.then(async () => {
+    const disabledLabels = await readDisabledIncidentCategories();
+    await writeDisabledIncidentCategories(update(disabledLabels));
+  });
+  return disabledCategoriesWriteQueue;
+};
+
 const decodeRefreshNowResponseFetchedAt = (value: unknown): number | null => {
   if (typeof value !== "object" || value === null) return null;
   const record = value as Record<string, unknown>;
@@ -360,12 +374,12 @@ const Options = () => {
       ),
     );
 
-    const disabledLabels = await readDisabledIncidentCategories();
-    const withoutLabel = disabledLabels.filter(
-      (value) => normalizeCategoryKey(value) !== categoryKey,
-    );
-    const next = enabled ? withoutLabel : [...withoutLabel, label];
-    await writeDisabledIncidentCategories(next);
+    await enqueueDisabledCategoriesWrite((disabledLabels) => {
+      const withoutLabel = disabledLabels.filter(
+        (value) => normalizeCategoryKey(value) !== categoryKey,
+      );
+      return enabled ? withoutLabel : [...withoutLabel, label];
+    });
   };
 
   const onChangePopupPosition = async (position: PopupPosition) => {

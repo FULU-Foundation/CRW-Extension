@@ -5,6 +5,7 @@ import type {
   AutoDismissCursorOutBehavior,
   PopupPosition,
 } from "@/shared/constants";
+import { decodeHtmlEntities } from "@/shared/html";
 import { canonicalizeSiteScopeList } from "@/shared/siteScope";
 import { ensureDataMigration } from "@/shared/dataMigrations";
 import { type CargoEntry, decodeCargoEntries } from "@/shared/types";
@@ -108,10 +109,7 @@ export const readDisabledIncidentCategories = async (): Promise<string[]> => {
 export const writeDisabledIncidentCategories = async (
   labels: string[],
 ): Promise<void> => {
-  await writeLocalValue(
-    Constants.STORAGE.DISABLED_INCIDENT_CATEGORIES,
-    labels,
-  );
+  await writeLocalValue(Constants.STORAGE.DISABLED_INCIDENT_CATEGORIES, labels);
 };
 
 export const readCachedIncidentTypeValues = async (): Promise<string[]> => {
@@ -129,7 +127,10 @@ export const readCachedIncidentTypeValues = async (): Promise<string[]> => {
     if (typeof incident !== "object" || incident === null) continue;
     const type = (incident as Record<string, unknown>).Type;
     if (typeof type === "string" && type.trim().length > 0) {
-      types.push(type);
+      // The cached wiki data stores Type values with HTML entities (e.g.
+      // "&amp;"), while matched incidents are decoded before display. Decode
+      // here so both sides derive the same category keys.
+      types.push(decodeHtmlEntities(type));
     }
   }
   return types;
