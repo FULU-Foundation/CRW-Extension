@@ -44,33 +44,13 @@ export const getIncidentCategoryLabels = (entry: IncidentEntry): string[] => {
   return [...labelsByKey.values()];
 };
 
-export const getCategoryLabelsFromTypeValues = (
-  typeValues: string[],
-): string[] => {
+export const dedupeAndSortCategoryLabels = (labels: string[]): string[] => {
   const labelsByKey = new Map<string, string>();
-  for (const rawType of typeValues) {
-    for (const part of rawType.split(",")) {
-      const label = formatCategoryLabel(part);
-      const key = normalizeCategoryKey(label);
-      if (!key) continue;
-      if (!labelsByKey.has(key)) labelsByKey.set(key, label);
-    }
-  }
-  return [...labelsByKey.values()].sort((left, right) =>
-    left.localeCompare(right),
-  );
-};
-
-export const getCategoryLabelsFromMatches = (
-  matches: CargoEntry[],
-): string[] => {
-  const labelsByKey = new Map<string, string>();
-  for (const entry of matches) {
-    if (!isIncidentEntry(entry)) continue;
-    for (const label of getIncidentCategoryLabels(entry)) {
-      const key = normalizeCategoryKey(label);
-      if (!labelsByKey.has(key)) labelsByKey.set(key, label);
-    }
+  for (const raw of labels) {
+    const label = formatCategoryLabel(raw);
+    const key = normalizeCategoryKey(label);
+    if (!key) continue;
+    if (!labelsByKey.has(key)) labelsByKey.set(key, label);
   }
   return [...labelsByKey.values()].sort((left, right) =>
     left.localeCompare(right),

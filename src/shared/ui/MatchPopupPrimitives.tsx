@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 
+import { getIncidentCategoryLabels } from "@/shared/incidentCategories";
 import {
   type CargoEntry,
   type CompanyEntry,
@@ -154,8 +155,15 @@ export const RelatedGroup = (props: {
   entries: CargoEntry[];
   externalIconUrl: string;
   showIncidentStatus?: boolean;
+  onHideIncidentCategory?: (label: string) => void;
 }) => {
-  const { title, entries, externalIconUrl, showIncidentStatus = false } = props;
+  const {
+    title,
+    entries,
+    externalIconUrl,
+    showIncidentStatus = false,
+    onHideIncidentCategory,
+  } = props;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
       <div
@@ -174,8 +182,131 @@ export const RelatedGroup = (props: {
           item={item}
           externalIconUrl={externalIconUrl}
           showIncidentStatus={showIncidentStatus}
+          onHideIncidentCategory={onHideIncidentCategory}
         />
       ))}
+    </div>
+  );
+};
+
+const CategoryHideMenu = (props: {
+  incidentName: string;
+  categoryLabels: string[];
+  onHideCategory: (label: string) => void;
+}) => {
+  const { incidentName, categoryLabels, onHideCategory } = props;
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div
+      style={{ position: "relative", flexShrink: 0 }}
+      onBlur={(event) => {
+        // Close when focus leaves the button and menu entirely (works inside
+        // the closed shadow root, where document-level listeners are awkward).
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setOpen(false);
+        }
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") setOpen(false);
+      }}
+    >
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`More actions for ${incidentName}`}
+        title="Hide incidents like this"
+        onClick={() => setOpen((value) => !value)}
+        style={{
+          appearance: "none",
+          border: 0,
+          background: open ? "rgba(255,255,255,0.18)" : "transparent",
+          color: POPUP_CSS.muted,
+          borderRadius: "6px",
+          padding: "0 4px",
+          fontSize: "12px",
+          fontWeight: 700,
+          letterSpacing: "1px",
+          lineHeight: 1.4,
+          cursor: "pointer",
+        }}
+        onMouseEnter={(event) => {
+          event.currentTarget.style.color = POPUP_CSS.text;
+        }}
+        onMouseLeave={(event) => {
+          event.currentTarget.style.color = POPUP_CSS.muted;
+        }}
+      >
+        &#8943;
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          style={{
+            position: "absolute",
+            right: 0,
+            // Open upward (like the incident tooltip) so the menu stays inside
+            // the scrollable body panel instead of being clipped below it.
+            bottom: "calc(100% + 4px)",
+            zIndex: 30,
+            minWidth: "200px",
+            maxWidth: "260px",
+            padding: "6px 0",
+            borderRadius: "10px",
+            background:
+              "linear-gradient(180deg, rgba(7,18,41,0.98), rgba(6,15,35,0.94))",
+            border: "1px solid rgba(216,241,255,0.22)",
+            boxShadow: "0 12px 28px rgba(0,0,0,0.28)",
+          }}
+        >
+          <div
+            style={{
+              padding: "3px 12px 6px 12px",
+              fontSize: "10px",
+              textTransform: "uppercase",
+              letterSpacing: ".05em",
+              color: POPUP_CSS.muted,
+              whiteSpace: "nowrap",
+            }}
+          >
+            Hide incidents by category
+          </div>
+          {categoryLabels.map((label) => (
+            <button
+              key={label}
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onHideCategory(label);
+              }}
+              style={{
+                appearance: "none",
+                display: "block",
+                width: "100%",
+                border: 0,
+                background: "transparent",
+                color: POPUP_CSS.text,
+                textAlign: "left",
+                padding: "6px 12px",
+                fontSize: "12px",
+                lineHeight: 1.3,
+                cursor: "pointer",
+              }}
+              onMouseEnter={(event) => {
+                event.currentTarget.style.background = "rgba(255,255,255,0.14)";
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.background = "transparent";
+              }}
+            >
+              Hide &quot;{label}&quot; incidents
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -184,10 +315,16 @@ const IncidentEntry = (props: {
   item: CargoEntry;
   externalIconUrl: string;
   showIncidentStatus: boolean;
+  onHideIncidentCategory?: (label: string) => void;
 }) => {
-  const { item, externalIconUrl, showIncidentStatus } = props;
+  const { item, externalIconUrl, showIncidentStatus, onHideIncidentCategory } =
+    props;
   const [showTooltip, setShowTooltip] = useState(false);
   const tooltipText = getIncidentTooltipText(item);
+  const categoryLabels =
+    onHideIncidentCategory && isIncidentEntry(item)
+      ? getIncidentCategoryLabels(item)
+      : [];
 
   return (
     <div
@@ -237,38 +374,55 @@ const IncidentEntry = (props: {
         </div>
       )}
 
-      <EntryLink
-        entry={item}
-        externalIconUrl={externalIconUrl}
-        linkStyle={{
-          fontSize: "12px",
-          color: POPUP_CSS.text,
-          textDecoration: "none",
+      <div
+        style={{
           display: "flex",
           alignItems: "center",
           gap: "4px",
         }}
-        titleStyle={{
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          minWidth: 0,
-        }}
-        iconSize={11}
-        statusLozenge={
-          showIncidentStatus
-            ? getIncidentPrimaryStatus(item) || undefined
-            : undefined
-        }
-        onMouseEnter={
-          showIncidentStatus ? () => setShowTooltip(true) : undefined
-        }
-        onMouseLeave={
-          showIncidentStatus ? () => setShowTooltip(false) : undefined
-        }
-        onFocus={showIncidentStatus ? () => setShowTooltip(true) : undefined}
-        onBlur={showIncidentStatus ? () => setShowTooltip(false) : undefined}
-      />
+      >
+        <EntryLink
+          entry={item}
+          externalIconUrl={externalIconUrl}
+          linkStyle={{
+            fontSize: "12px",
+            color: POPUP_CSS.text,
+            textDecoration: "none",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+            minWidth: 0,
+            flex: "1 1 auto",
+          }}
+          titleStyle={{
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            minWidth: 0,
+          }}
+          iconSize={11}
+          statusLozenge={
+            showIncidentStatus
+              ? getIncidentPrimaryStatus(item) || undefined
+              : undefined
+          }
+          onMouseEnter={
+            showIncidentStatus ? () => setShowTooltip(true) : undefined
+          }
+          onMouseLeave={
+            showIncidentStatus ? () => setShowTooltip(false) : undefined
+          }
+          onFocus={showIncidentStatus ? () => setShowTooltip(true) : undefined}
+          onBlur={showIncidentStatus ? () => setShowTooltip(false) : undefined}
+        />
+        {onHideIncidentCategory && categoryLabels.length > 0 && (
+          <CategoryHideMenu
+            incidentName={item.PageName}
+            categoryLabels={categoryLabels}
+            onHideCategory={onHideIncidentCategory}
+          />
+        )}
+      </div>
     </div>
   );
 };

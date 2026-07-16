@@ -1,6 +1,5 @@
 import React from "react";
 
-import { getCategoryLabelsFromMatches } from "@/shared/incidentCategories";
 import {
   type CargoEntry,
   type CompanyEntry,
@@ -15,58 +14,6 @@ import {
   ghostButtonHoverHandlers,
 } from "@/shared/ui/matchPopupStyles";
 
-const MAX_VISIBLE_CATEGORY_BADGES = 6;
-
-const CategoryBadgeRow = ({ incidents }: { incidents: IncidentEntry[] }) => {
-  const labels = getCategoryLabelsFromMatches(incidents);
-  if (labels.length === 0) return null;
-
-  const visibleLabels = labels.slice(0, MAX_VISIBLE_CATEGORY_BADGES);
-  const hiddenCount = labels.length - visibleLabels.length;
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: "4px",
-        alignItems: "center",
-      }}
-    >
-      {visibleLabels.map((label) => (
-        <span
-          key={label}
-          style={{
-            border: "1px solid rgba(255,255,255,0.35)",
-            borderRadius: "999px",
-            padding: "1px 7px",
-            fontSize: "10px",
-            lineHeight: 1.4,
-            fontWeight: 600,
-            color: POPUP_CSS.text,
-            background: "rgba(255,255,255,0.08)",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {label}
-        </span>
-      ))}
-      {hiddenCount > 0 && (
-        <span
-          style={{
-            fontSize: "10px",
-            lineHeight: 1.4,
-            color: POPUP_CSS.muted,
-            whiteSpace: "nowrap",
-          }}
-        >
-          +{hiddenCount} more
-        </span>
-      )}
-    </div>
-  );
-};
-
 type MatchPopupBodyProps = {
   topMatch: CargoEntry;
   companyMatch?: CompanyEntry;
@@ -79,6 +26,7 @@ type MatchPopupBodyProps = {
   hiddenRelatedPagesCount: number;
   showRelatedPages: boolean;
   onToggleRelatedPages: () => void;
+  onHideIncidentCategory?: (label: string) => void;
 };
 
 export const MatchPopupBody = (props: MatchPopupBodyProps) => {
@@ -94,6 +42,7 @@ export const MatchPopupBody = (props: MatchPopupBodyProps) => {
     hiddenRelatedPagesCount,
     showRelatedPages,
     onToggleRelatedPages,
+    onHideIncidentCategory,
   } = props;
 
   const hasExpandableRelatedGroups =
@@ -120,14 +69,6 @@ export const MatchPopupBody = (props: MatchPopupBodyProps) => {
         externalIconUrl={externalIconUrl}
       />
 
-      {(visibleIncidents.length > 0 || expandedIncidents.length > 0) && (
-        <div style={POPUP_LAYOUT.bodySection}>
-          <CategoryBadgeRow
-            incidents={[...visibleIncidents, ...expandedIncidents]}
-          />
-        </div>
-      )}
-
       {visibleIncidents.length > 0 && (
         <div style={POPUP_LAYOUT.bodySection}>
           <RelatedGroup
@@ -135,6 +76,7 @@ export const MatchPopupBody = (props: MatchPopupBodyProps) => {
             entries={visibleIncidents}
             externalIconUrl={externalIconUrl}
             showIncidentStatus
+            onHideIncidentCategory={onHideIncidentCategory}
           />
         </div>
       )}
@@ -191,6 +133,7 @@ export const MatchPopupBody = (props: MatchPopupBodyProps) => {
               entries={expandedIncidents}
               externalIconUrl={externalIconUrl}
               showIncidentStatus
+              onHideIncidentCategory={onHideIncidentCategory}
             />
           )}
           {relatedProducts.length > 0 && (

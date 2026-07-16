@@ -2,9 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  dedupeAndSortCategoryLabels,
   formatCategoryLabel,
-  getCategoryLabelsFromMatches,
-  getCategoryLabelsFromTypeValues,
   getIncidentCategoryLabels,
   isIncidentAutoPopupEnabled,
   normalizeCategoryKey,
@@ -28,8 +27,14 @@ const company = (pageName: string): CargoEntry => ({
 });
 
 test("normalizeCategoryKey ignores case and non-alphanumerics", () => {
-  assert.equal(normalizeCategoryKey("Digital Restrictions"), "digitalrestrictions");
-  assert.equal(normalizeCategoryKey("digital restrictions"), "digitalrestrictions");
+  assert.equal(
+    normalizeCategoryKey("Digital Restrictions"),
+    "digitalrestrictions",
+  );
+  assert.equal(
+    normalizeCategoryKey("digital restrictions"),
+    "digitalrestrictions",
+  );
   assert.equal(
     normalizeCategoryKey("Anti-competitive Behavior"),
     normalizeCategoryKey("Anticompetitive Behavior"),
@@ -39,7 +44,10 @@ test("normalizeCategoryKey ignores case and non-alphanumerics", () => {
 });
 
 test("formatCategoryLabel trims and title-cases words", () => {
-  assert.equal(formatCategoryLabel("  digital restrictions "), "Digital Restrictions");
+  assert.equal(
+    formatCategoryLabel("  digital restrictions "),
+    "Digital Restrictions",
+  );
   assert.equal(formatCategoryLabel("Privacy"), "Privacy");
   assert.equal(formatCategoryLabel("EULA"), "EULA");
 });
@@ -56,22 +64,15 @@ test("getIncidentCategoryLabels returns empty array without Type", () => {
   assert.deepEqual(getIncidentCategoryLabels(incident("A", "")), []);
 });
 
-test("getCategoryLabelsFromTypeValues dedupes across values and sorts", () => {
-  const labels = getCategoryLabelsFromTypeValues([
-    "Privacy, EULA",
+test("dedupeAndSortCategoryLabels formats, dedupes by key, and sorts", () => {
+  const labels = dedupeAndSortCategoryLabels([
     "privacy",
+    "Privacy",
     "Censorship",
+    "  digital restrictions ",
+    "",
   ]);
-  assert.deepEqual(labels, ["Censorship", "EULA", "Privacy"]);
-});
-
-test("getCategoryLabelsFromMatches only considers incidents", () => {
-  const labels = getCategoryLabelsFromMatches([
-    company("X"),
-    incident("A", "Privacy"),
-    incident("B", "Censorship, privacy"),
-  ]);
-  assert.deepEqual(labels, ["Censorship", "Privacy"]);
+  assert.deepEqual(labels, ["Censorship", "Digital Restrictions", "Privacy"]);
 });
 
 test("isIncidentAutoPopupEnabled treats missing Type as enabled", () => {

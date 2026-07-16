@@ -3,7 +3,10 @@ import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
 import type { PopupPosition } from "@/shared/constants";
-import { shouldCategoriesHideAutoPopup } from "@/shared/incidentCategories";
+import {
+  normalizeCategoryKey,
+  shouldCategoriesHideAutoPopup,
+} from "@/shared/incidentCategories";
 import { buildIncidentSignature } from "@/shared/incidentSignature";
 import {
   getSiteScopeHostname,
@@ -23,6 +26,7 @@ import {
   readSnoozedSiteMap,
   readSuppressedDomains,
   readWarningsEnabled,
+  writeDisabledIncidentCategories,
   writeSnoozedSiteMap,
   writeSuppressedDomains,
   writeWarningsEnabled,
@@ -171,6 +175,17 @@ const openOptions = () => {
       }
     }
   })();
+};
+
+const hideIncidentCategory = async (label: string): Promise<void> => {
+  const categoryKey = normalizeCategoryKey(label);
+  if (!categoryKey) return;
+  const disabledLabels = await readDisabledIncidentCategories();
+  const alreadyDisabled = disabledLabels.some(
+    (value) => normalizeCategoryKey(value) === categoryKey,
+  );
+  if (alreadyDisabled) return;
+  await writeDisabledIncidentCategories([...disabledLabels, label]);
 };
 
 const suppressCurrentSite = async (): Promise<void> => {
@@ -431,6 +446,7 @@ const renderInlinePopup = async (
           : () => void handleSnoozeUntilNewChangesClick()
       }
       onSuppressSite={() => void handleSuppressSiteClick()}
+      onHideIncidentCategory={(label) => void hideIncidentCategory(label)}
     />,
   );
 };
