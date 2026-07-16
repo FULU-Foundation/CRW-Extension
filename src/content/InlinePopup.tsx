@@ -29,6 +29,7 @@ type InlinePopupProps = {
   onSuppressSite: () => void;
   onSnoozeUntilNewChanges?: () => void;
   onDisableWarnings?: () => void;
+  onHideIncidentCategory?: (label: string) => void;
   snoozeUntilNewChangesLabel?: string;
   snoozeUntilNewChangesTooltip?: string;
   suppressButtonLabel?: string;
@@ -55,6 +56,7 @@ export const InlinePopup = (props: InlinePopupProps) => {
     onSuppressSite,
     onSnoozeUntilNewChanges,
     onDisableWarnings,
+    onHideIncidentCategory,
     snoozeUntilNewChangesLabel,
     snoozeUntilNewChangesTooltip,
     suppressButtonLabel,
@@ -128,6 +130,7 @@ export const InlinePopup = (props: InlinePopupProps) => {
         onSuppressSite={onSuppressSite}
         onSnoozeUntilNewChanges={onSnoozeUntilNewChanges}
         onDisableWarnings={onDisableWarnings}
+        onHideIncidentCategory={onHideIncidentCategory}
         snoozeUntilNewChangesLabel={snoozeUntilNewChangesLabel}
         snoozeUntilNewChangesTooltip={snoozeUntilNewChangesTooltip}
         suppressButtonLabel={suppressButtonLabel}

@@ -148,6 +148,66 @@ test("MatchPopupCard prefers product-linked company over marketplace company", (
   assert.ok(appleIncidentIndex < amazonIncidentIndex);
 });
 
+test("MatchPopupCard shows category menu button only for incidents with categories", () => {
+  const html = renderToStaticMarkup(
+    React.createElement(MatchPopupCard, {
+      matches: [
+        entry({
+          _type: "Company",
+          PageID: "company-apple",
+          PageName: "Apple",
+        }),
+        entry({
+          _type: "Incident",
+          PageID: "incident-with-type",
+          PageName: "Incident With Categories",
+          Company: "Apple",
+          Status: "Active",
+          Type: "Privacy, Fees",
+        }),
+        entry({
+          _type: "Incident",
+          PageID: "incident-without-type",
+          PageName: "Incident Without Categories",
+          Company: "Apple",
+          Status: "Active",
+        }),
+      ],
+      logoUrl: "/logo.png",
+      externalIconUrl: "/open-in-new.svg",
+      onSuppressSite: noop,
+      onHideIncidentCategory: noop,
+    }),
+  );
+
+  assert.ok(html.includes("More actions for Incident With Categories"));
+  assert.equal(
+    html.includes("More actions for Incident Without Categories"),
+    false,
+  );
+});
+
+test("MatchPopupCard hides category menu buttons without a hide handler", () => {
+  const html = renderToStaticMarkup(
+    React.createElement(MatchPopupCard, {
+      matches: [
+        entry({
+          _type: "Incident",
+          PageID: "incident-with-type",
+          PageName: "Incident With Categories",
+          Status: "Active",
+          Type: "Privacy",
+        }),
+      ],
+      logoUrl: "/logo.png",
+      externalIconUrl: "/open-in-new.svg",
+      onSuppressSite: noop,
+    }),
+  );
+
+  assert.equal(html.includes("More actions for"), false);
+});
+
 test("getIncidentTooltipText returns trimmed description when present", () => {
   assert.equal(
     getIncidentTooltipText(

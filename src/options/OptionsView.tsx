@@ -156,6 +156,7 @@ export type OptionsViewProps = {
   hideWhenNoIncidents: boolean;
   suppressedDomains: string[];
   snoozedSites: string[];
+  hiddenIncidentCategories: string[];
   refreshIntervalMs: number;
   lastRefreshedAt: number | null;
   refreshingNow: boolean;
@@ -176,6 +177,7 @@ export type OptionsViewProps = {
   onOpenShortcutSettings: () => void;
   onRemoveSuppressedDomain: (domain: string) => void;
   onRemoveSnoozedSite: (domain: string) => void;
+  onRestoreIncidentCategory: (label: string) => void;
   onChangePopupPosition: (position: PopupPosition) => void;
   onToggleAutoDismiss: (enabled: boolean) => void;
   onChangeAutoDismissTimeoutMs: (ms: number) => void;
@@ -204,6 +206,7 @@ export const OptionsView = (props: OptionsViewProps) => {
     hideWhenNoIncidents,
     suppressedDomains,
     snoozedSites,
+    hiddenIncidentCategories,
     refreshIntervalMs,
     lastRefreshedAt,
     refreshingNow,
@@ -224,6 +227,7 @@ export const OptionsView = (props: OptionsViewProps) => {
     onOpenShortcutSettings,
     onRemoveSuppressedDomain,
     onRemoveSnoozedSite,
+    onRestoreIncidentCategory,
     onChangePopupPosition,
     onToggleAutoDismiss,
     onChangeAutoDismissTimeoutMs,
@@ -1053,6 +1057,107 @@ export const OptionsView = (props: OptionsViewProps) => {
                     }}
                   >
                     Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section
+          style={{
+            border: `1px solid ${PAGE_CSS.border}`,
+            borderRadius: "12px",
+            padding: "14px",
+            background: PAGE_CSS.subtleBg,
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "16px",
+              lineHeight: 1.2,
+              fontWeight: 700,
+              color: PAGE_CSS.text,
+            }}
+          >
+            Hidden Categories
+          </h2>
+          <p
+            style={{
+              margin: "6px 0 10px 0",
+              fontSize: "13px",
+              color: PAGE_CSS.muted,
+            }}
+          >
+            Incidents in hidden categories no longer trigger automatic popups. A
+            popup is hidden only when every matched incident belongs solely to
+            hidden categories; incidents without category data always show.
+          </p>
+
+          {hiddenIncidentCategories.length === 0 && (
+            <div
+              style={{
+                border: `1px solid ${PAGE_CSS.border}`,
+                borderRadius: "10px",
+                padding: "10px 12px",
+                fontSize: "13px",
+                color: PAGE_CSS.muted,
+              }}
+            >
+              No hidden categories. To hide one, use the &#8943; menu next to an
+              incident in the popup.
+            </div>
+          )}
+
+          {hiddenIncidentCategories.length > 0 && (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            >
+              {hiddenIncidentCategories.map((label) => (
+                <div
+                  key={label}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "8px",
+                    border: `1px solid ${PAGE_CSS.border}`,
+                    borderRadius: "10px",
+                    padding: "8px 10px",
+                    fontSize: "13px",
+                    color: PAGE_CSS.text,
+                  }}
+                >
+                  <span
+                    style={{
+                      minWidth: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {label}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => {
+                      onRestoreIncidentCategory(label);
+                    }}
+                    style={{
+                      border: `1px solid ${PAGE_CSS.buttonBorder}`,
+                      background: PAGE_CSS.buttonBg,
+                      color: PAGE_CSS.buttonText,
+                      borderRadius: "8px",
+                      padding: "4px 10px",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    Show again
                   </button>
                 </div>
               ))}

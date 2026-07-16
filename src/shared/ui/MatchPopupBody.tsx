@@ -26,6 +26,7 @@ type MatchPopupBodyProps = {
   hiddenRelatedPagesCount: number;
   showRelatedPages: boolean;
   onToggleRelatedPages: () => void;
+  onHideIncidentCategory?: (label: string) => void;
 };
 
 export const MatchPopupBody = (props: MatchPopupBodyProps) => {
@@ -41,6 +42,7 @@ export const MatchPopupBody = (props: MatchPopupBodyProps) => {
     hiddenRelatedPagesCount,
     showRelatedPages,
     onToggleRelatedPages,
+    onHideIncidentCategory,
   } = props;
 
   const hasExpandableRelatedGroups =
@@ -74,6 +76,7 @@ export const MatchPopupBody = (props: MatchPopupBodyProps) => {
             entries={visibleIncidents}
             externalIconUrl={externalIconUrl}
             showIncidentStatus
+            onHideIncidentCategory={onHideIncidentCategory}
           />
         </div>
       )}
@@ -130,6 +133,7 @@ export const MatchPopupBody = (props: MatchPopupBodyProps) => {
               entries={expandedIncidents}
               externalIconUrl={externalIconUrl}
               showIncidentStatus
+              onHideIncidentCategory={onHideIncidentCategory}
             />
           )}
           {relatedProducts.length > 0 && (
