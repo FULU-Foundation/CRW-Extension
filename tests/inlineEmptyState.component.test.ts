@@ -21,3 +21,16 @@ test("InlineEmptyState renders CRW branding and empty-state message", () => {
   assert.ok(html.includes("Open extension settings"));
   assert.ok(html.includes("There are no matching articles."));
 });
+
+test("InlineEmptyState close button exposes an accessible name", () => {
+  const html = renderToStaticMarkup(
+    React.createElement(InlineEmptyState, {
+      logoUrl: "/logo.png",
+      settingsIconUrl: "/settings.svg",
+      onOpenSettings: noop,
+      onClose: noop,
+    }),
+  );
+
+  assert.ok(html.includes('aria-label="Close"'));
+});

@@ -89,6 +89,8 @@ export const InlineEmptyState = (props: InlineEmptyStateProps) => {
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close"
+            title="Close"
             style={{
               border: 0,
               background: "transparent",
@@ -104,7 +106,7 @@ export const InlineEmptyState = (props: InlineEmptyStateProps) => {
               padding: 0,
             }}
           >
-            ×
+            <span aria-hidden="true">×</span>
           </button>
         </div>
       </div>

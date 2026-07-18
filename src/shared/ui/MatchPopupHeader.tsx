@@ -120,6 +120,8 @@ export const MatchPopupHeader = (props: MatchPopupHeaderProps) => {
               type="button"
               onClick={onClose}
               {...ghostButtonHoverHandlers}
+              aria-label="Close"
+              title="Close"
               style={{
                 ...headerIconButtonStyle,
               }}
