@@ -1,0 +1,63 @@
+name: Bug report
+description: Report a bug in the extension
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is only for bugs in the browser extension. If you're using the wiki and something's not working, report it on the wiki's own [Bug reporting page](https://consumerrights.wiki/w/Consumer_Rights_Wiki_talk:Bugs) instead. For issues with the wiki codebase/infrastructure, use [FULU-Foundation/crw](https://github.com/FULU-Foundation/crw) instead.
+
+        **Do not report security vulnerabilities here.** Email [jake@fulu.org](mailto:jake@fulu.org) instead.
+  - type: checkboxes
+    id: duplicates
+    attributes:
+      label: Check for duplicates
+      options:
+        - label: I'm on the latest available version of the extension (or verified the bug still exists on the latest [release](https://github.com/FULU-Foundation/CRW-Extension/releases/) if the webstore version is behind)
+          required: true
+        - label: I searched existing issues and didn't find this already reported
+          required: true
+        - label: I've confirmed this is actually a bug and not a misconfiguration on my end
+          required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Inputs and outputs
+      description: What did you do, what did you expect to happen, and what actually happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Clear, step-by-step instructions so we can replicate it. Issues with no reproduction steps will be labelled `needs-repro` and ignored until they're provided.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Extension version
+      placeholder: "e.g. 1.4.2"
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: "e.g. Chrome 128, Firefox 129"
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: OS and platform
+      placeholder: "e.g. Windows 11 x86, macOS 15 ARM, Ubuntu 24.04"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console errors or screenshots
+      description: Browser console output or screenshots, if relevant
+    validations:
+      required: false
