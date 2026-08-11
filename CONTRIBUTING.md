@@ -1,76 +1,50 @@
 # Contributing to CRW Extension
 
-Thanks for contributing! ❤️
+Thanks for wanting to contribute.
 
-> If you like the project but don't have time to contribute, you can also star the repo or spread the word.
+By contributing, you confirm you're the original author of your submission, have the rights to submit it, and agree it can be licensed under this project's license.
 
-## Table of Contents
-- [Asking Questions](#asking-questions)
-- [Reporting Bugs](#reporting-bugs)
-- [Suggesting Features](#suggesting-features)
-- [Contributing Code](#contributing-code)
+## Questions and chat
 
----
+- Discord: https://discord.gg/qCWkX9yUQ4 (post in **#crw-extension**)
+- Zulip: https://zulip.consumerrights.wiki
+- Or open an issue
 
-## Asking Questions
+## Reporting bugs
 
-Before opening an issue to ask a question:
-- Search [existing issues](https://github.com/FULU-Foundation/CRW-Extension/issues) first.
-- For quicker help, join our [Discord](https://discord.gg/qCWkX9yUQ4) and post in **#crw-extension**.
+This tracker is only for the browser extension. If you're using the wiki and something's not working, report it on the wiki's own [Bug reporting page](https://consumerrights.wiki/w/Consumer_Rights_Wiki_talk:Bugs) instead. For the wiki codebase/infrastructure, use [FULU-Foundation/crw](https://github.com/FULU-Foundation/crw) instead.
 
----
+[Open an issue](https://github.com/FULU-Foundation/CRW-Extension/issues/new/choose) using the bug report form.
 
-## Reporting Bugs
+Before reporting:
+- Confirm you're on the **latest available version** of the extension. If the webstore version is behind the latest release, either wait for it to update or install the [latest release](https://github.com/FULU-Foundation/CRW-Extension/releases/) manually to verify the issue still exists.
+- Check for duplicates: search [existing issues](https://github.com/FULU-Foundation/CRW-Extension/issues) before posting to avoid repeats.
+- Check it's actually a bug and not a misconfiguration on your end.
 
-> [!IMPORTANT]
-> **Do not report security vulnerabilities publicly.** Email [jake@fulu.org](mailto:jake@fulu.org) instead.
-
-Before opening a bug report, you **must**:
-
-- [ ] Confirm you are on the **latest available version** of the extension.
-- [ ] If the webstore version is behind the latest release, either wait for it to update or install the [latest release](https://github.com/FULU-Foundation/CRW-Extension/releases/) manually to verify the issue still exists.
-- [ ] Search [existing issues](https://github.com/FULU-Foundation/CRW-Extension/issues) to check your bug hasn't already been reported.
-- [ ] Check it is actually a bug and not a misconfiguration on your end.
-
-Your bug report must include:
-
+Include:
 - Extension version
 - Browser and version (Chrome, Firefox, etc.)
 - OS and platform (Windows, macOS, Linux, ARM, etc.)
-- Clear steps to reproduce the issue
-- What you expected to happen vs. what actually happened
-- Any relevant console errors or screenshots
+- Inputs and outputs: what you did, what you expected to happen, and what actually happened
+- Reproduction steps: clear, step-by-step instructions so we can replicate it
+- Console errors or screenshots, if relevant
 
-**Skipping these steps creates duplicate issues, forces maintainers to chase missing information, and takes time away from productive work. Issues that do not follow these guidelines will be closed without review.**
+**Security issues**: do not open a public issue. Email [jake@fulu.org](mailto:jake@fulu.org) instead.
 
-Bugs with no reproduction steps will be labelled `needs-repro` and ignored until they are provided.
+## Suggesting features
 
----
+[Open an issue](https://github.com/FULU-Foundation/CRW-Extension/issues/new/choose) using the feature request form, describing the problem it solves and your proposed solution.
 
-## Suggesting Features
+## Contributing code
 
-Before opening a feature request:
+1. Set up your dev environment (see [README.md](README.md))
+2. Look for issues tagged `good first issue` or `help wanted`
+3. Open a PR
 
-- [ ] Confirm you are on the **latest version** of the extension.
-- [ ] Search [existing issues](https://github.com/FULU-Foundation/CRW-Extension/issues) to check it hasn't already been suggested. If it has, comment on that issue instead.
+Commit messages: keep them simple, to the point, and legible.
 
-Your feature request must include:
+## Core team
 
-- A clear description of the problem it solves
-- What the current behaviour is and what you'd like instead
-- Why this would benefit most users, **not just your specific use case**
-- Screenshots or recordings if relevant
-
-**Skipping these steps creates duplicate issues, forces maintainers to chase missing information, and takes time away from productive work. Issues that do not follow these guidelines will be closed without review.**
-
----
-
-## Contributing Code
-
-TBA
-
----
-
-## Join The Project Team
+Points of contact for this project.
 
 Join our [Discord](https://discord.gg/qCWkX9yUQ4) and request the **extension-dev** role.

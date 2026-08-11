@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest an improvement or new feature for the extension
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is only for the browser extension. If you want to suggest something for the wiki codebase/infrastructure, use [FULU-Foundation/crw](https://github.com/FULU-Foundation/crw) instead. To suggest wiki content itself, use Discord or Zulip.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+    validations:
+      required: false

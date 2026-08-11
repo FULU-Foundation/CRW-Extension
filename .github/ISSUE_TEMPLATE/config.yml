@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Using the wiki? Report it here
+    url: https://consumerrights.wiki/w/Consumer_Rights_Wiki_talk:Bugs
+    about: For reporting anything wrong with the wiki itself.
+  - name: Wiki codebase or infrastructure issue
+    url: https://github.com/FULU-Foundation/crw
+    about: Issues with, or contributions to, the wiki's codebase and infrastructure.
+  - name: Security vulnerability
+    url: mailto:jake@fulu.org
+    about: Please report security issues privately via email, not as a public issue.
+  - name: Discord
+    url: https://discord.gg/qCWkX9yUQ4
+    about: For general chat and quick help, post in #crw-extension.
+  - name: Zulip
+    url: https://zulip.consumerrights.wiki
+    about: For general chat (privacy-focused alternative) and quick help.
