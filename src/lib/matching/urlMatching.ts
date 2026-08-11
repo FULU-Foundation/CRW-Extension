@@ -38,6 +38,35 @@ export const normalizePath = (pathname: string): string => {
   return clean.replace(/\/+$/, "");
 };
 
+const isRegionalPathPrefix = (value: string): boolean => {
+  const normalized = value.toLowerCase().replace(/_/g, "-");
+  if (matchingConfig.crossTldCountryCodeSuffixes.includes(normalized)) {
+    return true;
+  }
+
+  try {
+    return Boolean(new Intl.Locale(normalized).region);
+  } catch {
+    return false;
+  }
+};
+
+const getVisitedPathVariants = (pathname: string): string[] => {
+  const variants = [pathname];
+  const segments = pathname.split("/").filter(Boolean);
+  const leadingSegment = segments[0];
+
+  if (
+    segments.length > 1 &&
+    leadingSegment &&
+    isRegionalPathPrefix(leadingSegment)
+  ) {
+    variants.push(`/${segments.slice(1).join("/")}`);
+  }
+
+  return variants;
+};
+
 export const getDomainRoot = (hostname: string): string => {
   const normalized = normalizeHostname(hostname);
   const registrableDomain = getDomain(normalized, {
@@ -98,19 +127,23 @@ const hasConfiguredCompoundCountrySuffix = (
 export const classifyUrlMatch = (
   visitedUrl: URL,
   candidateUrl: URL,
+  visitedPathVariants?: string[],
 ): UrlMatchDetail | null => {
   const visitedHost = normalizeHostname(visitedUrl.hostname);
   const candidateHost = normalizeHostname(candidateUrl.hostname);
   const visitedPath = normalizePath(visitedUrl.pathname);
   const candidatePath = normalizePath(candidateUrl.pathname);
-  const candidatePathMatchesVisitedPath =
-    visitedPath === candidatePath ||
-    visitedPath.startsWith(
-      candidatePath === "/" ? candidatePath : `${candidatePath}/`,
-    );
+  const pathVariants =
+    visitedPathVariants ?? getVisitedPathVariants(visitedPath);
+  const exactPathMatch = pathVariants.some((path) => path === candidatePath);
+  const candidatePathMatchesVisitedPath = pathVariants.some(
+    (path) =>
+      path === candidatePath ||
+      path.startsWith(candidatePath === "/" ? "/" : `${candidatePath}/`),
+  );
 
   if (visitedHost === candidateHost) {
-    if (visitedPath === candidatePath) {
+    if (exactPathMatch) {
       return {
         matchType: "exact",
         matchedPath: candidatePath,
@@ -122,7 +155,7 @@ export const classifyUrlMatch = (
     }
 
     const prefix = candidatePath === "/" ? "/" : `${candidatePath}/`;
-    if (visitedPath.startsWith(prefix)) {
+    if (pathVariants.some((path) => path.startsWith(prefix))) {
       return {
         matchType: "partial",
         matchedPath: candidatePath,
@@ -403,6 +436,10 @@ export const matchEntriesByUrl = (
   const visitedUrl = safeParseUrl(visitedUrlRaw);
   if (!visitedUrl) return [];
 
+  const visitedPathVariants = getVisitedPathVariants(
+    normalizePath(visitedUrl.pathname),
+  );
+
   const matches: DetailedUrlEntryMatch[] = [];
   for (const entry of entries) {
     const websiteUrls = splitWebsiteUrls(getEntryWebsite(entry));
@@ -411,7 +448,11 @@ export const matchEntriesByUrl = (
       const candidateUrl = safeParseUrl(websiteUrl);
       if (!candidateUrl) continue;
 
-      const detail = classifyUrlMatch(visitedUrl, candidateUrl);
+      const detail = classifyUrlMatch(
+        visitedUrl,
+        candidateUrl,
+        visitedPathVariants,
+      );
       if (!detail) continue;
 
       matches.push({

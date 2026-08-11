@@ -80,6 +80,78 @@ test("classifies partial when visited path is a deeper prefix on same host", () 
   assert.equal(result.matchedPath, "/invest");
 });
 
+test("matches a product path behind a leading country-code segment", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-apple",
+      PageName: "Apple",
+      Website: "https://apple.com/",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-airpods",
+      PageName: "AirPods",
+      Company: "Apple",
+      Website: "https://apple.com/airpods",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://www.apple.com/au/airpods/",
+    10,
+  );
+
+  assert.equal(results[0]?.entry.PageID, "pl-airpods");
+  assert.equal(results[0]?.matchType, "exact");
+  assert.equal(results[1]?.entry.PageID, "company-apple");
+});
+
+test("partially matches a deeper product path behind a country-code segment", () => {
+  const visited = safeParseUrl("https://www.apple.com/au/airpods/compare");
+  const candidate = safeParseUrl("https://apple.com/airpods");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "partial");
+  assert.equal(result.matchedPath, "/airpods");
+});
+
+test("matches a product path behind a BCP 47 locale segment", () => {
+  const visited = safeParseUrl("https://www.nvidia.com/en-au/geforce-now/");
+  const candidate = safeParseUrl("https://www.nvidia.com/geforce-now/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "exact");
+  assert.equal(result.matchedPath, "/geforce-now");
+});
+
+test("matches a product path behind an underscore locale segment", () => {
+  const visited = safeParseUrl("https://example.com/en_AU/products/widget");
+  const candidate = safeParseUrl("https://example.com/products/widget");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "exact");
+});
+
+test("does not strip an unknown leading path segment", () => {
+  const visited = safeParseUrl("https://www.apple.com/store/airpods");
+  const candidate = safeParseUrl("https://apple.com/airpods");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  assert.equal(classifyUrlMatch(visited, candidate), null);
+});
+
 test("does not partial-match when candidate is deeper than visited path", () => {
   const visited = safeParseUrl("https://www.ally.com/invest/hello");
   const candidate = safeParseUrl(
