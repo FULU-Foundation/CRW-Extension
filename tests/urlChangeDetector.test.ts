@@ -59,3 +59,22 @@ test("debounces mutations while a URL refresh is pending", () => {
   scheduleRefresh("https://example.com/second");
   assert.equal(timers.size, 0);
 });
+
+test("notifies immediately when a new URL is detected", () => {
+  let changeCount = 0;
+  const scheduleRefresh = createUrlChangeDebouncer({
+    initialUrl: "https://example.com/first",
+    delayMs: 300,
+    onUrlChange: () => {
+      changeCount += 1;
+    },
+    onRefresh: () => undefined,
+    setTimer: () => 1,
+    clearTimer: () => undefined,
+  });
+
+  scheduleRefresh("https://example.com/second");
+  scheduleRefresh("https://example.com/second");
+
+  assert.equal(changeCount, 1);
+});

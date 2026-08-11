@@ -563,6 +563,7 @@ browser.storage.onChanged.addListener((changes, areaName) => {
 const schedulePageContextRefreshForUrl = createUrlChangeDebouncer({
   initialUrl: location.href,
   delayMs: 300,
+  onUrlChange: removeInlinePopup,
   onRefresh: () => void runContentScript(),
   setTimer: (callback, delayMs) => window.setTimeout(callback, delayMs),
   clearTimer: (timer) => window.clearTimeout(timer),
