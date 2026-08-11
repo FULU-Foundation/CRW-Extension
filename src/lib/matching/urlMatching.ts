@@ -127,16 +127,16 @@ const hasConfiguredCompoundCountrySuffix = (
 export const classifyUrlMatch = (
   visitedUrl: URL,
   candidateUrl: URL,
+  visitedPathVariants?: string[],
 ): UrlMatchDetail | null => {
   const visitedHost = normalizeHostname(visitedUrl.hostname);
   const candidateHost = normalizeHostname(candidateUrl.hostname);
   const visitedPath = normalizePath(visitedUrl.pathname);
   const candidatePath = normalizePath(candidateUrl.pathname);
-  const visitedPathVariants = getVisitedPathVariants(visitedPath);
-  const exactPathMatch = visitedPathVariants.some(
-    (path) => path === candidatePath,
-  );
-  const candidatePathMatchesVisitedPath = visitedPathVariants.some(
+  const pathVariants =
+    visitedPathVariants ?? getVisitedPathVariants(visitedPath);
+  const exactPathMatch = pathVariants.some((path) => path === candidatePath);
+  const candidatePathMatchesVisitedPath = pathVariants.some(
     (path) =>
       path === candidatePath ||
       path.startsWith(candidatePath === "/" ? "/" : `${candidatePath}/`),
@@ -155,7 +155,7 @@ export const classifyUrlMatch = (
     }
 
     const prefix = candidatePath === "/" ? "/" : `${candidatePath}/`;
-    if (visitedPathVariants.some((path) => path.startsWith(prefix))) {
+    if (pathVariants.some((path) => path.startsWith(prefix))) {
       return {
         matchType: "partial",
         matchedPath: candidatePath,
@@ -436,6 +436,10 @@ export const matchEntriesByUrl = (
   const visitedUrl = safeParseUrl(visitedUrlRaw);
   if (!visitedUrl) return [];
 
+  const visitedPathVariants = getVisitedPathVariants(
+    normalizePath(visitedUrl.pathname),
+  );
+
   const matches: DetailedUrlEntryMatch[] = [];
   for (const entry of entries) {
     const websiteUrls = splitWebsiteUrls(getEntryWebsite(entry));
@@ -444,7 +448,11 @@ export const matchEntriesByUrl = (
       const candidateUrl = safeParseUrl(websiteUrl);
       if (!candidateUrl) continue;
 
-      const detail = classifyUrlMatch(visitedUrl, candidateUrl);
+      const detail = classifyUrlMatch(
+        visitedUrl,
+        candidateUrl,
+        visitedPathVariants,
+      );
       if (!detail) continue;
 
       matches.push({
