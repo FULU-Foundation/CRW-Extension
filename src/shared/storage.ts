@@ -98,6 +98,19 @@ export const writeSuppressedDomains = async (
   );
 };
 
+export const readDisabledIncidentCategories = async (): Promise<string[]> => {
+  const value = await readLocalValue(
+    Constants.STORAGE.DISABLED_INCIDENT_CATEGORIES,
+  );
+  return asStringArray(value);
+};
+
+export const writeDisabledIncidentCategories = async (
+  labels: string[],
+): Promise<void> => {
+  await writeLocalValue(Constants.STORAGE.DISABLED_INCIDENT_CATEGORIES, labels);
+};
+
 export const readSnoozedSiteMap = async (): Promise<SnoozedSiteMap> => {
   const value = await readLocalValue(
     Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE,

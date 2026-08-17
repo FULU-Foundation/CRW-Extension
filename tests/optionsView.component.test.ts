@@ -15,6 +15,7 @@ test("OptionsView shows enabled state and empty ignored-sites list", () => {
       hideWhenNoIncidents: true,
       suppressedDomains: [],
       snoozedSites: [],
+      hiddenIncidentCategories: [],
       refreshIntervalMs: 24 * 60 * 60 * 1000,
       lastRefreshedAt: null,
       refreshingNow: false,
@@ -35,6 +36,7 @@ test("OptionsView shows enabled state and empty ignored-sites list", () => {
       onOpenShortcutSettings: noop,
       onRemoveSuppressedDomain: noop,
       onRemoveSnoozedSite: noop,
+      onRestoreIncidentCategory: noop,
       onChangePopupPosition: noop,
       onToggleAutoDismiss: noop,
       onChangeAutoDismissTimeoutMs: noop,
@@ -61,6 +63,8 @@ test("OptionsView shows enabled state and empty ignored-sites list", () => {
   assert.ok(html.includes("Refresh now"));
   assert.ok(html.includes("No ignored sites."));
   assert.ok(html.includes("No snoozed sites."));
+  assert.ok(html.includes("Hidden Categories"));
+  assert.ok(html.includes("No hidden categories."));
   assert.ok(
     html.includes(
       "Enabled: automatic popups are hidden unless incident matches are present.",
@@ -75,6 +79,7 @@ test("OptionsView shows disabled state and removable ignored-site entries", () =
       hideWhenNoIncidents: false,
       suppressedDomains: ["example.com"],
       snoozedSites: ["shop.example"],
+      hiddenIncidentCategories: ["Planned Obsolescence", "Privacy"],
       refreshIntervalMs: 60 * 60 * 1000,
       lastRefreshedAt: Date.UTC(2026, 1, 22, 18, 30),
       refreshingNow: true,
@@ -100,6 +105,7 @@ test("OptionsView shows disabled state and removable ignored-site entries", () =
       onOpenShortcutSettings: noop,
       onRemoveSuppressedDomain: noop,
       onRemoveSnoozedSite: noop,
+      onRestoreIncidentCategory: noop,
       onChangePopupPosition: noop,
       onToggleAutoDismiss: noop,
       onChangeAutoDismissTimeoutMs: noop,
@@ -112,6 +118,9 @@ test("OptionsView shows disabled state and removable ignored-site entries", () =
   assert.ok(html.includes("Disabled: popups will not auto-show on page load."));
   assert.ok(html.includes("example.com"));
   assert.ok(html.includes("shop.example"));
+  assert.ok(html.includes("Privacy"));
+  assert.ok(html.includes("Planned Obsolescence"));
+  assert.ok(html.includes("Show again"));
   assert.ok(
     html.includes(
       "Disabled: automatic popups can show even without incident matches.",

@@ -3,6 +3,10 @@ import browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
 import type { PopupPosition } from "@/shared/constants";
+import {
+  normalizeCategoryKey,
+  shouldCategoriesHideAutoPopup,
+} from "@/shared/incidentCategories";
 import { buildIncidentSignature } from "@/shared/incidentSignature";
 import {
   getSiteScopeHostname,
@@ -16,11 +20,13 @@ import {
   readAutoDismissEnabled,
   readAutoDismissShowProgressBar,
   readAutoDismissTimeoutMs,
+  readDisabledIncidentCategories,
   readHideWhenNoIncidents,
   readPopupPosition,
   readSnoozedSiteMap,
   readSuppressedDomains,
   readWarningsEnabled,
+  writeDisabledIncidentCategories,
   writeSnoozedSiteMap,
   writeSuppressedDomains,
   writeWarningsEnabled,
@@ -171,6 +177,17 @@ const openOptions = () => {
   })();
 };
 
+const hideIncidentCategory = async (label: string): Promise<void> => {
+  const categoryKey = normalizeCategoryKey(label);
+  if (!categoryKey) return;
+  const disabledLabels = await readDisabledIncidentCategories();
+  const alreadyDisabled = disabledLabels.some(
+    (value) => normalizeCategoryKey(value) === categoryKey,
+  );
+  if (alreadyDisabled) return;
+  await writeDisabledIncidentCategories([...disabledLabels, label]);
+};
+
 const suppressCurrentSite = async (): Promise<void> => {
   const current = getSiteScopeHostname(location.hostname || "");
   if (!current) return;
@@ -300,6 +317,14 @@ const renderInlinePopup = async (
     return;
   }
 
+  if (!ignorePreferences && hasIncidents) {
+    const disabledCategories = await readDisabledIncidentCategories();
+    if (shouldCategoriesHideAutoPopup(visibleMatches, disabledCategories)) {
+      removeInlinePopup();
+      return;
+    }
+  }
+
   const currentlySnoozed = currentlySuppressed
     ? false
     : await isCurrentSiteSnoozedUntilIncidentChanges(incidentSignature);
@@ -421,6 +446,7 @@ const renderInlinePopup = async (
           : () => void handleSnoozeUntilNewChangesClick()
       }
       onSuppressSite={() => void handleSuppressSiteClick()}
+      onHideIncidentCategory={(label) => void hideIncidentCategory(label)}
     />,
   );
 };
@@ -536,7 +562,8 @@ browser.storage.onChanged.addListener((changes, areaName) => {
     }
     if (
       changes[Constants.STORAGE.SNOOZED_SITES_UNTIL_INCIDENT_CHANGE] ||
-      changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS]
+      changes[Constants.STORAGE.HIDE_WHEN_NO_INCIDENTS] ||
+      changes[Constants.STORAGE.DISABLED_INCIDENT_CATEGORIES]
     ) {
       void runContentScript();
     }

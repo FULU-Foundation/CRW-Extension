@@ -27,6 +27,7 @@ type MatchPopupCardProps = {
   onSuppressSite: () => void;
   onSnoozeUntilNewChanges?: () => void;
   onDisableWarnings?: () => void;
+  onHideIncidentCategory?: (label: string) => void;
   onClose?: () => void;
   domainLabel?: string;
   showCloseButton?: boolean;
@@ -211,6 +212,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     onSuppressSite,
     onSnoozeUntilNewChanges,
     onDisableWarnings,
+    onHideIncidentCategory,
     onClose,
     domainLabel,
     showCloseButton = false,
@@ -310,6 +312,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
         hiddenRelatedPagesCount={derived.hiddenRelatedPagesCount}
         showRelatedPages={showRelatedPages}
         onToggleRelatedPages={() => setShowRelatedPages((value) => !value)}
+        onHideIncidentCategory={onHideIncidentCategory}
       />
 
       <MatchPopupFooterActions
