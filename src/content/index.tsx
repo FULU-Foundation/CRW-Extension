@@ -37,6 +37,7 @@ import {
   extractAmazonMarketplaceProperties,
   extractEbayJsonLdProductProperties,
 } from "@/lib/matching/ecommerce";
+import { createPopupEscapeDismissHandler } from "@/content/popupEscapeDismiss";
 import { createUrlChangeDebouncer } from "@/content/urlChangeDetector";
 
 if (import.meta.env.DEV) {
@@ -575,6 +576,15 @@ const schedulePageContextRefresh = () => {
 
 window.addEventListener("popstate", schedulePageContextRefresh);
 window.addEventListener("hashchange", schedulePageContextRefresh);
+
+// Bubble phase on purpose: a page that handles Escape itself keeps priority.
+window.addEventListener(
+  "keydown",
+  createPopupEscapeDismissHandler({
+    isPopupOpen: isInlinePopupOpen,
+    onDismiss: removeInlinePopup,
+  }),
+);
 
 const navigationObserver = new MutationObserver(schedulePageContextRefresh);
 navigationObserver.observe(document.documentElement, {
