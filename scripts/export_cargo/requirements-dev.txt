@@ -1,4 +1,4 @@
 -r requirements.txt
 
-pip-tools==7.5.3
-python-dotenv==1.2.2
+pip-tools==7.6.1
+python-dotenv==1.2.3

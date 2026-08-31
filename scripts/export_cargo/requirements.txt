@@ -4,13 +4,13 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-certifi==2026.6.17
+certifi==2026.7.22
     # via requests
-charset-normalizer==3.4.7
+charset-normalizer==3.5.1
     # via requests
-idna==3.18
+idna==3.19
     # via requests
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via -r requirements.in
 requests==2.34.2
     # via -r requirements.in
