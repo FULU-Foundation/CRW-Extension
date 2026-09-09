@@ -400,6 +400,47 @@ test("does not cross-match same-label generic TLD hosts without ccTLD or compoun
   assert.equal(result, null);
 });
 
+test("does not cross-match a country-code domain to an authoritative .gov domain", () => {
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
+  const visited = safeParseUrl("https://faa.io/");
+  const candidate = safeParseUrl("https://faa.gov/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
+test("does not cross-match any .gov country namespace", () => {
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
+  const visited = safeParseUrl("https://example.io/");
+  const candidate = safeParseUrl("https://example.gov.uk/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
+test("keeps genuine .gov subdomain matches", () => {
+  setMatchingConfig({ enableSubdomainMatching: true });
+  const visited = safeParseUrl("https://www.faa.gov/news/");
+  const candidate = safeParseUrl("https://faa.gov/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "partial");
+  assert.equal(result.crossTldAlias, undefined);
+});
+
 test("does not cross-match branded compound country suffix domains to .com", () => {
   setMatchingConfig({
     enableMatchAcrossTLDs: true,

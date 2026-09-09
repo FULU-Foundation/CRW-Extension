@@ -124,6 +124,14 @@ const hasConfiguredCompoundCountrySuffix = (
     );
 };
 
+/**
+ * A .gov namespace is authoritative: matching a same-label non-government
+ * domain to it would make an unrelated domain appear official. This also
+ * covers country namespaces such as .gov.uk and .gov.au.
+ */
+const isGovernmentPublicSuffix = (suffix: string | undefined): boolean =>
+  suffix?.split(".").some((part) => part.toLowerCase() === "gov") ?? false;
+
 export const classifyUrlMatch = (
   visitedUrl: URL,
   candidateUrl: URL,
@@ -212,12 +220,16 @@ export const classifyUrlMatch = (
       hasConfiguredCompoundCountrySuffix(candidateSuffix) ||
       isCountryCodeSuffix(visitedSuffix) ||
       isCountryCodeSuffix(candidateSuffix);
+    const includesGovernmentSuffix =
+      isGovernmentPublicSuffix(visitedSuffix) ||
+      isGovernmentPublicSuffix(candidateSuffix);
 
     if (
       visitedLabel &&
       candidateLabel &&
       visitedLabel === candidateLabel &&
       hasAliasSuffixEvidence &&
+      !includesGovernmentSuffix &&
       visitedRoot !== candidateRoot
     ) {
       return {
