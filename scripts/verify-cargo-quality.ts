@@ -597,7 +597,7 @@ const formatWikiReport = (result: ValidationResult, args: Args): string => {
   lines.push(`* Minimum matching length threshold: ${args.minMatchLength}`);
   lines.push(`* Total findings: ${result.findingCount}`);
   lines.push(
-    "* Matrix uses {{Tick}} = passes/no issue, {{Cross}} = issue found, - = not applicable",
+    "* Matrix uses {{Tick}}<nowiki/> = passes/no issue, {{Cross}}<nowiki/> = issue found, - = not applicable",
   );
   lines.push(
     `* Rows shown: ${matrixRows.length} (pages with at least one issue)`,
