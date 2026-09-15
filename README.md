@@ -41,23 +41,6 @@ The compiled extension will be output in the `dist` folder. Alternatively run ``
 ```shell
 npm run format
 ```
-## Release workflow
-Pushing to `release` builds both extensions and creates a GitHub release. Chrome
-and Firefox publishing then run as independent jobs using the release ZIPs, so a
-store failure does not block the other store.
-
-After correcting a store error, use **Re-run failed jobs** in GitHub Actions to
-retry only the failed publisher. Re-running the entire workflow also accepts an
-existing release tag when it points to the same commit; a tag belonging to a
-different commit is rejected. Prefer retrying only failed jobs to avoid submitting
-an already published version again.
-
-A Chrome HTTP 400 needs the underlying Web Store or OAuth error to diagnose.
-Check the failed job's logs and the Chrome Web Store Developer Dashboard for the
-item's status and validation errors. If OAuth reports `invalid_grant`, renew the
-`CHROME_REFRESH_TOKEN` secret using the account that owns the item. Do not retry
-an unchanged rejected package or treat a failed upload as a successful release.
-
 ## Disclaimer
 The source code for the CRW Extension is licensed under the MIT License.
 
