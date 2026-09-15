@@ -103,10 +103,12 @@ jobs:
           RELEASE_TAG: ${{ needs.release.outputs.tag }}
 
       - name: Publish to Chrome Web Store
-        uses: mnao305/chrome-extension-upload@v6.0.0
+        uses: mnao305/chrome-extension-upload@v7.0.0
         with:
           file-path: chrome-extension.zip
           extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+          # Chrome Web Store Developer Dashboard > Publisher > Settings.
+          publisher-id: ${{ secrets.CHROME_PUBLISHER_ID }}
           client-id: ${{ secrets.CHROME_CLIENT_ID }}
           client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
           refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
