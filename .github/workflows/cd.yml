@@ -12,11 +12,8 @@ jobs:
   release:
     runs-on: ubuntu-latest
 
-    env:
-      CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
-      CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
-      CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
-      CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
 
     steps:
       - name: Checkout
@@ -69,9 +66,13 @@ jobs:
           TAG="v$VERSION"
           git fetch --tags
 
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists. Bump package.json version and push again."
-            exit 1
+          if git rev-parse --verify "refs/tags/$TAG" >/dev/null 2>&1; then
+            TAG_COMMIT=$(git rev-parse "refs/tags/$TAG^{commit}")
+            if [ "$TAG_COMMIT" != "$GITHUB_SHA" ]; then
+              echo "::error::Tag $TAG belongs to another commit; refusing to overwrite the release."
+              exit 1
+            fi
+            echo "Reusing $TAG for a retry of the same release commit."
           fi
 
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
@@ -89,15 +90,48 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  publish-chrome:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Download Chrome release package
+        run: gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern chrome-extension.zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.release.outputs.tag }}
+
       - name: Publish to Chrome Web Store
-        uses: mnao305/chrome-extension-upload@v6.0.0
+        uses: mnao305/chrome-extension-upload@v7.0.0
         with:
           file-path: chrome-extension.zip
           extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+          # Chrome Web Store Developer Dashboard > Publisher > Settings.
+          publisher-id: ${{ secrets.CHROME_PUBLISHER_ID }}
           client-id: ${{ secrets.CHROME_CLIENT_ID }}
           client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
           refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
           publish: true
+
+  publish-firefox:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Download Firefox release package
+        run: |
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern firefox-extension.zip
+          unzip -q firefox-extension.zip -d dist/firefox
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.release.outputs.tag }}
 
       - name: Publish to Firefox Add-ons (AMO)
         run: |
