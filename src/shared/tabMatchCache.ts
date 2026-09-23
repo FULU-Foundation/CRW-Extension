@@ -3,10 +3,7 @@ import type browser from "webextension-polyfill";
 import * as Constants from "@/shared/constants";
 import { type CargoEntry, decodeCargoEntries } from "@/shared/types";
 
-type StorageArea = Pick<
-  browser.Storage.StorageArea,
-  "get" | "set" | "remove"
->;
+type StorageArea = Pick<browser.Storage.StorageArea, "get" | "set" | "remove">;
 
 const LEGACY_DATASET_CACHE_KEYS = new Set(["crw_raw", "crw_all"]);
 

@@ -46,10 +46,7 @@ const cacheTabMatches = async (
     await writeTabMatches(browser.storage.session, tabId, matches);
   } catch (error) {
     // Match delivery and badge updates must not depend on cache availability.
-    console.warn(
-      `${Constants.LOG_PREFIX} Failed to cache tab matches`,
-      error,
-    );
+    console.warn(`${Constants.LOG_PREFIX} Failed to cache tab matches`, error);
   }
 };
 
