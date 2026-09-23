@@ -10,9 +10,9 @@ import { normalizeHostname } from "@/shared/util";
 import { CargoEntry } from "@/shared/types";
 import {
   readSuppressedDomains,
-  readTabMatches,
   writeSuppressedDomains,
 } from "@/shared/storage";
+import { readTabMatches } from "@/shared/tabMatchCache";
 
 const POPUP_BG = "#004080";
 const POPUP_TEXT = "#FFFFFF";
@@ -62,7 +62,7 @@ const Popup = () => {
 
         if (!tabId) return;
 
-        const results = await readTabMatches(tabId);
+        const results = await readTabMatches(browser.storage.session, tabId);
         setArticles(results);
       } catch {
         setDomain("unknown");
