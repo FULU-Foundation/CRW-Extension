@@ -64,10 +64,6 @@ export function createBackgroundMessageHandler(handlers: {
   onRefreshDatasetNow?: (
     sender: browser.Runtime.MessageSender,
   ) => unknown | Promise<unknown>;
-  onGetTabMatches?: (
-    payload: MessagePayloadByType[MessageType.GET_TAB_MATCHES],
-    sender: browser.Runtime.MessageSender,
-  ) => unknown | Promise<unknown>;
 }) {
   browser.runtime.onMessage.addListener(
     (msg: unknown, sender: browser.Runtime.MessageSender) => {
@@ -85,18 +81,6 @@ export function createBackgroundMessageHandler(handlers: {
           return handlers.onOpenOptionsPage?.(sender);
         case MessageType.REFRESH_DATASET_NOW:
           return handlers.onRefreshDatasetNow?.(sender);
-        case MessageType.GET_TAB_MATCHES: {
-          const payload = decodedMessage.payload;
-          if (
-            !isObjectRecord(payload) ||
-            typeof payload.tabId !== "number" ||
-            !Number.isInteger(payload.tabId)
-          ) {
-            return;
-          }
-          return handlers.onGetTabMatches?.({ tabId: payload.tabId }, sender);
-        }
-
         default:
           console.warn(
             `${Constants.LOG_PREFIX} Unknown message type:`,

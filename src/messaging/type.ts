@@ -18,14 +18,14 @@ export type MessageSource = "background" | "content" | "popup" | "options";
 export type MessagePayloadByType = {
   [MessageType.PAGE_CONTEXT_UPDATE]: PageContext;
   [MessageType.MATCH_RESULTS_UPDATED]: CargoEntry[];
-  [MessageType.FORCE_SHOW_INLINE_POPUP]: CargoEntry[];
-  [MessageType.TOGGLE_INLINE_POPUP]: CargoEntry[];
+  [MessageType.FORCE_SHOW_INLINE_POPUP]: undefined;
+  [MessageType.TOGGLE_INLINE_POPUP]: undefined;
   [MessageType.HIDE_INLINE_POPUP]: undefined;
-  [MessageType.TOGGLE_SNOOZE_CURRENT_SITE]: CargoEntry[];
-  [MessageType.TOGGLE_SUPPRESS_CURRENT_SITE]: CargoEntry[];
+  [MessageType.TOGGLE_SNOOZE_CURRENT_SITE]: undefined;
+  [MessageType.TOGGLE_SUPPRESS_CURRENT_SITE]: undefined;
   [MessageType.OPEN_OPTIONS_PAGE]: undefined;
   [MessageType.REFRESH_DATASET_NOW]: undefined;
-  [MessageType.GET_TAB_MATCHES]: { tabId: number };
+  [MessageType.GET_TAB_MATCHES]: undefined;
 };
 
 export type CRWMessage<TType extends MessageType = MessageType> = {

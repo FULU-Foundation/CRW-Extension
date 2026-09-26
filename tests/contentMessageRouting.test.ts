@@ -15,7 +15,6 @@ const PAGE_SCAN_RESULT = "CRW_PAGE_SCAN_RESULT";
 test("returns force-show instruction for browser-action click with zero matches", () => {
   const instruction = getInlinePopupInstruction({
     type: FORCE_SHOW_INLINE_POPUP,
-    payload: [],
   });
 
   assert.ok(instruction);
@@ -33,10 +32,10 @@ test("returns force-show instruction for browser-action click with matches", () 
     }),
   ];
 
-  const instruction = getInlinePopupInstruction({
-    type: FORCE_SHOW_INLINE_POPUP,
-    payload: matches,
-  });
+  const instruction = getInlinePopupInstruction(
+    { type: FORCE_SHOW_INLINE_POPUP },
+    matches,
+  );
 
   assert.ok(instruction);
   assert.equal(instruction.action, "show");
@@ -54,10 +53,10 @@ test("returns toggle instruction for browser-action toggle clicks", () => {
     }),
   ];
 
-  const instruction = getInlinePopupInstruction({
-    type: TOGGLE_INLINE_POPUP,
-    payload: matches,
-  });
+  const instruction = getInlinePopupInstruction(
+    { type: TOGGLE_INLINE_POPUP },
+    matches,
+  );
 
   assert.ok(instruction);
   assert.equal(instruction.action, "toggle");
@@ -85,10 +84,10 @@ test("returns snooze instruction for snooze shortcut command", () => {
     }),
   ];
 
-  const instruction = getInlinePopupInstruction({
-    type: TOGGLE_SNOOZE_CURRENT_SITE,
-    payload: matches,
-  });
+  const instruction = getInlinePopupInstruction(
+    { type: TOGGLE_SNOOZE_CURRENT_SITE },
+    matches,
+  );
 
   assert.ok(instruction);
   assert.equal(instruction.action, "toggleSnooze");
@@ -105,10 +104,10 @@ test("returns suppress instruction for ignore shortcut command", () => {
     }),
   ];
 
-  const instruction = getInlinePopupInstruction({
-    type: TOGGLE_SUPPRESS_CURRENT_SITE,
-    payload: matches,
-  });
+  const instruction = getInlinePopupInstruction(
+    { type: TOGGLE_SUPPRESS_CURRENT_SITE },
+    matches,
+  );
 
   assert.ok(instruction);
   assert.equal(instruction.action, "toggleSuppress");
@@ -134,6 +133,19 @@ test("returns regular update instruction for match updates", () => {
   assert.equal(instruction.action, "show");
   assert.equal(instruction.ignorePreferences, false);
   assert.equal(instruction.matches[0]?.PageID, "company-7eleven");
+});
+
+test("match updates replace content-held matches instead of reusing them", () => {
+  const previousMatches = [entry({ PageID: "previous", PageName: "Previous" })];
+  const nextMatches = [entry({ PageID: "next", PageName: "Next" })];
+
+  const instruction = getInlinePopupInstruction(
+    { type: MATCH_RESULTS_UPDATED, payload: nextMatches },
+    previousMatches,
+  );
+
+  assert.ok(instruction);
+  assert.deepEqual(instruction.matches, nextMatches);
 });
 
 test("returns null for unrelated messages", () => {

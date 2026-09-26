@@ -63,10 +63,9 @@ const Popup = () => {
 
         if (!tabId) return;
 
-        const response = await browser.runtime.sendMessage(
-          Messaging.createMessage(MessageType.GET_TAB_MATCHES, "popup", {
-            tabId,
-          }),
+        const response = await browser.tabs.sendMessage(
+          tabId,
+          Messaging.createMessage(MessageType.GET_TAB_MATCHES, "popup"),
         );
         setArticles(decodeCargoEntries(response));
       } catch {

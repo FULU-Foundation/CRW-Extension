@@ -18,6 +18,7 @@ const toCargoEntries = (payload: unknown): CargoEntry[] => {
 
 export const getInlinePopupInstruction = (
   message: unknown,
+  currentPageMatches: CargoEntry[] = [],
 ): InlinePopupInstruction | null => {
   if (!isObjectRecord(message)) return null;
 
@@ -33,7 +34,7 @@ export const getInlinePopupInstruction = (
   if (messageType === MessageType.FORCE_SHOW_INLINE_POPUP) {
     return {
       action: "show",
-      matches: toCargoEntries(message.payload),
+      matches: currentPageMatches,
       ignorePreferences: true,
     };
   }
@@ -41,7 +42,7 @@ export const getInlinePopupInstruction = (
   if (messageType === MessageType.TOGGLE_INLINE_POPUP) {
     return {
       action: "toggle",
-      matches: toCargoEntries(message.payload),
+      matches: currentPageMatches,
       ignorePreferences: true,
     };
   }
@@ -57,7 +58,7 @@ export const getInlinePopupInstruction = (
   if (messageType === MessageType.TOGGLE_SNOOZE_CURRENT_SITE) {
     return {
       action: "toggleSnooze",
-      matches: toCargoEntries(message.payload),
+      matches: currentPageMatches,
       ignorePreferences: true,
     };
   }
@@ -65,10 +66,17 @@ export const getInlinePopupInstruction = (
   if (messageType === MessageType.TOGGLE_SUPPRESS_CURRENT_SITE) {
     return {
       action: "toggleSuppress",
-      matches: toCargoEntries(message.payload),
+      matches: currentPageMatches,
       ignorePreferences: true,
     };
   }
 
   return null;
+};
+
+export const hasMessageType = (
+  message: unknown,
+  messageType: MessageType,
+): boolean => {
+  return isObjectRecord(message) && message.type === messageType;
 };
