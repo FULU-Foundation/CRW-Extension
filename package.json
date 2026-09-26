@@ -32,7 +32,7 @@
     "i18n-iso-countries": "^7.14.0",
     "react": "^19.2.8",
     "react-dom": "^19.3.0",
-    "tldts": "^7.4.12",
+    "tldts": "^7.4.13",
     "webextension-polyfill": "^0.12.0"
   },
   "devDependencies": {
