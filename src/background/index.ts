@@ -6,11 +6,12 @@ import * as Dataset from "@/lib/dataset";
 import * as Messaging from "@/messaging";
 import { type AnyCRWMessage, MessageType } from "@/messaging/type";
 import { CargoEntry } from "@/shared/types";
-import { readDatasetCacheRefreshInfo, readTabMatches } from "@/shared/storage";
+import { readDatasetCacheRefreshInfo } from "@/shared/storage";
 import {
   isShortcutCommandName,
   type ShortcutCommandName,
 } from "@/shared/shortcuts";
+import { clearObsoleteLocalCaches } from "@/shared/storageCleanup";
 import { isCurrentPageUrl, TabNavigationState } from "./tabNavigationState";
 
 let datasetCache: CargoEntry[] = [];
@@ -91,9 +92,6 @@ const handleShortcutCommand = async (
   await waitForNavigationCleanup(tabId);
   if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
 
-  const matches = await readTabMatches(tabId);
-  if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
-
   switch (command) {
     case "show-inline-popup":
       void sendMessageToTab(
@@ -101,7 +99,6 @@ const handleShortcutCommand = async (
         Messaging.createMessage(
           MessageType.FORCE_SHOW_INLINE_POPUP,
           "background",
-          matches,
         ),
       );
       break;
@@ -111,7 +108,6 @@ const handleShortcutCommand = async (
         Messaging.createMessage(
           MessageType.TOGGLE_SNOOZE_CURRENT_SITE,
           "background",
-          matches,
         ),
       );
       break;
@@ -121,7 +117,6 @@ const handleShortcutCommand = async (
         Messaging.createMessage(
           MessageType.TOGGLE_SUPPRESS_CURRENT_SITE,
           "background",
-          matches,
         ),
       );
       break;
@@ -175,13 +170,14 @@ const loadDatasetCache = async (options?: {
   }
 };
 
-const clearStoredTabMatches = async (): Promise<void> => {
-  const stored = await browser.storage.local.get(null);
-  const staleKeys = Object.keys(stored).filter((key) =>
-    key.startsWith(Constants.STORAGE.MATCHES_PREFIX),
-  );
-  if (staleKeys.length === 0) return;
-  await browser.storage.local.remove(staleKeys);
+const cleanupCachedStorage = async (): Promise<void> => {
+  try {
+    // Upgrades from older releases can contain a dataset twice (crw_raw and
+    // crw_all) plus an unbounded crw_matched_* key for every historical tab.
+    await clearObsoleteLocalCaches(browser.storage.local);
+  } catch (error) {
+    console.warn(`${Constants.LOG_PREFIX} Failed to clean cached data`, error);
+  }
 };
 
 browser.runtime.onInstalled.addListener(async () => {
@@ -189,12 +185,12 @@ browser.runtime.onInstalled.addListener(async () => {
     `${Constants.LOG_PREFIX} Extension installed/updated. Loading dataset...`,
   );
 
-  await clearStoredTabMatches();
+  await cleanupCachedStorage();
   await loadDatasetCache();
 });
 
 browser.runtime.onStartup.addListener(async () => {
-  await clearStoredTabMatches();
+  await cleanupCachedStorage();
   await loadDatasetCache();
 });
 
@@ -206,33 +202,12 @@ browser.storage.onChanged.addListener((changes, areaName) => {
   }
 });
 
-browser.tabs.onActivated.addListener(async ({ tabId }) => {
-  console.log(
-    `${Constants.LOG_PREFIX} Active tab has been changed. TabId:${tabId}`,
-  );
-
-  const navigationGeneration = tabNavigationState.capture(tabId);
-  await waitForNavigationCleanup(tabId);
-  if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
-
-  const results = await readTabMatches(tabId);
-  if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
-
-  browser.action.setBadgeText({
-    tabId,
-    text: getBadgeText(results.length),
-  });
-  browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
-});
-
 browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status !== "loading") return;
 
   tabNavigationState.beginNavigation(tabId);
-  const cleanup = Promise.all([
-    browser.storage.local.remove(Constants.STORAGE.MATCHES(tabId)),
-    browser.action.setBadgeText({ tabId, text: "" }),
-  ])
+  const cleanup = browser.action
+    .setBadgeText({ tabId, text: "" })
     .then(() => undefined)
     .catch((error) => {
       console.warn(
@@ -251,7 +226,6 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
 browser.tabs.onRemoved.addListener((tabId) => {
   tabNavigationState.forget(tabId);
   navigationCleanups.delete(tabId);
-  void browser.storage.local.remove(Constants.STORAGE.MATCHES(tabId));
 });
 
 browser.action.onClicked.addListener(async (tab) => {
@@ -262,16 +236,9 @@ browser.action.onClicked.addListener(async (tab) => {
   await waitForNavigationCleanup(tabId);
   if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
 
-  const matches = await readTabMatches(tabId);
-  if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
-
   void sendMessageToTab(
     tabId,
-    Messaging.createMessage(
-      MessageType.TOGGLE_INLINE_POPUP,
-      "background",
-      matches,
-    ),
+    Messaging.createMessage(MessageType.TOGGLE_INLINE_POPUP, "background"),
   );
 });
 
@@ -310,14 +277,7 @@ Messaging.createBackgroundMessageHandler({
       return;
     }
 
-    const storageKey = Constants.STORAGE.MATCHES(tabId);
-
     const matches = Matching.matchByPageContext(dataset, payload);
-
-    await browser.storage.local.set({
-      [storageKey]: matches,
-    });
-    if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
 
     try {
       currentTab = await browser.tabs.get(tabId);

@@ -7,7 +7,6 @@ import type {
 } from "@/shared/constants";
 import { canonicalizeSiteScopeList } from "@/shared/siteScope";
 import { ensureDataMigration } from "@/shared/dataMigrations";
-import { type CargoEntry, decodeCargoEntries } from "@/shared/types";
 import {
   type SnoozedSiteMap,
   normalizeSnoozedSiteMap,
@@ -246,10 +245,4 @@ export const writeAutoDismissHoverCancelMs = async (
   ms: number,
 ): Promise<void> => {
   await writeLocalValue(Constants.STORAGE.AUTO_DISMISS_HOVER_CANCEL_MS, ms);
-};
-
-export const readTabMatches = async (tabId: number): Promise<CargoEntry[]> => {
-  const key = Constants.STORAGE.MATCHES(tabId);
-  const value = await readLocalValue(key);
-  return decodeCargoEntries(value);
 };

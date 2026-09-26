@@ -31,6 +31,7 @@ import { InlinePopup } from "@/content/InlinePopup";
 import { InlineEmptyState } from "@/content/InlineEmptyState";
 import {
   getInlinePopupInstruction,
+  hasMessageType,
   type InlinePopupInstruction,
 } from "@/content/messageRouting";
 import {
@@ -60,6 +61,7 @@ let popupRoot: Root | null = null;
 let forcePopupVisible = false;
 let currentPopupMatches: CargoEntry[] | null = null;
 let currentPopupIgnorePreferences = false;
+let currentPageMatches: CargoEntry[] = [];
 const SNOOZE_UNTIL_NEW_CHANGES_LABEL = "Hide until new incidents";
 
 const getSuppressedDomains = async (): Promise<string[]> => {
@@ -512,8 +514,16 @@ const handleInlinePopupInstruction = async (
 };
 
 browser.runtime.onMessage.addListener((msg: unknown) => {
-  const instruction = getInlinePopupInstruction(msg);
+  if (hasMessageType(msg, MessageType.GET_TAB_MATCHES)) {
+    return Promise.resolve(currentPageMatches);
+  }
+
+  const instruction = getInlinePopupInstruction(msg, currentPageMatches);
   if (!instruction) return;
+
+  if (hasMessageType(msg, MessageType.MATCH_RESULTS_UPDATED)) {
+    currentPageMatches = instruction.matches;
+  }
   void handleInlinePopupInstruction(instruction);
 });
 
@@ -563,7 +573,10 @@ browser.storage.onChanged.addListener((changes, areaName) => {
 const schedulePageContextRefreshForUrl = createUrlChangeDebouncer({
   initialUrl: location.href,
   delayMs: 300,
-  onUrlChange: removeInlinePopup,
+  onUrlChange: () => {
+    currentPageMatches = [];
+    removeInlinePopup();
+  },
   onRefresh: () => void runContentScript(),
   setTimer: (callback, delayMs) => window.setTimeout(callback, delayMs),
   clearTimer: (timer) => window.clearTimeout(timer),

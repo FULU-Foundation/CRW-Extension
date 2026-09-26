@@ -150,9 +150,18 @@ const writeRefreshError = async (error: unknown): Promise<void> => {
     failedAt: Date.now(),
   };
 
-  await browser.storage.local.set({
-    [Constants.STORAGE.DATA_REFRESH_ERROR]: record,
-  });
+  try {
+    await browser.storage.local.set({
+      [Constants.STORAGE.DATA_REFRESH_ERROR]: record,
+    });
+  } catch (storageError) {
+    // A full storage area may be the reason the refresh failed. Recording the
+    // error is best-effort so stale-cache/empty-data fallback can still run.
+    console.warn(
+      `${Constants.LOG_PREFIX} Failed to store dataset refresh error`,
+      storageError,
+    );
+  }
 };
 
 const clearRefreshError = async (): Promise<void> => {

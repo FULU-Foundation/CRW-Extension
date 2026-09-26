@@ -10,6 +10,7 @@ export enum MessageType {
   TOGGLE_SUPPRESS_CURRENT_SITE = "CRW_TOGGLE_SUPPRESS_CURRENT_SITE",
   OPEN_OPTIONS_PAGE = "CRW_OPEN_OPTIONS_PAGE",
   REFRESH_DATASET_NOW = "CRW_REFRESH_DATASET_NOW",
+  GET_TAB_MATCHES = "CRW_GET_TAB_MATCHES",
 }
 
 export type MessageSource = "background" | "content" | "popup" | "options";
@@ -17,13 +18,14 @@ export type MessageSource = "background" | "content" | "popup" | "options";
 export type MessagePayloadByType = {
   [MessageType.PAGE_CONTEXT_UPDATE]: PageContext;
   [MessageType.MATCH_RESULTS_UPDATED]: CargoEntry[];
-  [MessageType.FORCE_SHOW_INLINE_POPUP]: CargoEntry[];
-  [MessageType.TOGGLE_INLINE_POPUP]: CargoEntry[];
+  [MessageType.FORCE_SHOW_INLINE_POPUP]: undefined;
+  [MessageType.TOGGLE_INLINE_POPUP]: undefined;
   [MessageType.HIDE_INLINE_POPUP]: undefined;
-  [MessageType.TOGGLE_SNOOZE_CURRENT_SITE]: CargoEntry[];
-  [MessageType.TOGGLE_SUPPRESS_CURRENT_SITE]: CargoEntry[];
+  [MessageType.TOGGLE_SNOOZE_CURRENT_SITE]: undefined;
+  [MessageType.TOGGLE_SUPPRESS_CURRENT_SITE]: undefined;
   [MessageType.OPEN_OPTIONS_PAGE]: undefined;
   [MessageType.REFRESH_DATASET_NOW]: undefined;
+  [MessageType.GET_TAB_MATCHES]: undefined;
 };
 
 export type CRWMessage<TType extends MessageType = MessageType> = {
