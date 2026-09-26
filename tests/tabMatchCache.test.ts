@@ -4,8 +4,9 @@ import test from "node:test";
 import {
   clearObsoleteLocalCaches,
   clearTabMatches,
-  readTabMatches,
-  writeTabMatches,
+  readTabMatchReferences,
+  resolveTabMatchReferences,
+  writeTabMatchReferences,
 } from "../src/shared/tabMatchCache.ts";
 import { entry } from "./helpers.ts";
 
@@ -59,13 +60,61 @@ test("upgrade cleanup removes accumulated and legacy caches only", async () => {
   });
 });
 
-test("tab matches round-trip through a session storage area", async () => {
+test("tab cache stores only compact match references", async () => {
   const storage = new MemoryStorageArea();
-  const matches = [entry({ PageID: "acme", PageName: "Acme" })];
+  const matches = [
+    entry({
+      _type: "Company",
+      PageID: "acme",
+      PageName: "Acme",
+      Description: "Not duplicated in the tab cache",
+      Website: "https://acme.example",
+    }),
+  ];
 
-  await writeTabMatches(storage, 42, matches);
+  await writeTabMatchReferences(storage, 42, matches);
 
-  assert.deepEqual(await readTabMatches(storage, 42), matches);
+  assert.deepEqual(storage.values, {
+    crw_matched_42: [{ type: "Company", pageId: "acme" }],
+  });
+  assert.deepEqual(await readTabMatchReferences(storage, 42), [
+    { type: "Company", pageId: "acme" },
+  ]);
+});
+
+test("resolves references by type and PageID", () => {
+  const product = entry({
+    _type: "Product",
+    PageID: "4725",
+    PageName: "Product 4725",
+  });
+  const productLine = entry({
+    _type: "ProductLine",
+    PageID: "4725",
+    PageName: "Product line 4725",
+  });
+
+  assert.deepEqual(
+    resolveTabMatchReferences(
+      [{ type: "ProductLine", pageId: "4725" }],
+      [product, productLine],
+    ),
+    [productLine],
+  );
+});
+
+test("ignores invalid and stale match references", async () => {
+  const storage = new MemoryStorageArea({
+    crw_matched_42: [
+      { type: "Company", pageId: "acme" },
+      { type: "Unknown", pageId: "invalid" },
+      { type: "Product", pageId: 123 },
+    ],
+  });
+
+  const references = await readTabMatchReferences(storage, 42);
+  assert.deepEqual(references, [{ type: "Company", pageId: "acme" }]);
+  assert.deepEqual(resolveTabMatchReferences(references, []), []);
 });
 
 test("empty match results do not occupy cache space", async () => {
@@ -73,10 +122,10 @@ test("empty match results do not occupy cache space", async () => {
     crw_matched_42: [entry({ PageID: "old", PageName: "Old" })],
   });
 
-  await writeTabMatches(storage, 42, []);
+  await writeTabMatchReferences(storage, 42, []);
 
   assert.deepEqual(storage.values, {});
-  assert.deepEqual(await readTabMatches(storage, 42), []);
+  assert.deepEqual(await readTabMatchReferences(storage, 42), []);
 });
 
 test("session cleanup removes only tab match entries", async () => {

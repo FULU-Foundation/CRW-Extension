@@ -14,9 +14,10 @@ import {
 import {
   clearObsoleteLocalCaches,
   clearTabMatches,
-  readTabMatches,
+  readTabMatchReferences,
   removeTabMatches,
-  writeTabMatches,
+  resolveTabMatchReferences,
+  writeTabMatchReferences,
 } from "@/shared/tabMatchCache";
 import { isCurrentPageUrl, TabNavigationState } from "./tabNavigationState";
 
@@ -28,7 +29,11 @@ const navigationCleanups = new Map<number, Promise<void>>();
 
 const readCachedTabMatches = async (tabId: number): Promise<CargoEntry[]> => {
   try {
-    return await readTabMatches(browser.storage.session, tabId);
+    const [references, dataset] = await Promise.all([
+      readTabMatchReferences(browser.storage.session, tabId),
+      loadDatasetCache(),
+    ]);
+    return resolveTabMatchReferences(references, dataset);
   } catch (error) {
     console.warn(
       `${Constants.LOG_PREFIX} Failed to read cached tab matches`,
@@ -43,7 +48,7 @@ const cacheTabMatches = async (
   matches: CargoEntry[],
 ): Promise<void> => {
   try {
-    await writeTabMatches(browser.storage.session, tabId, matches);
+    await writeTabMatchReferences(browser.storage.session, tabId, matches);
   } catch (error) {
     // Match delivery and badge updates must not depend on cache availability.
     console.warn(`${Constants.LOG_PREFIX} Failed to cache tab matches`, error);
@@ -327,6 +332,9 @@ browser.commands.onCommand.addListener((command) => {
 });
 
 Messaging.createBackgroundMessageHandler({
+  onGetTabMatches({ tabId }) {
+    return readCachedTabMatches(tabId);
+  },
   onOpenOptionsPage() {
     return browser.runtime.openOptionsPage();
   },

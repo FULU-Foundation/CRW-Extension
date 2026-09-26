@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from "react";
 import browser from "webextension-polyfill";
 
+import * as Messaging from "@/messaging";
+import { MessageType } from "@/messaging/type";
 import {
   getSiteScopeHostname,
   isHostnameInSiteScopeList,
   removeMatchingSiteScopes,
 } from "@/shared/siteScope";
 import { normalizeHostname } from "@/shared/util";
-import { CargoEntry } from "@/shared/types";
+import { type CargoEntry, decodeCargoEntries } from "@/shared/types";
 import {
   readSuppressedDomains,
   writeSuppressedDomains,
 } from "@/shared/storage";
-import { readTabMatches } from "@/shared/tabMatchCache";
 
 const POPUP_BG = "#004080";
 const POPUP_TEXT = "#FFFFFF";
@@ -62,8 +63,12 @@ const Popup = () => {
 
         if (!tabId) return;
 
-        const results = await readTabMatches(browser.storage.session, tabId);
-        setArticles(results);
+        const response = await browser.runtime.sendMessage(
+          Messaging.createMessage(MessageType.GET_TAB_MATCHES, "popup", {
+            tabId,
+          }),
+        );
+        setArticles(decodeCargoEntries(response));
       } catch {
         setDomain("unknown");
         setSuppressed(false);

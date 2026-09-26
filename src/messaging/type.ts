@@ -10,6 +10,7 @@ export enum MessageType {
   TOGGLE_SUPPRESS_CURRENT_SITE = "CRW_TOGGLE_SUPPRESS_CURRENT_SITE",
   OPEN_OPTIONS_PAGE = "CRW_OPEN_OPTIONS_PAGE",
   REFRESH_DATASET_NOW = "CRW_REFRESH_DATASET_NOW",
+  GET_TAB_MATCHES = "CRW_GET_TAB_MATCHES",
 }
 
 export type MessageSource = "background" | "content" | "popup" | "options";
@@ -24,6 +25,7 @@ export type MessagePayloadByType = {
   [MessageType.TOGGLE_SUPPRESS_CURRENT_SITE]: CargoEntry[];
   [MessageType.OPEN_OPTIONS_PAGE]: undefined;
   [MessageType.REFRESH_DATASET_NOW]: undefined;
+  [MessageType.GET_TAB_MATCHES]: { tabId: number };
 };
 
 export type CRWMessage<TType extends MessageType = MessageType> = {

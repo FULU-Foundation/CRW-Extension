@@ -1,11 +1,45 @@
 import type browser from "webextension-polyfill";
 
 import * as Constants from "@/shared/constants";
-import { type CargoEntry, decodeCargoEntries } from "@/shared/types";
+import type { CargoEntry, CargoEntryType } from "@/shared/types";
 
 type StorageArea = Pick<browser.Storage.StorageArea, "get" | "set" | "remove">;
 
 const LEGACY_DATASET_CACHE_KEYS = new Set(["crw_raw", "crw_all"]);
+
+export type TabMatchReference = {
+  type: CargoEntryType;
+  pageId: string;
+};
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === "object" && value !== null;
+};
+
+const isCargoEntryType = (value: unknown): value is CargoEntryType => {
+  return (
+    typeof value === "string" &&
+    Constants.DATASET_KEYS.includes(value as CargoEntryType)
+  );
+};
+
+const decodeTabMatchReferences = (value: unknown): TabMatchReference[] => {
+  if (!Array.isArray(value)) return [];
+
+  const references: TabMatchReference[] = [];
+  for (const item of value) {
+    if (!isObjectRecord(item)) continue;
+    if (!isCargoEntryType(item.type) || typeof item.pageId !== "string") {
+      continue;
+    }
+    references.push({ type: item.type, pageId: item.pageId });
+  }
+  return references;
+};
+
+const referenceKey = (reference: TabMatchReference): string => {
+  return `${reference.type}:${reference.pageId}`;
+};
 
 const findKeys = async (
   storageArea: Pick<StorageArea, "get">,
@@ -15,16 +49,16 @@ const findKeys = async (
   return Object.keys(stored).filter(predicate);
 };
 
-export const readTabMatches = async (
+export const readTabMatchReferences = async (
   storageArea: Pick<StorageArea, "get">,
   tabId: number,
-): Promise<CargoEntry[]> => {
+): Promise<TabMatchReference[]> => {
   const key = Constants.STORAGE.MATCHES(tabId);
   const stored = await storageArea.get(key);
-  return decodeCargoEntries(stored[key]);
+  return decodeTabMatchReferences(stored[key]);
 };
 
-export const writeTabMatches = async (
+export const writeTabMatchReferences = async (
   storageArea: Pick<StorageArea, "set" | "remove">,
   tabId: number,
   matches: CargoEntry[],
@@ -38,7 +72,28 @@ export const writeTabMatches = async (
     return;
   }
 
-  await storageArea.set({ [key]: matches });
+  const references = matches.map((match) => ({
+    type: match._type,
+    pageId: match.PageID,
+  }));
+  await storageArea.set({ [key]: references });
+};
+
+export const resolveTabMatchReferences = (
+  references: TabMatchReference[],
+  dataset: CargoEntry[],
+): CargoEntry[] => {
+  const entriesByReference = new Map(
+    dataset.map((entry) => [
+      referenceKey({ type: entry._type, pageId: entry.PageID }),
+      entry,
+    ]),
+  );
+
+  return references.flatMap((reference) => {
+    const entry = entriesByReference.get(referenceKey(reference));
+    return entry ? [entry] : [];
+  });
 };
 
 export const removeTabMatches = async (
