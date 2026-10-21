@@ -1,7 +1,7 @@
-import he from "he";
+import { decode } from "he";
 
 export const decodeHtmlEntities = (value: string): string => {
-  return he.decode(value);
+  return decode(value);
 };
 
 export const decodeEntityStrings = (value: unknown): unknown => {
