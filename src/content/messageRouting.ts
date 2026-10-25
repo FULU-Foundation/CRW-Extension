@@ -18,15 +18,19 @@ const toCargoEntries = (payload: unknown): CargoEntry[] => {
 
 export const getInlinePopupInstruction = (
   message: unknown,
+  currentPageUrl: string,
   currentPageMatches: CargoEntry[] = [],
 ): InlinePopupInstruction | null => {
   if (!isObjectRecord(message)) return null;
 
   const messageType = message.type;
   if (messageType === MessageType.MATCH_RESULTS_UPDATED) {
+    const payload = message.payload;
+    if (!isObjectRecord(payload) || payload.url !== currentPageUrl) return null;
+
     return {
       action: "show",
-      matches: toCargoEntries(message.payload),
+      matches: toCargoEntries(payload.matches),
       ignorePreferences: false,
     };
   }

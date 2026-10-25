@@ -518,7 +518,11 @@ browser.runtime.onMessage.addListener((msg: unknown) => {
     return Promise.resolve(currentPageMatches);
   }
 
-  const instruction = getInlinePopupInstruction(msg, currentPageMatches);
+  const instruction = getInlinePopupInstruction(
+    msg,
+    location.href,
+    currentPageMatches,
+  );
   if (!instruction) return;
 
   if (hasMessageType(msg, MessageType.MATCH_RESULTS_UPDATED)) {

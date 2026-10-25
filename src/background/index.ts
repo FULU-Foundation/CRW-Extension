@@ -48,16 +48,16 @@ const sendMessageToTab = async (
 
 const sendMatchResultsToTab = async (
   tabId: number,
+  url: string,
   matches: CargoEntry[],
 ): Promise<void> => {
   try {
     await browser.tabs.sendMessage(
       tabId,
-      Messaging.createMessage(
-        MessageType.MATCH_RESULTS_UPDATED,
-        "background",
+      Messaging.createMessage(MessageType.MATCH_RESULTS_UPDATED, "background", {
+        url,
         matches,
-      ),
+      }),
     );
   } catch {
     // A failed match update means the page is no longer available. Its next
@@ -292,7 +292,7 @@ Messaging.createBackgroundMessageHandler({
     });
     browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
 
-    void sendMatchResultsToTab(tabId, matches);
+    void sendMatchResultsToTab(tabId, payload.url, matches);
   },
 });
 

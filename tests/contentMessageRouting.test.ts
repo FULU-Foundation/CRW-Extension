@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import { getInlinePopupInstruction } from "../src/content/messageRouting.ts";
 import { entry } from "./helpers.ts";
 
+const CURRENT_URL = "https://example.com/current";
+
 const FORCE_SHOW_INLINE_POPUP = "CRW_FORCE_SHOW_INLINE_POPUP";
 const HIDE_INLINE_POPUP = "CRW_HIDE_INLINE_POPUP";
 const MATCH_RESULTS_UPDATED = "CRW_MATCH_RESULTS_UPDATED";
@@ -13,9 +15,10 @@ const TOGGLE_SUPPRESS_CURRENT_SITE = "CRW_TOGGLE_SUPPRESS_CURRENT_SITE";
 const PAGE_SCAN_RESULT = "CRW_PAGE_SCAN_RESULT";
 
 test("returns force-show instruction for browser-action click with zero matches", () => {
-  const instruction = getInlinePopupInstruction({
-    type: FORCE_SHOW_INLINE_POPUP,
-  });
+  const instruction = getInlinePopupInstruction(
+    { type: FORCE_SHOW_INLINE_POPUP },
+    CURRENT_URL,
+  );
 
   assert.ok(instruction);
   assert.equal(instruction.action, "show");
@@ -34,6 +37,7 @@ test("returns force-show instruction for browser-action click with matches", () 
 
   const instruction = getInlinePopupInstruction(
     { type: FORCE_SHOW_INLINE_POPUP },
+    CURRENT_URL,
     matches,
   );
 
@@ -55,6 +59,7 @@ test("returns toggle instruction for browser-action toggle clicks", () => {
 
   const instruction = getInlinePopupInstruction(
     { type: TOGGLE_INLINE_POPUP },
+    CURRENT_URL,
     matches,
   );
 
@@ -65,9 +70,10 @@ test("returns toggle instruction for browser-action toggle clicks", () => {
 });
 
 test("returns hide instruction for hide shortcut command", () => {
-  const instruction = getInlinePopupInstruction({
-    type: HIDE_INLINE_POPUP,
-  });
+  const instruction = getInlinePopupInstruction(
+    { type: HIDE_INLINE_POPUP },
+    CURRENT_URL,
+  );
 
   assert.ok(instruction);
   assert.equal(instruction.action, "hide");
@@ -86,6 +92,7 @@ test("returns snooze instruction for snooze shortcut command", () => {
 
   const instruction = getInlinePopupInstruction(
     { type: TOGGLE_SNOOZE_CURRENT_SITE },
+    CURRENT_URL,
     matches,
   );
 
@@ -106,6 +113,7 @@ test("returns suppress instruction for ignore shortcut command", () => {
 
   const instruction = getInlinePopupInstruction(
     { type: TOGGLE_SUPPRESS_CURRENT_SITE },
+    CURRENT_URL,
     matches,
   );
 
@@ -124,10 +132,10 @@ test("returns regular update instruction for match updates", () => {
     }),
   ];
 
-  const instruction = getInlinePopupInstruction({
-    type: MATCH_RESULTS_UPDATED,
-    payload: matches,
-  });
+  const instruction = getInlinePopupInstruction(
+    { type: MATCH_RESULTS_UPDATED, payload: { url: CURRENT_URL, matches } },
+    CURRENT_URL,
+  );
 
   assert.ok(instruction);
   assert.equal(instruction.action, "show");
@@ -140,7 +148,11 @@ test("match updates replace content-held matches instead of reusing them", () =>
   const nextMatches = [entry({ PageID: "next", PageName: "Next" })];
 
   const instruction = getInlinePopupInstruction(
-    { type: MATCH_RESULTS_UPDATED, payload: nextMatches },
+    {
+      type: MATCH_RESULTS_UPDATED,
+      payload: { url: CURRENT_URL, matches: nextMatches },
+    },
+    CURRENT_URL,
     previousMatches,
   );
 
@@ -149,10 +161,68 @@ test("match updates replace content-held matches instead of reusing them", () =>
 });
 
 test("returns null for unrelated messages", () => {
-  const instruction = getInlinePopupInstruction({
-    type: PAGE_SCAN_RESULT,
-    payload: [],
-  });
+  const instruction = getInlinePopupInstruction(
+    { type: PAGE_SCAN_RESULT, payload: [] },
+    CURRENT_URL,
+  );
 
   assert.equal(instruction, null);
+});
+
+test("rejects late match results after navigation clears the cache", () => {
+  const matches = [entry({ PageID: "previous", PageName: "Previous" })];
+  const previousUrl = "https://example.com/previous";
+  const message = {
+    type: MATCH_RESULTS_UPDATED,
+    payload: { url: previousUrl, matches },
+  };
+
+  assert.deepEqual(
+    getInlinePopupInstruction(message, previousUrl)?.matches,
+    matches,
+  );
+
+  // The listener must receive no instruction that could refill the cleared cache
+  // or show the previous page's popup, including on query/hash-only navigation.
+  for (const currentUrl of [
+    CURRENT_URL,
+    `${previousUrl}?page=2`,
+    `${previousUrl}#details`,
+  ]) {
+    assert.equal(getInlinePopupInstruction(message, currentUrl, []), null);
+  }
+});
+
+test("rejects match updates without a valid URL", () => {
+  const matches = [entry({ PageID: "previous", PageName: "Previous" })];
+
+  for (const payload of [
+    matches,
+    null,
+    {},
+    { matches },
+    { url: null, matches },
+    { url: 123, matches },
+  ]) {
+    assert.equal(
+      getInlinePopupInstruction(
+        { type: MATCH_RESULTS_UPDATED, payload },
+        CURRENT_URL,
+        matches,
+      ),
+      null,
+    );
+  }
+});
+
+test("accepts empty current-page results to clear previous matches", () => {
+  const previousMatches = [entry({ PageID: "previous", PageName: "Previous" })];
+  const instruction = getInlinePopupInstruction(
+    { type: MATCH_RESULTS_UPDATED, payload: { url: CURRENT_URL, matches: [] } },
+    CURRENT_URL,
+    previousMatches,
+  );
+
+  assert.ok(instruction);
+  assert.deepEqual(instruction.matches, []);
 });

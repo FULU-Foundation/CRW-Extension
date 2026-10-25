@@ -17,7 +17,7 @@ export type MessageSource = "background" | "content" | "popup" | "options";
 
 export type MessagePayloadByType = {
   [MessageType.PAGE_CONTEXT_UPDATE]: PageContext;
-  [MessageType.MATCH_RESULTS_UPDATED]: CargoEntry[];
+  [MessageType.MATCH_RESULTS_UPDATED]: { url: string; matches: CargoEntry[] };
   [MessageType.FORCE_SHOW_INLINE_POPUP]: undefined;
   [MessageType.TOGGLE_INLINE_POPUP]: undefined;
   [MessageType.HIDE_INLINE_POPUP]: undefined;
