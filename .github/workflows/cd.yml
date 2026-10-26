@@ -128,6 +128,7 @@ jobs:
       - name: Download Firefox release package
         run: |
           gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern firefox-extension.zip
+          mkdir -p dist/firefox
           unzip -q firefox-extension.zip -d dist/firefox
         env:
           GH_TOKEN: ${{ github.token }}
@@ -145,7 +146,6 @@ jobs:
             --channel listed \
             --api-key "$AMO_API_KEY" \
             --api-secret "$AMO_API_SECRET" \
-            --api-url-prefix https://addons.mozilla.org/api/v5 \
             --approval-timeout 0
         env:
           AMO_API_KEY: ${{ secrets.AMO_API_KEY }}
