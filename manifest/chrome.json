@@ -26,6 +26,20 @@
     "service_worker": "background.js",
     "type": "module"
   },
+  "commands": {
+    "hide-inline-popup": {
+      "description": "Hide the CRW pop-up on the current tab"
+    },
+    "show-inline-popup": {
+      "description": "Show the CRW pop-up on the current tab"
+    },
+    "toggle-site-snooze": {
+      "description": "Toggle CRW snooze for the current domain"
+    },
+    "toggle-site-ignore": {
+      "description": "Toggle CRW ignore for the current domain"
+    }
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
@@ -36,13 +50,13 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "assets/data.json",
         "crw_logo.png",
         "open-in-new.svg",
         "settings.svg",
         "close.svg"
       ],
-      "matches": ["<all_urls>"]
+      "matches": ["<all_urls>"],
+      "use_dynamic_url": true
     }
   ]
 }

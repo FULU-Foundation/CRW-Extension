@@ -4,13 +4,25 @@ import * as Constants from "@/shared/constants";
 import * as Matching from "@/lib/matching/matching";
 import * as Dataset from "@/lib/dataset";
 import * as Messaging from "@/messaging";
-import { MessageType } from "@/messaging/type";
+import { type AnyCRWMessage, MessageType } from "@/messaging/type";
 import { CargoEntry } from "@/shared/types";
-import { readDatasetCacheRefreshInfo, readTabMatches } from "@/shared/storage";
+import { readDatasetCacheRefreshInfo } from "@/shared/storage";
+import {
+  isShortcutCommandName,
+  type ShortcutCommandName,
+} from "@/shared/shortcuts";
+import { clearObsoleteLocalCaches } from "@/shared/storageCleanup";
+import { isCurrentPageUrl, TabNavigationState } from "./tabNavigationState";
 
 let datasetCache: CargoEntry[] = [];
 let datasetLoadPromise: Promise<CargoEntry[]> | null = null;
 let nextDatasetRefreshCheckAt = 0;
+const tabNavigationState = new TabNavigationState();
+const navigationCleanups = new Map<number, Promise<void>>();
+
+const waitForNavigationCleanup = async (tabId: number): Promise<void> => {
+  await navigationCleanups.get(tabId);
+};
 
 const getBadgeText = (count: number): string => {
   if (count <= 0) return "";
@@ -18,26 +30,96 @@ const getBadgeText = (count: number): string => {
   return String(count);
 };
 
-const sendMatchUpdateToTab = async (
+const sendMessageToTab = async (
   tabId: number,
-  matches: CargoEntry[],
-  type:
-    | MessageType.MATCH_RESULTS_UPDATED
-    | MessageType.FORCE_SHOW_INLINE_POPUP
-    | MessageType.TOGGLE_INLINE_POPUP = MessageType.MATCH_RESULTS_UPDATED,
+  message: AnyCRWMessage,
   attempt = 0,
 ): Promise<void> => {
   try {
-    await browser.tabs.sendMessage(
-      tabId,
-      Messaging.createMessage(type, "background", matches),
-    );
+    await browser.tabs.sendMessage(tabId, message);
   } catch {
     if (attempt >= 2) return;
     const delayMs = 250 * (attempt + 1);
     setTimeout(() => {
-      void sendMatchUpdateToTab(tabId, matches, type, attempt + 1);
+      void sendMessageToTab(tabId, message, attempt + 1);
     }, delayMs);
+  }
+};
+
+const sendMatchResultsToTab = async (
+  tabId: number,
+  url: string,
+  matches: CargoEntry[],
+): Promise<void> => {
+  try {
+    await browser.tabs.sendMessage(
+      tabId,
+      Messaging.createMessage(MessageType.MATCH_RESULTS_UPDATED, "background", {
+        url,
+        matches,
+      }),
+    );
+  } catch {
+    // A failed match update means the page is no longer available. Its next
+    // content-script context update will calculate and deliver fresh matches.
+  }
+};
+
+const readActiveTabId = async (): Promise<number | null> => {
+  const tabs = await browser.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+
+  return tabs[0]?.id ?? null;
+};
+
+const handleShortcutCommand = async (
+  command: ShortcutCommandName,
+): Promise<void> => {
+  const tabId = await readActiveTabId();
+  if (!tabId) return;
+
+  if (command === "hide-inline-popup") {
+    void sendMessageToTab(
+      tabId,
+      Messaging.createMessage(MessageType.HIDE_INLINE_POPUP, "background"),
+    );
+    return;
+  }
+
+  const navigationGeneration = tabNavigationState.capture(tabId);
+  await waitForNavigationCleanup(tabId);
+  if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
+
+  switch (command) {
+    case "show-inline-popup":
+      void sendMessageToTab(
+        tabId,
+        Messaging.createMessage(
+          MessageType.FORCE_SHOW_INLINE_POPUP,
+          "background",
+        ),
+      );
+      break;
+    case "toggle-site-snooze":
+      void sendMessageToTab(
+        tabId,
+        Messaging.createMessage(
+          MessageType.TOGGLE_SNOOZE_CURRENT_SITE,
+          "background",
+        ),
+      );
+      break;
+    case "toggle-site-ignore":
+      void sendMessageToTab(
+        tabId,
+        Messaging.createMessage(
+          MessageType.TOGGLE_SUPPRESS_CURRENT_SITE,
+          "background",
+        ),
+      );
+      break;
   }
 };
 
@@ -78,11 +160,23 @@ const loadDatasetCache = async (options?: {
     return await datasetLoadPromise;
   } catch (error) {
     console.log(`${Constants.LOG_PREFIX} Dataset load failed`, error);
-    datasetCache = [];
     nextDatasetRefreshCheckAt = 0;
+    if (forceRefresh) throw error;
+
+    datasetCache = [];
     return datasetCache;
   } finally {
     datasetLoadPromise = null;
+  }
+};
+
+const cleanupCachedStorage = async (): Promise<void> => {
+  try {
+    // Upgrades from older releases can contain a dataset twice (crw_raw and
+    // crw_all) plus an unbounded crw_matched_* key for every historical tab.
+    await clearObsoleteLocalCaches(browser.storage.local);
+  } catch (error) {
+    console.warn(`${Constants.LOG_PREFIX} Failed to clean cached data`, error);
   }
 };
 
@@ -91,10 +185,12 @@ browser.runtime.onInstalled.addListener(async () => {
     `${Constants.LOG_PREFIX} Extension installed/updated. Loading dataset...`,
   );
 
+  await cleanupCachedStorage();
   await loadDatasetCache();
 });
 
 browser.runtime.onStartup.addListener(async () => {
+  await cleanupCachedStorage();
   await loadDatasetCache();
 });
 
@@ -106,27 +202,49 @@ browser.storage.onChanged.addListener((changes, areaName) => {
   }
 });
 
-browser.tabs.onActivated.addListener(async ({ tabId }) => {
-  console.log(
-    `${Constants.LOG_PREFIX} Active tab has been changed. TabId:${tabId}`,
-  );
+browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status !== "loading") return;
 
-  const results = await readTabMatches(tabId);
+  tabNavigationState.beginNavigation(tabId);
+  const cleanup = browser.action
+    .setBadgeText({ tabId, text: "" })
+    .then(() => undefined)
+    .catch((error) => {
+      console.warn(
+        `${Constants.LOG_PREFIX} Failed to clear matches during navigation`,
+        error,
+      );
+    })
+    .finally(() => {
+      if (navigationCleanups.get(tabId) === cleanup) {
+        navigationCleanups.delete(tabId);
+      }
+    });
+  navigationCleanups.set(tabId, cleanup);
+});
 
-  browser.action.setBadgeText({
-    tabId,
-    text: getBadgeText(results.length),
-  });
-  browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
+browser.tabs.onRemoved.addListener((tabId) => {
+  tabNavigationState.forget(tabId);
+  navigationCleanups.delete(tabId);
 });
 
 browser.action.onClicked.addListener(async (tab) => {
   const tabId = tab.id;
   if (!tabId) return;
 
-  const matches = await readTabMatches(tabId);
+  const navigationGeneration = tabNavigationState.capture(tabId);
+  await waitForNavigationCleanup(tabId);
+  if (!tabNavigationState.isCurrent(tabId, navigationGeneration)) return;
 
-  void sendMatchUpdateToTab(tabId, matches, MessageType.TOGGLE_INLINE_POPUP);
+  void sendMessageToTab(
+    tabId,
+    Messaging.createMessage(MessageType.TOGGLE_INLINE_POPUP, "background"),
+  );
+});
+
+browser.commands.onCommand.addListener((command) => {
+  if (!isShortcutCommandName(command)) return;
+  void handleShortcutCommand(command);
 });
 
 Messaging.createBackgroundMessageHandler({
@@ -140,14 +258,33 @@ Messaging.createBackgroundMessageHandler({
   async onPageContextUpdated(payload, sender) {
     const tabId = sender.tab?.id;
     if (!tabId) return;
-    const dataset = await loadDatasetCache();
-    const storageKey = Constants.STORAGE.MATCHES(tabId);
+    const navigationGeneration = tabNavigationState.capture(tabId);
+    const [dataset] = await Promise.all([
+      loadDatasetCache(),
+      waitForNavigationCleanup(tabId),
+    ]);
+
+    let currentTab: browser.Tabs.Tab;
+    try {
+      currentTab = await browser.tabs.get(tabId);
+    } catch {
+      return;
+    }
+    if (
+      !tabNavigationState.isCurrent(tabId, navigationGeneration) ||
+      !isCurrentPageUrl(payload.url, currentTab.url)
+    ) {
+      return;
+    }
 
     const matches = Matching.matchByPageContext(dataset, payload);
 
-    await browser.storage.local.set({
-      [storageKey]: matches,
-    });
+    try {
+      currentTab = await browser.tabs.get(tabId);
+    } catch {
+      return;
+    }
+    if (!isCurrentPageUrl(payload.url, currentTab.url)) return;
 
     browser.action.setBadgeText({
       tabId,
@@ -155,7 +292,7 @@ Messaging.createBackgroundMessageHandler({
     });
     browser.action.setBadgeBackgroundColor({ tabId, color: "#FF5722" });
 
-    void sendMatchUpdateToTab(tabId, matches);
+    void sendMatchResultsToTab(tabId, payload.url, matches);
   },
 });
 

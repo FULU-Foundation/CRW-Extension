@@ -32,6 +32,7 @@ type MatchPopupCardProps = {
   showCloseButton?: boolean;
   hideRelatedButtonWhenEmpty?: boolean;
   containerStyle?: React.CSSProperties;
+  bottomSlot?: React.ReactNode;
   suppressButtonLabel?: string;
   suppressButtonTooltip?: string;
   snoozeUntilNewChangesLabel?: string;
@@ -48,8 +49,7 @@ const normalizeEntityToken = (value: string): string => {
   return value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .replace(/\s+/g, " ");
+    .trim();
 };
 
 const toNormalizedReferenceSet = (value: string | undefined): Set<string> => {
@@ -224,6 +224,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
     onOpenSettings,
     settingsIconUrl,
     closeIconUrl,
+    bottomSlot,
   } = props;
 
   const [showRelatedPages, setShowRelatedPages] = useState(false);
@@ -284,6 +285,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
       style={{
         ...POPUP_LAYOUT.root,
         ...containerStyle,
+        position: "relative",
       }}
     >
       <MatchPopupHeader
@@ -345,6 +347,7 @@ export const MatchPopupCard = (props: MatchPopupCardProps) => {
           </button>
         </div>
       )}
+      {bottomSlot}
     </div>
   );
 };

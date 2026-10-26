@@ -3,9 +3,9 @@ import { decodeCargoEntries } from "@/shared/types";
 import { MessageType } from "@/messaging/type";
 
 export type InlinePopupInstruction = {
+  action: "show" | "toggle" | "hide" | "toggleSnooze" | "toggleSuppress";
   matches: CargoEntry[];
   ignorePreferences: boolean;
-  toggle: boolean;
 };
 
 const isObjectRecord = (value: unknown): value is Record<string, unknown> => {
@@ -18,33 +18,69 @@ const toCargoEntries = (payload: unknown): CargoEntry[] => {
 
 export const getInlinePopupInstruction = (
   message: unknown,
+  currentPageUrl: string,
+  currentPageMatches: CargoEntry[] = [],
 ): InlinePopupInstruction | null => {
   if (!isObjectRecord(message)) return null;
 
   const messageType = message.type;
   if (messageType === MessageType.MATCH_RESULTS_UPDATED) {
+    const payload = message.payload;
+    if (!isObjectRecord(payload) || payload.url !== currentPageUrl) return null;
+
     return {
-      matches: toCargoEntries(message.payload),
+      action: "show",
+      matches: toCargoEntries(payload.matches),
       ignorePreferences: false,
-      toggle: false,
     };
   }
 
   if (messageType === MessageType.FORCE_SHOW_INLINE_POPUP) {
     return {
-      matches: toCargoEntries(message.payload),
+      action: "show",
+      matches: currentPageMatches,
       ignorePreferences: true,
-      toggle: false,
     };
   }
 
   if (messageType === MessageType.TOGGLE_INLINE_POPUP) {
     return {
-      matches: toCargoEntries(message.payload),
+      action: "toggle",
+      matches: currentPageMatches,
       ignorePreferences: true,
-      toggle: true,
+    };
+  }
+
+  if (messageType === MessageType.HIDE_INLINE_POPUP) {
+    return {
+      action: "hide",
+      matches: [],
+      ignorePreferences: true,
+    };
+  }
+
+  if (messageType === MessageType.TOGGLE_SNOOZE_CURRENT_SITE) {
+    return {
+      action: "toggleSnooze",
+      matches: currentPageMatches,
+      ignorePreferences: true,
+    };
+  }
+
+  if (messageType === MessageType.TOGGLE_SUPPRESS_CURRENT_SITE) {
+    return {
+      action: "toggleSuppress",
+      matches: currentPageMatches,
+      ignorePreferences: true,
     };
   }
 
   return null;
+};
+
+export const hasMessageType = (
+  message: unknown,
+  messageType: MessageType,
+): boolean => {
+  return isObjectRecord(message) && message.type === messageType;
 };

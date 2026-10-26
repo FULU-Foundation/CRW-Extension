@@ -8,6 +8,7 @@ import { getDomain, parse } from "tldts";
 import type { UrlEntryMatch, UrlMatchDetail, UrlMatchType } from "./types";
 import { getEcommerceFamily } from "./ecommerce.ts";
 import { matchingConfig } from "./matchingConfig.ts";
+import { normalizeHostname } from "../../shared/util.ts";
 
 const MATCH_PRIORITY: Record<UrlMatchType, number> = {
   exact: 3,
@@ -37,8 +38,37 @@ export const normalizePath = (pathname: string): string => {
   return clean.replace(/\/+$/, "");
 };
 
+const isRegionalPathPrefix = (value: string): boolean => {
+  const normalized = value.toLowerCase().replace(/_/g, "-");
+  if (matchingConfig.crossTldCountryCodeSuffixes.includes(normalized)) {
+    return true;
+  }
+
+  try {
+    return Boolean(new Intl.Locale(normalized).region);
+  } catch {
+    return false;
+  }
+};
+
+const getVisitedPathVariants = (pathname: string): string[] => {
+  const variants = [pathname];
+  const segments = pathname.split("/").filter(Boolean);
+  const leadingSegment = segments[0];
+
+  if (
+    segments.length > 1 &&
+    leadingSegment &&
+    isRegionalPathPrefix(leadingSegment)
+  ) {
+    variants.push(`/${segments.slice(1).join("/")}`);
+  }
+
+  return variants;
+};
+
 export const getDomainRoot = (hostname: string): string => {
-  const normalized = hostname.toLowerCase().replace(/^www\./, "");
+  const normalized = normalizeHostname(hostname);
   const registrableDomain = getDomain(normalized, {
     allowPrivateDomains: true,
   });
@@ -50,7 +80,7 @@ export const getDomainRoot = (hostname: string): string => {
 };
 
 const getCrossTldAliasKey = (hostname: string): string | null => {
-  const normalized = hostname.toLowerCase().replace(/^www\./, "");
+  const normalized = normalizeHostname(hostname);
   const parsed = parse(normalized, { allowPrivateDomains: true });
   if (!parsed.domainWithoutSuffix || !parsed.publicSuffix) return null;
   return `${parsed.domainWithoutSuffix}|${parsed.publicSuffix}`;
@@ -94,36 +124,53 @@ const hasConfiguredCompoundCountrySuffix = (
     );
 };
 
-const normalizeMatchHostname = (hostname: string): string => {
-  return hostname.toLowerCase().replace(/^www\./, "");
-};
+/**
+ * A .gov namespace is authoritative: matching a same-label non-government
+ * domain to it would make an unrelated domain appear official. This also
+ * covers country namespaces such as .gov.uk and .gov.au.
+ */
+const isGovernmentPublicSuffix = (suffix: string | undefined): boolean =>
+  suffix?.split(".").some((part) => part.toLowerCase() === "gov") ?? false;
 
 export const classifyUrlMatch = (
   visitedUrl: URL,
   candidateUrl: URL,
+  visitedPathVariants?: string[],
 ): UrlMatchDetail | null => {
-  const visitedHost = normalizeMatchHostname(visitedUrl.hostname);
-  const candidateHost = normalizeMatchHostname(candidateUrl.hostname);
+  const visitedHost = normalizeHostname(visitedUrl.hostname);
+  const candidateHost = normalizeHostname(candidateUrl.hostname);
   const visitedPath = normalizePath(visitedUrl.pathname);
   const candidatePath = normalizePath(candidateUrl.pathname);
+  const pathVariants =
+    visitedPathVariants ?? getVisitedPathVariants(visitedPath);
+  const exactPathMatch = pathVariants.some((path) => path === candidatePath);
+  const candidatePathMatchesVisitedPath = pathVariants.some(
+    (path) =>
+      path === candidatePath ||
+      path.startsWith(candidatePath === "/" ? "/" : `${candidatePath}/`),
+  );
 
   if (visitedHost === candidateHost) {
-    if (visitedPath === candidatePath) {
+    if (exactPathMatch) {
       return {
         matchType: "exact",
         matchedPath: candidatePath,
         visitedHost,
         candidateHost,
+        candidatePath,
+        candidatePathMatchesVisitedPath,
       };
     }
 
     const prefix = candidatePath === "/" ? "/" : `${candidatePath}/`;
-    if (visitedPath.startsWith(prefix)) {
+    if (pathVariants.some((path) => path.startsWith(prefix))) {
       return {
         matchType: "partial",
         matchedPath: candidatePath,
         visitedHost,
         candidateHost,
+        candidatePath,
+        candidatePathMatchesVisitedPath,
       };
     }
   }
@@ -138,6 +185,8 @@ export const classifyUrlMatch = (
         matchedPath: null,
         visitedHost,
         candidateHost,
+        candidatePath,
+        candidatePathMatchesVisitedPath,
       };
     }
   }
@@ -151,6 +200,8 @@ export const classifyUrlMatch = (
         matchedPath: null,
         visitedHost,
         candidateHost,
+        candidatePath,
+        candidatePathMatchesVisitedPath,
         ecommerceFamilyAlias: true,
       };
     }
@@ -169,12 +220,16 @@ export const classifyUrlMatch = (
       hasConfiguredCompoundCountrySuffix(candidateSuffix) ||
       isCountryCodeSuffix(visitedSuffix) ||
       isCountryCodeSuffix(candidateSuffix);
+    const includesGovernmentSuffix =
+      isGovernmentPublicSuffix(visitedSuffix) ||
+      isGovernmentPublicSuffix(candidateSuffix);
 
     if (
       visitedLabel &&
       candidateLabel &&
       visitedLabel === candidateLabel &&
       hasAliasSuffixEvidence &&
+      !includesGovernmentSuffix &&
       visitedRoot !== candidateRoot
     ) {
       return {
@@ -182,6 +237,8 @@ export const classifyUrlMatch = (
         matchedPath: null,
         visitedHost,
         candidateHost,
+        candidatePath,
+        candidatePathMatchesVisitedPath,
         crossTldAlias: true,
       };
     }
@@ -238,11 +295,46 @@ const compareSubdomainDepth = (
   return leftDepth - rightDepth;
 };
 
+const compareSubdomainCandidatePath = (
+  left: UrlMatchDetail,
+  right: UrlMatchDetail,
+): number => {
+  if (left.matchType !== "subdomain" || right.matchType !== "subdomain") {
+    return 0;
+  }
+
+  if (
+    left.candidatePathMatchesVisitedPath !==
+    right.candidatePathMatchesVisitedPath
+  ) {
+    return left.candidatePathMatchesVisitedPath ? -1 : 1;
+  }
+
+  if (
+    left.candidatePathMatchesVisitedPath &&
+    right.candidatePathMatchesVisitedPath
+  ) {
+    const byPathLength = right.candidatePath.length - left.candidatePath.length;
+    if (byPathLength !== 0) return byPathLength;
+  }
+
+  const leftIsRootPath = left.candidatePath === "/";
+  const rightIsRootPath = right.candidatePath === "/";
+  if (leftIsRootPath === rightIsRootPath) return 0;
+  return leftIsRootPath ? -1 : 1;
+};
+
 const sortDetailedMatches = (
   left: DetailedUrlEntryMatch,
   right: DetailedUrlEntryMatch,
 ): number => {
   if (right.score !== left.score) return right.score - left.score;
+
+  const byCandidatePath = compareSubdomainCandidatePath(
+    left.detail,
+    right.detail,
+  );
+  if (byCandidatePath !== 0) return byCandidatePath;
 
   const byDepth = compareSubdomainDepth(left.detail, right.detail);
   if (byDepth !== 0) return byDepth;
@@ -356,6 +448,10 @@ export const matchEntriesByUrl = (
   const visitedUrl = safeParseUrl(visitedUrlRaw);
   if (!visitedUrl) return [];
 
+  const visitedPathVariants = getVisitedPathVariants(
+    normalizePath(visitedUrl.pathname),
+  );
+
   const matches: DetailedUrlEntryMatch[] = [];
   for (const entry of entries) {
     const websiteUrls = splitWebsiteUrls(getEntryWebsite(entry));
@@ -364,7 +460,11 @@ export const matchEntriesByUrl = (
       const candidateUrl = safeParseUrl(websiteUrl);
       if (!candidateUrl) continue;
 
-      const detail = classifyUrlMatch(visitedUrl, candidateUrl);
+      const detail = classifyUrlMatch(
+        visitedUrl,
+        candidateUrl,
+        visitedPathVariants,
+      );
       if (!detail) continue;
 
       matches.push({

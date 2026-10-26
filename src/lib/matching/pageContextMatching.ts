@@ -12,10 +12,9 @@ const MARKETPLACE_BRANDS = new Set(["amazon", "ebay"]);
 const normalizeText = (value: string): string => {
   return value
     .toLowerCase()
-    .replace(/&[a-z0-9#]+;/gi, " ")
+    .replace(/&[a-z0-9#]+;/g, " ")
     .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .replace(/\s+/g, " ");
+    .trim();
 };
 
 const containsWholePhrase = (haystack: string, needle: string): boolean => {

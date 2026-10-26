@@ -1,6 +1,10 @@
 /**
  * Cargo data types
  */
+
+/**
+ * enum
+ */
 export type CargoEntryType = "Company" | "Incident" | "Product" | "ProductLine";
 
 type CargoEntryCommon = {
@@ -40,10 +44,7 @@ export type ProductLineEntry = CargoEntryCommon & {
 };
 
 export type CargoEntry =
-  | CompanyEntry
-  | IncidentEntry
-  | ProductEntry
-  | ProductLineEntry;
+  CompanyEntry | IncidentEntry | ProductEntry | ProductLineEntry;
 
 export type RawCargoDataset = Record<CargoEntryType, unknown[]>;
 

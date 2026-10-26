@@ -80,6 +80,78 @@ test("classifies partial when visited path is a deeper prefix on same host", () 
   assert.equal(result.matchedPath, "/invest");
 });
 
+test("matches a product path behind a leading country-code segment", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-apple",
+      PageName: "Apple",
+      Website: "https://apple.com/",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-airpods",
+      PageName: "AirPods",
+      Company: "Apple",
+      Website: "https://apple.com/airpods",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://www.apple.com/au/airpods/",
+    10,
+  );
+
+  assert.equal(results[0]?.entry.PageID, "pl-airpods");
+  assert.equal(results[0]?.matchType, "exact");
+  assert.equal(results[1]?.entry.PageID, "company-apple");
+});
+
+test("partially matches a deeper product path behind a country-code segment", () => {
+  const visited = safeParseUrl("https://www.apple.com/au/airpods/compare");
+  const candidate = safeParseUrl("https://apple.com/airpods");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "partial");
+  assert.equal(result.matchedPath, "/airpods");
+});
+
+test("matches a product path behind a BCP 47 locale segment", () => {
+  const visited = safeParseUrl("https://www.nvidia.com/en-au/geforce-now/");
+  const candidate = safeParseUrl("https://www.nvidia.com/geforce-now/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "exact");
+  assert.equal(result.matchedPath, "/geforce-now");
+});
+
+test("matches a product path behind an underscore locale segment", () => {
+  const visited = safeParseUrl("https://example.com/en_AU/products/widget");
+  const candidate = safeParseUrl("https://example.com/products/widget");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "exact");
+});
+
+test("does not strip an unknown leading path segment", () => {
+  const visited = safeParseUrl("https://www.apple.com/store/airpods");
+  const candidate = safeParseUrl("https://apple.com/airpods");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  assert.equal(classifyUrlMatch(visited, candidate), null);
+});
+
 test("does not partial-match when candidate is deeper than visited path", () => {
   const visited = safeParseUrl("https://www.ally.com/invest/hello");
   const candidate = safeParseUrl(
@@ -102,6 +174,128 @@ test("classifies subdomain match without requiring path compatibility", () => {
   const result = classifyUrlMatch(visited, candidate);
   assert.ok(result);
   assert.equal(result.matchType, "subdomain");
+});
+
+test("prefers root website subdomain matches over path-specific entries", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-nvidia",
+      PageName: "Nvidia",
+      Website: "https://www.nvidia.com/",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-geforce-now",
+      PageName: "GeForce Now",
+      Company: "Nvidia",
+      Website: "https://www.nvidia.com/geforce-now/",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://developer.nvidia.com/",
+    10,
+  );
+
+  assert.equal(results.length, 2);
+  assert.equal(results[0]?.entry.PageID, "company-nvidia");
+  assert.equal(results[1]?.entry.PageID, "pl-geforce-now");
+  assert.equal(results[0]?.matchType, "subdomain");
+});
+
+test("prefers a path-specific subdomain match when the visited path matches", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-apple",
+      PageName: "Apple",
+      Website: "https://www.apple.com/",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-airpods",
+      PageName: "AirPods",
+      Company: "Apple",
+      Website: "https://www.apple.com/airpods/",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://support.apple.com/airpods/",
+    10,
+  );
+
+  assert.equal(results.length, 2);
+  assert.equal(results[0]?.entry.PageID, "pl-airpods");
+  assert.equal(results[1]?.entry.PageID, "company-apple");
+  assert.equal(results[0]?.matchType, "subdomain");
+});
+
+test("prefers the longest matching candidate path for subdomain matches", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-example",
+      PageName: "Example",
+      Website: "https://www.example.com/",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-example-support",
+      PageName: "Example Support",
+      Company: "Example",
+      Website: "https://www.example.com/support/",
+    }),
+    entry({
+      _type: "Product",
+      PageID: "product-example-repair",
+      PageName: "Example Repair",
+      Company: "Example",
+      Website: "https://www.example.com/support/repair/",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://help.example.com/support/repair/status/",
+    10,
+  );
+
+  assert.equal(results.length, 3);
+  assert.equal(results[0]?.entry.PageID, "product-example-repair");
+  assert.equal(results[1]?.entry.PageID, "pl-example-support");
+  assert.equal(results[2]?.entry.PageID, "company-example");
+});
+
+test("prefers a matching candidate path over a shallower candidate host", () => {
+  const dataset: CargoEntry[] = [
+    entry({
+      _type: "Company",
+      PageID: "company-example",
+      PageName: "Example",
+      Website: "https://www.example.com/",
+    }),
+    entry({
+      _type: "ProductLine",
+      PageID: "pl-example-widget",
+      PageName: "Example Widget",
+      Company: "Example",
+      Website: "https://products.example.com/widget/",
+    }),
+  ];
+
+  const results = matchEntriesByUrl(
+    dataset,
+    "https://support.example.com/widget/",
+    10,
+  );
+
+  assert.equal(results.length, 2);
+  assert.equal(results[0]?.entry.PageID, "pl-example-widget");
+  assert.equal(results[1]?.entry.PageID, "company-example");
 });
 
 test("does not classify subdomain match when subdomain matching is disabled", () => {
@@ -204,6 +398,47 @@ test("does not cross-match same-label generic TLD hosts without ccTLD or compoun
 
   const result = classifyUrlMatch(visited, candidate);
   assert.equal(result, null);
+});
+
+test("does not cross-match a country-code domain to an authoritative .gov domain", () => {
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
+  const visited = safeParseUrl("https://faa.io/");
+  const candidate = safeParseUrl("https://faa.gov/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
+test("does not cross-match any .gov country namespace", () => {
+  setMatchingConfig({
+    enableMatchAcrossTLDs: true,
+    enableSubdomainMatching: true,
+  });
+  const visited = safeParseUrl("https://example.io/");
+  const candidate = safeParseUrl("https://example.gov.uk/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.equal(result, null);
+});
+
+test("keeps genuine .gov subdomain matches", () => {
+  setMatchingConfig({ enableSubdomainMatching: true });
+  const visited = safeParseUrl("https://www.faa.gov/news/");
+  const candidate = safeParseUrl("https://faa.gov/");
+  assert.ok(visited);
+  assert.ok(candidate);
+
+  const result = classifyUrlMatch(visited, candidate);
+  assert.ok(result);
+  assert.equal(result.matchType, "partial");
+  assert.equal(result.crossTldAlias, undefined);
 });
 
 test("does not cross-match branded compound country suffix domains to .com", () => {

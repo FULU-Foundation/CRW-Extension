@@ -1,4 +1,3 @@
-import React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import browser from "webextension-polyfill";
 
@@ -12,6 +11,11 @@ import {
 } from "@/shared/siteScope";
 import { CargoEntry, PageContext } from "@/shared/types";
 import {
+  readAutoDismissHoverCancelMs,
+  readAutoDismissCursorOutBehavior,
+  readAutoDismissEnabled,
+  readAutoDismissShowProgressBar,
+  readAutoDismissTimeoutMs,
   readHideWhenNoIncidents,
   readPopupPosition,
   readSnoozedSiteMap,
@@ -27,17 +31,21 @@ import { InlinePopup } from "@/content/InlinePopup";
 import { InlineEmptyState } from "@/content/InlineEmptyState";
 import {
   getInlinePopupInstruction,
+  hasMessageType,
   type InlinePopupInstruction,
 } from "@/content/messageRouting";
 import {
   extractAmazonMarketplaceProperties,
   extractEbayJsonLdProductProperties,
 } from "@/lib/matching/ecommerce";
+import { createUrlChangeDebouncer } from "@/content/urlChangeDetector";
 
-console.log(
-  `${Constants.LOG_PREFIX} Content script loaded on:`,
-  window.location.href,
-);
+if (import.meta.env.DEV) {
+  console.log(
+    `${Constants.LOG_PREFIX} Content script loaded on:`,
+    window.location.href,
+  );
+}
 
 const POPUP_ID = "crw-inline-alert";
 const ASSET_URLS = {
@@ -51,6 +59,9 @@ let popupHost: HTMLDivElement | null = null;
 let popupShadowMount: HTMLDivElement | null = null;
 let popupRoot: Root | null = null;
 let forcePopupVisible = false;
+let currentPopupMatches: CargoEntry[] | null = null;
+let currentPopupIgnorePreferences = false;
+let currentPageMatches: CargoEntry[] = [];
 const SNOOZE_UNTIL_NEW_CHANGES_LABEL = "Hide until new incidents";
 
 const getSuppressedDomains = async (): Promise<string[]> => {
@@ -217,6 +228,8 @@ const ensurePopupRoot = (): Root => {
 
 const removeInlinePopup = () => {
   forcePopupVisible = false;
+  currentPopupMatches = null;
+  currentPopupIgnorePreferences = false;
   if (popupRoot) {
     popupRoot.unmount();
   }
@@ -230,6 +243,34 @@ const removeInlinePopup = () => {
 
 const isInlinePopupOpen = (): boolean =>
   Boolean(popupHost?.isConnected && popupShadowMount?.isConnected && popupRoot);
+
+const toggleCurrentSiteSuppression = async (
+  matches: CargoEntry[],
+): Promise<void> => {
+  if (await isCurrentSiteSuppressed()) {
+    await unsuppressCurrentSite();
+    void renderInlinePopup(matches, true);
+    return;
+  }
+
+  await suppressCurrentSite();
+  removeInlinePopup();
+};
+
+const toggleCurrentSiteSnooze = async (
+  matches: CargoEntry[],
+): Promise<void> => {
+  const incidentSignature = buildIncidentSignature(matches);
+
+  if (await isCurrentSiteSnoozedUntilIncidentChanges(incidentSignature)) {
+    await unsnoozeCurrentSiteUntilNewIncidentChanges(incidentSignature);
+    void renderInlinePopup(matches, true);
+    return;
+  }
+
+  await snoozeCurrentSiteUntilNewIncidentChanges(incidentSignature);
+  removeInlinePopup();
+};
 
 const renderInlinePopup = async (
   matches: CargoEntry[],
@@ -275,7 +316,14 @@ const renderInlinePopup = async (
   }
 
   forcePopupVisible = ignorePreferences;
+  currentPopupMatches = visibleMatches;
+  currentPopupIgnorePreferences = ignorePreferences;
   const popupPosition: PopupPosition = await readPopupPosition();
+  const autoDismissEnabled = await readAutoDismissEnabled();
+  const autoDismissTimeoutMs = await readAutoDismissTimeoutMs();
+  const autoDismissShowProgressBar = await readAutoDismissShowProgressBar();
+  const autoDismissCursorOutBehavior = await readAutoDismissCursorOutBehavior();
+  const autoDismissHoverCancelMs = await readAutoDismissHoverCancelMs();
   const root = ensurePopupRoot();
   if (visibleMatches.length === 0) {
     root.render(
@@ -331,6 +379,12 @@ const renderInlinePopup = async (
       settingsIconUrl={ASSET_URLS.settings}
       closeIconUrl={ASSET_URLS.close}
       position={popupPosition}
+      autoDismissEnabled={autoDismissEnabled}
+      autoDismissTimeoutMs={autoDismissTimeoutMs}
+      autoDismissShowProgressBar={autoDismissShowProgressBar}
+      autoDismissCursorOutBehavior={autoDismissCursorOutBehavior}
+      autoDismissHoverCancelMs={autoDismissHoverCancelMs}
+      manuallyOpened={ignorePreferences}
       onClose={removeInlinePopup}
       onOpenSettings={openOptions}
       onDisableWarnings={() => void handleDisableWarnings()}
@@ -429,28 +483,51 @@ const runContentScript = async () => {
 const handleInlinePopupInstruction = async (
   instruction: InlinePopupInstruction,
 ) => {
-  if (instruction.toggle) {
-    if (isInlinePopupOpen()) {
+  switch (instruction.action) {
+    case "hide":
       removeInlinePopup();
       return;
-    }
+    case "toggle":
+      if (isInlinePopupOpen()) {
+        removeInlinePopup();
+        return;
+      }
 
-    void renderInlinePopup(instruction.matches, true);
-    return;
+      void renderInlinePopup(instruction.matches, true);
+      return;
+    case "toggleSnooze":
+      await toggleCurrentSiteSnooze(instruction.matches);
+      return;
+    case "toggleSuppress":
+      await toggleCurrentSiteSuppression(instruction.matches);
+      return;
+    case "show":
+      if (!instruction.ignorePreferences) {
+        if (forcePopupVisible && !(await isWarningsEnabled())) return;
+        void renderInlinePopup(instruction.matches, false);
+        return;
+      }
+
+      void renderInlinePopup(instruction.matches, true);
+      return;
   }
-
-  if (!instruction.ignorePreferences) {
-    if (forcePopupVisible && !(await isWarningsEnabled())) return;
-    void renderInlinePopup(instruction.matches, false);
-    return;
-  }
-
-  void renderInlinePopup(instruction.matches, true);
 };
 
 browser.runtime.onMessage.addListener((msg: unknown) => {
-  const instruction = getInlinePopupInstruction(msg);
+  if (hasMessageType(msg, MessageType.GET_TAB_MATCHES)) {
+    return Promise.resolve(currentPageMatches);
+  }
+
+  const instruction = getInlinePopupInstruction(
+    msg,
+    location.href,
+    currentPageMatches,
+  );
   if (!instruction) return;
+
+  if (hasMessageType(msg, MessageType.MATCH_RESULTS_UPDATED)) {
+    currentPageMatches = instruction.matches;
+  }
   void handleInlinePopupInstruction(instruction);
 });
 
@@ -477,9 +554,51 @@ browser.storage.onChanged.addListener((changes, areaName) => {
     ) {
       void runContentScript();
     }
+    if (
+      isInlinePopupOpen() &&
+      currentPopupMatches !== null &&
+      (changes[Constants.STORAGE.AUTO_DISMISS_ENABLED] ||
+        changes[Constants.STORAGE.AUTO_DISMISS_TIMEOUT_MS] ||
+        changes[Constants.STORAGE.AUTO_DISMISS_SHOW_PROGRESS_BAR] ||
+        changes[Constants.STORAGE.AUTO_DISMISS_CURSOR_OUT_BEHAVIOR] ||
+        changes[Constants.STORAGE.AUTO_DISMISS_HOVER_CANCEL_MS] ||
+        changes[Constants.STORAGE.POPUP_POSITION])
+    ) {
+      void renderInlinePopup(
+        currentPopupMatches,
+        currentPopupIgnorePreferences,
+      );
+    }
   };
 
   void syncPopupStateWithStorage();
 });
+
+const schedulePageContextRefreshForUrl = createUrlChangeDebouncer({
+  initialUrl: location.href,
+  delayMs: 300,
+  onUrlChange: () => {
+    currentPageMatches = [];
+    removeInlinePopup();
+  },
+  onRefresh: () => void runContentScript(),
+  setTimer: (callback, delayMs) => window.setTimeout(callback, delayMs),
+  clearTimer: (timer) => window.clearTimeout(timer),
+});
+
+const schedulePageContextRefresh = () => {
+  schedulePageContextRefreshForUrl(location.href);
+};
+
+window.addEventListener("popstate", schedulePageContextRefresh);
+window.addEventListener("hashchange", schedulePageContextRefresh);
+
+const navigationObserver = new MutationObserver(schedulePageContextRefresh);
+navigationObserver.observe(document.documentElement, {
+  childList: true,
+  subtree: true,
+});
+
+window.setInterval(schedulePageContextRefresh, 1000);
 
 void runContentScript();

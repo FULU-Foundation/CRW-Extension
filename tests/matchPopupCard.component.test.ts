@@ -73,6 +73,28 @@ test("MatchPopupCard incident list shows first status token and sorts active inc
   assert.equal(html.includes("Investigating"), false);
 });
 
+test("MatchPopupCard close button exposes an accessible name", () => {
+  const html = renderToStaticMarkup(
+    React.createElement(MatchPopupCard, {
+      matches: [
+        entry({
+          _type: "Company",
+          PageID: "company-apple",
+          PageName: "Apple",
+        }),
+      ],
+      logoUrl: "/logo.png",
+      externalIconUrl: "/open-in-new.svg",
+      closeIconUrl: "/close.svg",
+      onSuppressSite: noop,
+      onClose: noop,
+      showCloseButton: true,
+    }),
+  );
+
+  assert.ok(html.includes('aria-label="Close"'));
+});
+
 test("MatchPopupCard renders snooze action when handler is provided", () => {
   const html = renderToStaticMarkup(
     React.createElement(MatchPopupCard, {
