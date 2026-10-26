@@ -42,7 +42,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.3.0",
     "@types/webextension-polyfill": "^0.12.5",
-    "@vitejs/plugin-react": "^6.1.1",
+    "@vitejs/plugin-react": "^6.1.2",
     "chokidar-cli": "^3.0.0",
     "cross-env": "^10.1.0",
     "eslint": "^10.11.0",
