@@ -16,6 +16,31 @@ const MATCH_PRIORITY: Record<UrlMatchType, number> = {
   subdomain: 1,
 };
 
+// These ccTLDs are commonly treated as generic rather than country-specific,
+// so they are weak evidence that two same-label domains are regional aliases.
+const GENERIC_COUNTRY_CODE_SUFFIXES = new Set([
+  "ad",
+  "ai",
+  "as",
+  "bz",
+  "cc",
+  "cd",
+  "co",
+  "dj",
+  "fm",
+  "io",
+  "la",
+  "me",
+  "ms",
+  "nu",
+  "sc",
+  "sr",
+  "su",
+  "tv",
+  "tk",
+  "ws",
+]);
+
 export const safeParseUrl = (rawUrl: string | null | undefined): URL | null => {
   if (!rawUrl) return null;
   const trimmed = rawUrl.trim();
@@ -95,6 +120,8 @@ const isCountryCodeSuffix = (suffix: string | undefined): boolean => {
   const lastPart = parts[parts.length - 1]?.toLowerCase();
   if (!lastPart) return false;
 
+  if (GENERIC_COUNTRY_CODE_SUFFIXES.has(lastPart)) return false;
+
   return matchingConfig.crossTldCountryCodeSuffixes.includes(lastPart);
 };
 
@@ -112,6 +139,7 @@ const hasConfiguredCompoundCountrySuffix = (
   const lastPart = parts[parts.length - 1];
   if (
     !lastPart ||
+    GENERIC_COUNTRY_CODE_SUFFIXES.has(lastPart) ||
     !matchingConfig.crossTldCountryCodeSuffixes.includes(lastPart)
   ) {
     return false;
