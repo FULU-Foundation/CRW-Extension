@@ -62,6 +62,7 @@ let forcePopupVisible = false;
 let currentPopupMatches: CargoEntry[] | null = null;
 let currentPopupIgnorePreferences = false;
 let currentPageMatches: CargoEntry[] = [];
+let automaticPopupDismissed = false;
 const SNOOZE_UNTIL_NEW_CHANGES_LABEL = "Hide until new incidents";
 
 const getSuppressedDomains = async (): Promise<string[]> => {
@@ -244,6 +245,11 @@ const removeInlinePopup = () => {
 const isInlinePopupOpen = (): boolean =>
   Boolean(popupHost?.isConnected && popupShadowMount?.isConnected && popupRoot);
 
+const dismissInlinePopup = () => {
+  automaticPopupDismissed = true;
+  removeInlinePopup();
+};
+
 const toggleCurrentSiteSuppression = async (
   matches: CargoEntry[],
 ): Promise<void> => {
@@ -332,7 +338,7 @@ const renderInlinePopup = async (
         settingsIconUrl={ASSET_URLS.settings}
         position={popupPosition}
         onOpenSettings={openOptions}
-        onClose={removeInlinePopup}
+        onClose={dismissInlinePopup}
       />,
     );
     return;
@@ -385,7 +391,7 @@ const renderInlinePopup = async (
       autoDismissCursorOutBehavior={autoDismissCursorOutBehavior}
       autoDismissHoverCancelMs={autoDismissHoverCancelMs}
       manuallyOpened={ignorePreferences}
-      onClose={removeInlinePopup}
+      onClose={dismissInlinePopup}
       onOpenSettings={openOptions}
       onDisableWarnings={() => void handleDisableWarnings()}
       disableWarningsLabel={
@@ -485,11 +491,11 @@ const handleInlinePopupInstruction = async (
 ) => {
   switch (instruction.action) {
     case "hide":
-      removeInlinePopup();
+      dismissInlinePopup();
       return;
     case "toggle":
       if (isInlinePopupOpen()) {
-        removeInlinePopup();
+        dismissInlinePopup();
         return;
       }
 
@@ -503,6 +509,7 @@ const handleInlinePopupInstruction = async (
       return;
     case "show":
       if (!instruction.ignorePreferences) {
+        if (automaticPopupDismissed) return;
         if (forcePopupVisible && !(await isWarningsEnabled())) return;
         void renderInlinePopup(instruction.matches, false);
         return;
@@ -579,6 +586,7 @@ const schedulePageContextRefreshForUrl = createUrlChangeDebouncer({
   delayMs: 300,
   onUrlChange: () => {
     currentPageMatches = [];
+    automaticPopupDismissed = false;
     removeInlinePopup();
   },
   onRefresh: () => void runContentScript(),
