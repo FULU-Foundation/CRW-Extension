@@ -63,6 +63,7 @@ let currentPopupMatches: CargoEntry[] | null = null;
 let currentPopupIgnorePreferences = false;
 let currentPageMatches: CargoEntry[] = [];
 let automaticPopupDismissed = false;
+let navigationGeneration = 0;
 const SNOOZE_UNTIL_NEW_CHANGES_LABEL = "Hide until new incidents";
 
 const getSuppressedDomains = async (): Promise<string[]> => {
@@ -282,6 +283,7 @@ const renderInlinePopup = async (
   matches: CargoEntry[],
   ignorePreferences = false,
 ) => {
+  const generation = navigationGeneration;
   const visibleMatches = matches;
 
   const currentlyWarningsEnabled = await isWarningsEnabled();
@@ -317,7 +319,11 @@ const renderInlinePopup = async (
   }
 
   if (visibleMatches.length === 0 && !ignorePreferences) {
-    removeInlinePopup();
+    if (isInlinePopupOpen()) {
+      dismissInlinePopup();
+    } else {
+      removeInlinePopup();
+    }
     return;
   }
 
@@ -330,6 +336,8 @@ const renderInlinePopup = async (
   const autoDismissShowProgressBar = await readAutoDismissShowProgressBar();
   const autoDismissCursorOutBehavior = await readAutoDismissCursorOutBehavior();
   const autoDismissHoverCancelMs = await readAutoDismissHoverCancelMs();
+  if (generation !== navigationGeneration) return;
+  if (!ignorePreferences && automaticPopupDismissed) return;
   const root = ensurePopupRoot();
   if (visibleMatches.length === 0) {
     root.render(
@@ -585,6 +593,7 @@ const schedulePageContextRefreshForUrl = createUrlChangeDebouncer({
   initialUrl: location.href,
   delayMs: 300,
   onUrlChange: () => {
+    navigationGeneration += 1;
     currentPageMatches = [];
     automaticPopupDismissed = false;
     removeInlinePopup();
